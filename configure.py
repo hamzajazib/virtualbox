@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# $Id: configure.py 112871 2026-02-09 09:17:00Z andreas.loeffler@oracle.com $
+# $Id: configure.py 112891 2026-02-09 11:02:47Z andreas.loeffler@oracle.com $
 """
 Configuration script for building VirtualBox.
 
@@ -61,7 +61,7 @@ SPDX-License-Identifier: GPL-3.0-only
 # External Python modules or other dependencies are not allowed!
 #
 
-__revision__ = "$Revision: 112871 $"
+__revision__ = "$Revision: 112891 $"
 
 import argparse
 import ctypes
@@ -3264,11 +3264,6 @@ g_aoLibs = [
                  sSdkName = "VBoxLibCurl"),
     LibraryCheck("libdevmapper", [ "libdevmapper.h" ], [ "libdevmapper" ], aeTargets = [ BuildTarget.LINUX ],
                  sCode = '#include <libdevmapper.h>\nint main() { char v[64]; dm_get_library_version(v, sizeof(v)); printf("%s", v); return 0; }\n'),
-    # Dragging in libgsoapssl++ when linking requires certain stubs to be implemented (soap_faultcode, soap_fault_subcode, ++) by the user (depending on the libgsoap version),
-    # so we only do the bare minimum here (hence the empty lib definition) to return the installed version of libgsoap[ssl][++].
-    LibraryCheck("libgsoapssl++", [ "stdsoap2.h" ], [ ], aeTargets = [ BuildTarget.LINUX ],
-                 sCode = '#include <stdsoap2.h>\nint main() { printf("%ld", GSOAP_VERSION); return 0; }\n',
-                 dictDefinesToSetIfFailed = { 'VBOX_WITH_WEBSERVICES' : '' }),
     LibraryCheck("libjpeg-turbo", [ "turbojpeg.h" ], [ "libturbojpeg" ], aeTargets = [ BuildTarget.ANY ], fUseInTree = True,
                  sCode = '#include <turbojpeg.h>\nint main() { tjInitCompress(); printf("<found>"); return 0; }\n'),
     LibraryCheck("liblzf", [ "lzf.h" ], [ "liblzf" ], aeTargets = [ BuildTarget.ANY ], fUseInTree = True,
