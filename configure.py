@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# $Id: configure.py 112891 2026-02-09 11:02:47Z andreas.loeffler@oracle.com $
+# $Id: configure.py 112894 2026-02-09 11:10:23Z andreas.loeffler@oracle.com $
 """
 Configuration script for building VirtualBox.
 
@@ -61,7 +61,7 @@ SPDX-License-Identifier: GPL-3.0-only
 # External Python modules or other dependencies are not allowed!
 #
 
-__revision__ = "$Revision: 112891 $"
+__revision__ = "$Revision: 112894 $"
 
 import argparse
 import ctypes
@@ -3671,6 +3671,7 @@ def main():
     oParser.add_argument('--with-win-vcpkg-root', help='Where the VCPKG root directory to be found', dest='config_win_vcpkg_root');
     # The following arguments are deprecated and undocumented -- kept for backwards compatibility.
     oParser.add_argument('--build-libssl', help=argparse.SUPPRESS, action='store_true', dest='config_libs_build_openssl');
+    oParser.add_argument('--disable-qt6', help=argparse.SUPPRESS, dest='config_libs_disable_qt');
     oParser.add_argument('--enable-webservice', help=argparse.SUPPRESS, action='store_true', default=None, dest='VBOX_WITH_WEBSERVICES=1');
     oParser.add_argument('--passive-mesa', help=argparse.SUPPRESS, action='store_true', default=None, dest='DISPLAY=');
     oParser.add_argument('--with-ddk', help=argparse.SUPPRESS, dest='config_tools_path_win_ddk');
@@ -3876,8 +3877,8 @@ def main():
         # or with Extension Pack feature disabled.
         lambda env: { 'VBOX_WITH_EXTPACK_PUEL_BUILD': '' } if g_oEnv['config_only_additions']
                                                            or g_oEnv['config_disable_extpack'] else {},
-        # Disable FE/Qt if qt6 is disabled.
-        lambda env: { 'VBOX_WITH_QTGUI': '' } if g_oEnv['config_libs_disable_qt6'] else {},
+        # Disable FE/Qt if Qt is disabled.
+        lambda env: { 'VBOX_WITH_QTGUI': '' } if g_oEnv['config_libs_disable_qt'] else {},
         # Disable components if we want to build headless.
         lambda env: { 'VBOX_WITH_HEADLESS': '1', \
                       'VBOX_WITH_QTGUI': '', \
