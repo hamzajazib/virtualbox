@@ -1,4 +1,4 @@
-/* $Id: UIChooserAbstractModel.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIChooserAbstractModel.cpp 112908 2026-02-09 15:53:11Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIChooserAbstractModel class implementation.
  */
@@ -261,7 +261,7 @@ void UIThreadGroupSettingsSave::run()
             comMachine.SaveSettings();
             if (!comMachine.isOk())
             {
-                msgCenter().cannotSaveMachineSettings(comMachine);
+                UINotificationMessage::cannotSaveMachineSettings(comMachine);
                 break;
             }
         } while (0);

@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.h 112902 2026-02-09 14:35:57Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.h 112908 2026-02-09 15:53:11Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class declaration.
  */
@@ -283,10 +283,6 @@ public:
         void cannotSetExtraData(const CMachine &machine, const QString &strKey, const QString &strValue);
         bool cannotRemountMedium(const CMachine &machine, const UIMedium &medium,
                                  bool fMount, bool fRetry, QWidget *pParent = 0) const;
-
-        void cannotSetHostSettings(const CHost &comHost, QWidget *pParent = 0) const;
-        void cannotSetSystemProperties(const CSystemProperties &properties, QWidget *pParent = 0) const;
-        void cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent = 0) const;
 
         void cannotAddDiskEncryptionPassword(const CConsole &console);
     /** @} */

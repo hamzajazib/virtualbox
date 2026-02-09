@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.cpp 112902 2026-02-09 14:35:57Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.cpp 112908 2026-02-09 15:53:11Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class implementation.
  */
@@ -633,28 +633,6 @@ bool UIMessageCenter::cannotRemountMedium(const CMachine &machine, const UIMediu
           strMessage.arg(medium.isHostDrive() ? medium.name() : medium.location(), CMachine(machine).GetName()),
           UIErrorString::formatErrorInfo(machine));
     return false;
-}
-
-void UIMessageCenter::cannotSetHostSettings(const CHost &comHost, QWidget *pParent /* = 0 */) const
-{
-    error(pParent, MessageType_Critical,
-          tr("Failed to set global host settings."),
-          UIErrorString::formatErrorInfo(comHost));
-}
-
-void UIMessageCenter::cannotSetSystemProperties(const CSystemProperties &properties, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Critical,
-          tr("Failed to set global VirtualBox properties."),
-          UIErrorString::formatErrorInfo(properties));
-}
-
-void UIMessageCenter::cannotSaveMachineSettings(const CMachine &machine, QWidget *pParent /* = 0*/) const
-{
-    error(pParent, MessageType_Error,
-          tr("Failed to save the settings of the virtual machine <b>%1</b> to <b><nobr>%2</nobr></b>.")
-             .arg(CMachine(machine).GetName(), CMachine(machine).GetSettingsFilePath()),
-          UIErrorString::formatErrorInfo(machine));
 }
 
 void UIMessageCenter::cannotAddDiskEncryptionPassword(const CConsole &console)

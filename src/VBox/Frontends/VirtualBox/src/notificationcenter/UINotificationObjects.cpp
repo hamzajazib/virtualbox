@@ -1,4 +1,4 @@
-/* $Id: UINotificationObjects.cpp 112902 2026-02-09 14:35:57Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationObjects.cpp 112908 2026-02-09 15:53:11Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationObjects implementations.
  */
@@ -1025,6 +1025,26 @@ void UINotificationMessage::cannotAcquireCloudMachineParameter(const CCloudMachi
         QApplication::translate("UIMessageCenter", "Cloud failure ..."),
         QApplication::translate("UIMessageCenter", "Failed to acquire cloud machine parameter.") +
         UIErrorString::formatErrorInfo(comCloudMachine),
+        pParent);
+}
+
+/* static */
+void UINotificationMessage::cannotChangeHostParameter(const CHost &comHost, QWidget *pParent /* = 0 */)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Host failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to change host parameter.") +
+        UIErrorString::formatErrorInfo(comHost),
+        pParent);
+}
+
+/* static */
+void UINotificationMessage::cannotChangeSystemProperties(const CSystemProperties &comProperties, QWidget *pParent /* = 0 */)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "System properties failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to change system properties.") +
+        UIErrorString::formatErrorInfo(comProperties),
         pParent);
 }
 

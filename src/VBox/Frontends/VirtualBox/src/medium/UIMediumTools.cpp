@@ -1,4 +1,4 @@
-/* $Id: UIMediumTools.cpp 112902 2026-02-09 14:35:57Z sergey.dubov@oracle.com $ */
+/* $Id: UIMediumTools.cpp 112908 2026-02-09 15:53:11Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMediumTools class implementation.
  */
@@ -679,7 +679,7 @@ void UIMediumTools::updateMachineStorage(const CMachine &comConstMachine,
     {
         comMachine.SaveSettings();
         if (!comMachine.isOk())
-            msgCenter().cannotSaveMachineSettings(comMachine, windowManager().mainWindowShown());
+            UINotificationMessage::cannotSaveMachineSettings(comMachine);
     }
 
     /* Close session to editable comMachine if necessary: */

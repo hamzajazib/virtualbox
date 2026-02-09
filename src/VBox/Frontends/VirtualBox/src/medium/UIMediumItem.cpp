@@ -1,4 +1,4 @@
-/* $Id: UIMediumItem.cpp 112902 2026-02-09 14:35:57Z sergey.dubov@oracle.com $ */
+/* $Id: UIMediumItem.cpp 112908 2026-02-09 15:53:11Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMediumItem class implementation.
  */
@@ -330,7 +330,7 @@ bool UIMediumItem::releaseFrom(const QUuid &uMachineId)
         /* Save machine settings: */
         machine.SaveSettings();
         if (!machine.isOk())
-            msgCenter().cannotSaveMachineSettings(machine, treeWidget());
+            UINotificationMessage::cannotSaveMachineSettings(machine, treeWidget());
         else
             fSuccess = true;
     }
@@ -370,7 +370,7 @@ bool UIMediumItem::attachTo(const AttachmentCache &attachmentCache)
         /* Save machine settings: */
         comMachine.SaveSettings();
         if (!comMachine.isOk())
-            msgCenter().cannotSaveMachineSettings(comMachine, parentTree());
+            UINotificationMessage::cannotSaveMachineSettings(comMachine, parentTree());
     }
 
     /* Close session: */

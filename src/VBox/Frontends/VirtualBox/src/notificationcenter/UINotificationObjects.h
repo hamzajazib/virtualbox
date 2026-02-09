@@ -1,4 +1,4 @@
-/* $Id: UINotificationObjects.h 112902 2026-02-09 14:35:57Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationObjects.h 112908 2026-02-09 15:53:11Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationObjects declarations.
  */
@@ -421,6 +421,12 @@ public:
         static void cannotAcquireCloudMachineParameter(const CCloudMachine &comCloudMachine,
                                                        QWidget *pParent);
 
+        /** Notifies about inability to change IHost parameter.
+          * @param  comHost  Brings the object parameter being changed for. */
+        static void cannotChangeHostParameter(const CHost &comHost, QWidget *pParent = 0);
+        /** Notifies about inability to change ISystemProperties.
+          * @param  comProperties  Brings the properties object being changed. */
+        static void cannotChangeSystemProperties(const CSystemProperties &comProperties, QWidget *pParent = 0);
         /** Notifies about inability to change IMedium parameter.
           * @param  comMedium  Brings the object parameter being changed for. */
         static void cannotChangeMediumParameter(const CMedium &comMedium);

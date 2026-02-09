@@ -1,4 +1,4 @@
-/* $Id: UIAdvancedSettingsDialogSpecific.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIAdvancedSettingsDialogSpecific.cpp 112908 2026-02-09 15:53:11Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIAdvancedSettingsDialogSpecific class implementation.
  */
@@ -37,6 +37,7 @@
 #include "UIIconPool.h"
 #include "UILocalMachineStuff.h"
 #include "UIMessageCenter.h"
+#include "UINotificationObjects.h"
 #include "UISettingsDefs.h"
 #include "UISettingsSerializer.h"
 #include "UISettingsSelector.h"
@@ -162,13 +163,13 @@ void UIAdvancedSettingsDialogGlobal::save()
     CHost comNewHost = varData.value<UISettingsDataGlobal>().m_host;
     /* If host is not OK => show the error: */
     if (!comNewHost.isOk())
-        msgCenter().cannotSetHostSettings(comNewHost, this);
+        UINotificationMessage::cannotChangeHostParameter(comNewHost, this);
 
     /* Get updated properties: */
     CSystemProperties comNewProperties = varData.value<UISettingsDataGlobal>().m_properties;
     /* If properties are not OK => show the error: */
     if (!comNewProperties.isOk())
-        msgCenter().cannotSetSystemProperties(comNewProperties, this);
+        UINotificationMessage::cannotChangeSystemProperties(comNewProperties, this);
 
     /* Handle serializartion finished: */
     sltHandleSerializationFinished();
@@ -471,7 +472,7 @@ void UIAdvancedSettingsDialogMachine::save()
 
     /* If machine is NOT OK => show the error message: */
     if (!m_machine.isOk())
-        msgCenter().cannotSaveMachineSettings(m_machine, this);
+        UINotificationMessage::cannotSaveMachineSettings(m_machine, this);
 
     /* Handle serializartion finished: */
     sltHandleSerializationFinished();

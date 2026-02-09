@@ -1,4 +1,4 @@
-/* $Id: UIMachineAttributeSetter.cpp 112749 2026-01-29 14:48:10Z sergey.dubov@oracle.com $ */
+/* $Id: UIMachineAttributeSetter.cpp 112908 2026-02-09 15:53:11Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMachineAttributeSetter namespace implementation.
  */
@@ -307,7 +307,7 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
         comMachine.SaveSettings();
         if (!comMachine.isOk())
         {
-            msgCenter().cannotSaveMachineSettings(comMachine);
+            UINotificationMessage::cannotSaveMachineSettings(comMachine);
             break;
         }
     }
