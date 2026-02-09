@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# $Id: configure.py 112907 2026-02-09 15:13:22Z andreas.loeffler@oracle.com $
+# $Id: configure.py 112910 2026-02-09 17:32:33Z andreas.loeffler@oracle.com $
 """
 Configuration script for building VirtualBox.
 
@@ -61,7 +61,7 @@ SPDX-License-Identifier: GPL-3.0-only
 # External Python modules or other dependencies are not allowed!
 #
 
-__revision__ = "$Revision: 112907 $"
+__revision__ = "$Revision: 112910 $"
 
 import argparse
 import ctypes
@@ -163,10 +163,8 @@ g_aeBuildTargets = [ BuildTarget.LINUX, BuildTarget.WINDOWS, BuildTarget.DARWIN,
 
 g_fDebug = False;             # Enables debug mode. For development.
 g_fContOnErr = False;         # Continue on fatal errors.
-g_fCompatMode = False;        # Enables compatibility mode to mimic the old build scripts.
-g_sEnvVarPrefix = 'VBOX_';
 g_sFileLog = 'configure.log'; # Log file path.
-g_cVerbosity = 4;             # Verbosity level (0=none, 1=min, 5=max). Defaults to 4 for now (development phase).
+g_cVerbosity = 0;             # Verbosity level (0=none, 1=min, 5=max).
 g_cErrors = 0;                # Number of error messages.
 g_asErrors = [];              # List of error messages.
 g_cWarnings = 0;              # Number of warning messages.
@@ -187,10 +185,8 @@ g_enmHostTarget = {
     "":         BuildTarget.UNKNOWN
 }.get(g_sHostTarget, BuildTarget.UNKNOWN);
 
-# The build target. Defaults to host target.
-g_enmBuildTarget = g_enmHostTarget;
-# The build architecture. Defaults to host architecture.
-g_enmBuildArch = g_enmHostArch;
+# The command line arguments. Populated in main().
+g_oArgs = None;
 
 class BuildType:
     """
@@ -200,6 +196,9 @@ class BuildType:
     DEBUG = "debug";
     RELEASE = "release";
     PROFILE = "profile";
+    ASAN = "asan";
+# Supported build types.
+g_aeBuildTypes = [ BuildType.DEBUG, BuildType.RELEASE, BuildType.PROFILE, BuildType.ASAN ];
 
 # Maps Visual Studio build architecture to (kBuild dir name, Windows SDK dir name).
 g_mapWinVSArch2Dir = {
@@ -602,7 +601,7 @@ def getPosixError(uCode):
     return f"Killed by signal {sName}";
 
 def compileAndExecute(sName, asIncPaths, asLibPaths, asIncFiles, asLibFiles, sCode, \
-                      enmBuildTarget = g_enmBuildTarget, enmBuildArch = g_enmBuildArch,
+                      enmBuildTarget = g_enmHostTarget, enmBuildArch = g_enmHostArch,
                       oEnv = None, asCompilerArgs = None, asLinkerArgs = None, asDefines = None, fLog = True, fErrorsAsWarnings = False):
     """
     Compiles and executes a test program.
@@ -617,10 +616,10 @@ def compileAndExecute(sName, asIncPaths, asLibPaths, asIncFiles, asLibFiles, sCo
 
     if enmBuildTarget == BuildTarget.WINDOWS:
         fCPP      = True;
-        sCompiler = g_oEnv['config_cpp_compiler'];
+        sCompiler = g_oArgs.config_cpp_compiler;
     else:
         fCPP      = hasCPPHeader(asIncFiles);
-        sCompiler = g_oEnv['config_cpp_compiler'] if fCPP else g_oEnv['config_c_compiler'];
+        sCompiler = g_oArgs.config_cpp_compiler if fCPP else g_oArgs.config_c_compiler;
     if not sCompiler:
         printError(f'No compiler found for test program "{sName}"');
         return False, None, None;
@@ -883,7 +882,7 @@ class CheckBase:
     """
     Base class for checks.
     """
-    def __init__(self, sName, enmBuildTarget = g_enmBuildTarget, enmBuildArch = g_enmBuildArch, aeTargets = None, aeArchs = None, aeTargetsExcluded = None):
+    def __init__(self, sName, enmBuildTarget = g_enmHostTarget, enmBuildArch = g_enmHostArch, aeTargets = None, aeArchs = None, aeTargetsExcluded = None):
         """
         Constructor.
         """
@@ -1089,7 +1088,7 @@ class LibraryCheck(CheckBase):
     Describes and checks for a library / package.
     """
     def __init__(self, sName, asIncFiles, asLibFiles,
-                 enmBuildTarget = g_enmBuildTarget, enmBuildArch = g_enmBuildArch, aeTargets = None, aeArchs = None, sCode = None,
+                 enmBuildTarget = g_enmHostTarget, enmBuildArch = g_enmHostArch, aeTargets = None, aeArchs = None, sCode = None,
                  asIncPaths = None, asLibPaths = None,
                  fnCallback = None, aeTargetsExcluded = None, fUseInTree = False, sSdkName = None,
                  dictDefinesToSetIfFailed = None):
@@ -1217,7 +1216,7 @@ class LibraryCheck(CheckBase):
         fInTree   = False;
         if sRootPath:
             self.printVerbose(1, f'Root path was set to custom path: {sRootPath}');
-        if  not g_oEnv['config_ignore_in_tree_libs'] \
+        if  not g_oArgs.config_ignore_in_tree_libs \
         and not sRootPath : # Search for in-tree libs.
             sPath  = os.path.join(g_sScriptPath, 'src', 'libs');
             self.printVerbose(1, f'Searching in-tree library: {sPath}');
@@ -1365,8 +1364,8 @@ class LibraryCheck(CheckBase):
             #
             # Try VCPKG first.
             #
-            if g_oEnv['VCPKG_ROOT']:
-                asPaths.extend([ os.path.join(g_oEnv['VCPKG_ROOT'], 'packages', self.sName) ]);
+            if g_oArgs.config_win_vcpkg_root:
+                asPaths.extend([ os.path.join(g_oArgs.config_win_vcpkg_root, 'packages', self.sName) ]);
             #
             # MSVC
             #
@@ -1684,7 +1683,7 @@ class LibraryCheck(CheckBase):
             # For MSVC this means at least 14.1 (VS 2017).
             #
             if self.enmBuildTarget == BuildTarget.WINDOWS:
-                sCompilerVer = g_oEnv['config_cpp_compiler_ver'];
+                sCompilerVer = g_oArgs.config_cpp_compiler_ver;
                 if self.compareStringVersions(sCompilerVer, "14.1") < 1:
                     self.printError(f'MSVC compiler version too old ({sCompilerVer}), requires at least 15.7 (2017 Update 7)');
                     return False;
@@ -1789,7 +1788,7 @@ class ToolCheck(CheckBase):
     Describes and checks for a build tool.
     """
     def __init__(self, sName, asCmd = None, fnCallback = None, aeTargets = None, aeArchs = None,
-                 enmBuildTarget = g_enmBuildTarget, enmBuildArch = g_enmBuildArch,
+                 enmBuildTarget = g_enmHostTarget, enmBuildArch = g_enmHostArch,
                  aeTargetsExcluded = None, dictDefinesToSetIfFailed = None):
         """
         Constructor.
@@ -2715,7 +2714,7 @@ class ToolCheck(CheckBase):
         """
 
         # If Python is disabled, skip.
-        if g_oEnv['config_disable_python']:
+        if g_oArgs.config_disable_python:
             self.printVerbose(1, 'Python C API disabled, skipping');
             return True;
 
@@ -2770,7 +2769,7 @@ int main()
         """
 
         # If Python is disabled, skip.
-        if g_oEnv['config_disable_python']:
+        if g_oArgs.config_disable_python:
             self.printVerbose(1, 'Python disbled, skipping');
             return True;
 
@@ -2786,7 +2785,7 @@ int main()
                 # Hack to accept distutils for now as a substitute to the packaging module.
                 if sCurMod == 'packaging':
                     try:
-                        self.printVerbose(1, f"Checking module 'distutils'");
+                        self.printVerbose(1, "Checking module 'distutils'");
                         importlib.import_module('distutils');
                     except ImportError:
                         self.printWarn(f"Python module '{sCurMod}' or 'distutils' is not installed");
@@ -3052,6 +3051,8 @@ class EnvFileWriter(EnvMgrWriter):
 class EnvManager:
     """
     A simple manager for environment variables.
+
+    Note: This does *not* modify this process' environment!
     """
 
     def __init__(self, env = None):
@@ -3126,9 +3127,7 @@ class EnvManager:
         """
         for sKey, aValue in vars(oArgs).items():
             if aValue:
-                if sKey.startswith('config_'):
-                    self.set(sKey, str(aValue));
-                else:
+                if not sKey.startswith('config_'): # Ignore internal stuff.
                     idxSep =  sKey.find("=");
                     if not idxSep:
                         break;
@@ -3143,7 +3142,8 @@ class EnvManager:
         for exprCur in mapTransform:
             result = exprCur(self.env);
             if isinstance(result, dict):
-                self.env.update(result);
+                for sKey, sValue in result.items():
+                    self.set(sKey, sValue);
 
     def printLog(self, sPrefix, asKeys = None):
         """
@@ -3416,7 +3416,7 @@ def write_autoconfig_kmk(sFilePath, enmBuildTarget, oEnv, aoLibs, aoTools):
     w.write_raw('\n');
 
     w.write_raw('# Features derived from arguments');
-    w.write_all(asPrefixInclude = ['VBOX_WITH_']);
+    w.write_all(asPrefixInclude = ['VBOX_WITH_', 'VBOX_ONLY_' ]);
     w.write_raw('\n');
 
     # Tools
@@ -3595,12 +3595,10 @@ def main():
     """
     global g_fhLog;
     global g_cVerbosity;
-    global g_fCompatMode
     global g_fDebug;
     global g_fContOnErr;
     global g_sFileLog;
-    global g_enmBuildTarget;
-    global g_enmBuildArch;
+    global g_oArgs;
 
     #
     # Special case:
@@ -3645,7 +3643,9 @@ def main():
     oParser.add_argument('--ignore-in-tree-libs', help='Ignores all in-tree libs', action='store_true', default=None, dest='config_ignore_in_tree_libs');
     # Disables building the Extension Pack explicitly. Only makes sense for the non-OSE build.
     oParser.add_argument('--disable-extpack', '--without-extpack', help='Disables building the Extension Pack', action='store_true', default=None, dest='config_disable_extpack');
-    oParser.add_argument('--with-hardening', help='Enables hardening', action='store_true', default=None, dest='config_with_hardening');
+    # If explicitly specified, we set this to '2', otherwise we default to '1'. This resembles the behavior of the old configure script.
+    # The '2' acts as a marker for us to know that this was explcitly set by the configure script (rather than the default).
+    oParser.add_argument('--with-hardening', help='Enables hardening', action='store_const', const='2', default='1', dest='config_with_hardening');
     oParser.add_argument('--disable-hardening', '--without-hardening', help='Disables hardening', action='store_true', default=None, dest='config_without_hardening');
     oParser.add_argument('--output-file-autoconfig', help='Path to output AutoConfig.kmk file', default=None, dest='config_file_autoconfig');
     oParser.add_argument('--output-file-env', help='Path to output env[.bat|.sh] file', default=None, dest='config_file_env');
@@ -3657,14 +3657,14 @@ def main():
     # Note: '--out-base-dir' is kept for backwards compatibility.
     oParser.add_argument('--output-build-dir', '--out-base-dir', help='Specifies the build output directory', default=os.path.join(g_sScriptPath, 'out'), dest='config_build_dir');
     oParser.add_argument('--ose', help='Builds the OSE version', action='store_true', default=None, dest='config_ose');
-    oParser.add_argument('--compat', help='Runs in compatibility mode. Only use for development', action='store_true', default=False, dest='config_compat');
-    oParser.add_argument('--debug', help='Runs in debug mode. Only use for development', action='store_true', default=False, dest='config_debug');
+    oParser.add_argument('--debug', help='Runs in debug mode. Only use for development', action='store_const', default=False, dest='config_debug');
     oParser.add_argument('--nofatal', '--continue-on-error', help='Continues execution on fatal errors', action='store_true', dest='config_nofatal');
-    oParser.add_argument('--build-profile', help='Build with a profiling support', action='store_true', default=None, dest='KBUILD_TYPE=profile');
-    oParser.add_argument('--build-target', help='Specifies the build target', default = g_enmBuildTarget, dest='config_build_target');
-    oParser.add_argument('--build-arch', help='Specifies the build architecture', default = g_enmBuildArch, dest='config_build_arch');
-    oParser.add_argument('--build-debug', help='Build with debugging symbols and assertions', action='store_true', default=None, dest='KBUILD_TYPE=debug');
+    oParser.add_argument('--build-arch', help='Specifies the build architecture', default=g_enmHostArch, dest='config_build_arch');
+    oParser.add_argument('--build-debug', help='Build with debugging symbols and assertions', action='store_const', const=BuildType.DEBUG, dest='config_build_type');
     oParser.add_argument('--build-headless', help='Build headless (without any GUI frontend)', action='store_true', dest='config_build_headless');
+    oParser.add_argument('--build-profile', help='Build with profiling support', action='store_true', dest='config_build_profile');
+    oParser.add_argument('--build-target', help='Specifies the build target', default=g_enmHostTarget, dest='config_build_target');
+    oParser.add_argument('--build-type', help='Specifies the build type', dest='config_build_type');
     oParser.add_argument('--internal-first', help='Check internal tools (tools/win.*) first (default)', action='store_true', dest='config_internal_first');
     oParser.add_argument('--internal-last', help='Check internal tools (tools/win.*) last', action='store_true', dest='config_internal_last');
     oParser.add_argument('--append-ewdk-path', '--append-ewdk-dir', help='Adds an EWDK drive to search.', dest='config_path_append_ewdk');
@@ -3695,15 +3695,15 @@ def main():
     oParser.add_argument('--with-macos-sdk-path', help='Where the macOS SDK is to be found', dest='config_macos_sdk_path');
 
     try:
-        oArgs = oParser.parse_args();
+        g_oArgs = oParser.parse_args();
     except SystemExit:
         print('Invalid argument(s) -- try --help for more information.');
         return 2;
 
-    if oArgs.help:
+    if g_oArgs.help:
         show_syntax_help();
         return 2;
-    if oArgs.version:
+    if g_oArgs.version:
         print(__revision__);
         return 0;
 
@@ -3713,37 +3713,22 @@ def main():
     print(f'Using Python {sys.version} (platform: {sysconfig.get_platform()})');
     print();
 
-    g_cVerbosity = oArgs.config_verbose;
-    g_fCompatMode = oArgs.config_compat;
-    g_fDebug = oArgs.config_debug;
-    g_fContOnErr = oArgs.config_nofatal;
+    g_cVerbosity = g_oArgs.config_verbose;
+    g_fDebug = g_oArgs.config_debug;
+    g_fContOnErr = g_oArgs.config_nofatal;
 
     if g_cVerbosity > 0:
         print(f'Verbosity level set to {g_cVerbosity}');
+        print();
 
     if g_fDebug:
         print('\n'.join(f"{k}: {v}" for k, v in sysconfig.get_config_vars().items()));
         print();
 
-    if g_fCompatMode:
-        g_fContOnErr = True;
-        g_fDebug = True;
-        print('Running in compatibility mode');
-        print();
-
-    # Here we disable all stuff which cause build errors on the build boxes we don't have access to.
-    # Needs to be fixed properly by installing the packages on the build boxes or properly disabling
-    # those tools via command line arguments.
-    if g_fCompatMode:
-        oArgs.config_tools_disable_glslang_tools = True;
-        oArgs.config_tools_disable_openwatcom = True;
-        oArgs.config_tools_disable_python_modules = True;
-        oArgs.config_tools_disable_yasm = True;
-
-    if not oArgs.config_file_log:
-        g_sFileLog = os.path.join(oArgs.config_out_dir, 'configure.log');
+    if not g_oArgs.config_file_log:
+        g_sFileLog = os.path.join(g_oArgs.config_out_dir, 'configure.log');
     else:
-        g_sFileLog = oArgs.config_file_log;
+        g_sFileLog = g_oArgs.config_file_log;
     try:
         g_fhLog = open(g_sFileLog, "w", encoding="utf-8");
     except OSError as ex:
@@ -3754,88 +3739,98 @@ def main():
 
     printLogHeader();
 
+    # Defaults to release build if not specified explicitly.
+    g_oArgs.config_build_type = g_oArgs.config_build_type if g_oArgs.config_build_type else BuildType.RELEASE;
+    if g_oArgs.config_build_profile:
+        g_oArgs.config_build_type = BuildType.PROFILE;
+
     # Set defaults.
     g_oEnv.set('KBUILD_HOST', g_enmHostTarget);
     g_oEnv.set('KBUILD_HOST_ARCH', g_enmHostArch);
-    g_oEnv.set('KBUILD_TYPE', BuildType.RELEASE);
-    g_oEnv.set('KBUILD_TARGET', oArgs.config_build_target);
-    g_oEnv.set('KBUILD_TARGET_ARCH', oArgs.config_build_arch);
+    g_oEnv.set('KBUILD_TYPE', g_oArgs.config_build_type);
+    g_oEnv.set('KBUILD_TARGET', g_oArgs.config_build_target);
+    g_oEnv.set('KBUILD_TARGET_ARCH', g_oArgs.config_build_arch);
     g_oEnv.set('KBUILD_TARGET_CPU', 'blend'); ## @todo Check this.
-    g_oEnv.set('KBUILD_PATH', oArgs.config_tools_path_kbuild);
+    g_oEnv.set('KBUILD_PATH', g_oArgs.config_tools_path_kbuild);
 
     # If hardening is not explicitly enabled or disabled, use the default from the source tree.
-    if oArgs.config_with_hardening:
+    if g_oArgs.config_with_hardening == '2':
         g_oEnv.set('VBOX_WITH_HARDENING', '2'); # Set to 2 as an indicator that our script has modified it.
-    elif oArgs.config_without_hardening:
+    elif g_oArgs.config_without_hardening:
         g_oEnv.set('VBOX_WITHOUT_HARDENING', '1');
 
     # Handle out directory.
-    if  oArgs.config_out_dir \
-    and not isDir(oArgs.config_out_dir):
-        printWarn(f"Output directory '{oArgs.config_out_dir}' does not exist -- using script directory as output base");
-        oArgs.config_out_dir = g_sScriptPath;
+    if  g_oArgs.config_out_dir \
+    and not isDir(g_oArgs.config_out_dir):
+        printWarn(f"Output directory '{g_oArgs.config_out_dir}' does not exist -- using script directory as output base");
+        g_oArgs.config_out_dir = g_sScriptPath;
 
     # Handle build directory.
-    if  oArgs.config_build_dir \
-    and not isDir(oArgs.config_build_dir):
-        printWarn(f"Build output directory '{oArgs.config_build_dir}' does not exist -- using script directory as output base");
-        oArgs.config_build_dir = g_sScriptPath;
-    g_oEnv.set('PATH_OUT_BASE', oArgs.config_build_dir);
+    if  g_oArgs.config_build_dir \
+    and not isDir(g_oArgs.config_build_dir):
+        printWarn(f"Build output directory '{g_oArgs.config_build_dir}' does not exist -- using script directory as output base");
+        g_oArgs.config_build_dir = g_sScriptPath;
+    g_oEnv.set('PATH_OUT_BASE', g_oArgs.config_build_dir);
 
     # Handle prepending / appending certain paths ('--[prepend|append]-<whatever>-path') arguments.
     for sArgCur, _ in g_asPathsPrepend.items(): # ASSUMES that g_asPathsAppend and g_asPathsPrepend are in sync.
-        sPath = getattr(oArgs, f'config_path_append_{sArgCur}');
+        sPath = getattr(g_oArgs, f'config_path_append_{sArgCur}');
         if sPath:
             g_asPathsAppend[ sArgCur ].extend( [ sPath ] );
-        sPath = getattr(oArgs, f'config_path_prepend_{sArgCur}');
+        sPath = getattr(g_oArgs, f'config_path_prepend_{sArgCur}');
         if sPath:
             g_asPathsPrepend[ sArgCur ].extend( [ sPath ] );
 
-    oArgs.config_libs_path_python_c_api = oArgs.config_python_path;
+    g_oArgs.config_libs_path_python_c_api = g_oArgs.config_python_path;
+    g_oArgs.config_c_compiler             = '' # Set later.
+    g_oArgs.config_cpp_compiler           = '' # Ditto.
 
     #
-    # Check build target / architecture
+    # Check build type / target / architecture.
     #
-    if oArgs.config_build_target and oArgs.config_build_target not in g_aeBuildTargets:
-        printError(f"Unsupported build target '{oArgs.config_build_target}'");
-    if oArgs.config_build_arch and oArgs.config_build_arch not in g_aeBuildArchs:
-        printError(f"Unsupported build architecture '{oArgs.config_build_arch}\'");
-    g_enmBuildTarget = oArgs.config_build_target;
-    g_enmBuildArch   = oArgs.config_build_arch;
+    if g_oArgs.config_build_type and g_oArgs.config_build_type not in g_aeBuildTypes:
+        printError(f"Unsupported build type '{g_oArgs.config_build_type}'");
+        print();
+    if g_oArgs.config_build_target and g_oArgs.config_build_target not in g_aeBuildTargets:
+        printError(f"Unsupported build target '{g_oArgs.config_build_target}'");
+        print();
+    if g_oArgs.config_build_arch and g_oArgs.config_build_arch not in g_aeBuildArchs:
+        printError(f"Unsupported build architecture '{g_oArgs.config_build_arch}\'");
+        print();
 
     print(f'Host OS / arch     : { g_sHostTarget}.{g_sHostArch}');
-    print(f'Building for target: { g_enmBuildTarget }.{ g_enmBuildArch }');
-    print(f'Build type         : { g_oEnv["KBUILD_TYPE"] }');
+    print(f'Building for target: { g_oArgs.config_build_target }.{ g_oArgs.config_build_arch }');
+    print(f'Build type         : { g_oArgs.config_build_type }');
     print();
 
     # Handle env[.sh|.bat] output file.
-    sEnvFile = 'env.bat' if g_enmBuildTarget == BuildTarget.WINDOWS else 'env.sh';
-    if not oArgs.config_file_env:
-        oArgs.config_file_env = os.path.join(oArgs.config_out_dir, sEnvFile);
+    sEnvFile = 'env.bat' if g_oArgs.config_build_target == BuildTarget.WINDOWS else 'env.sh';
+    if not g_oArgs.config_file_env:
+        g_oArgs.config_file_env = os.path.join(g_oArgs.config_out_dir, sEnvFile);
     else:
-        sEnvDir = os.path.dirname(oArgs.config_file_env);
+        sEnvDir = os.path.dirname(g_oArgs.config_file_env);
         if not isDir(sEnvDir):
             printWarn(f"Directory for environment file '{sEnvDir}' does not exist -- using output directory as base");
-            oArgs.config_file_env = os.path.join(oArgs.config_out_dir, sEnvFile);
+            g_oArgs.config_file_env = os.path.join(g_oArgs.config_out_dir, sEnvFile);
 
     # Handle AutoConfig.kmk output file.
-    if not oArgs.config_file_autoconfig:
-        oArgs.config_file_autoconfig = os.path.join(oArgs.config_out_dir, 'AutoConfig.kmk');
+    if not g_oArgs.config_file_autoconfig:
+        g_oArgs.config_file_autoconfig = os.path.join(g_oArgs.config_out_dir, 'AutoConfig.kmk');
     else: # AutoConfig.kmk location will be written to the env[.sh|.bat] file.
-        sAutoConfigDir = os.path.dirname(oArgs.config_file_autoconfig);
+        sAutoConfigDir = os.path.dirname(g_oArgs.config_file_autoconfig);
         if not isDir(sAutoConfigDir):
             printWarn(f"Directory for AutoConfig.kmk '{sAutoConfigDir}' does not exist -- using output directory as base");
-            oArgs.config_file_autoconfig = os.path.join(oArgs.config_out_dir, 'AutoConfig.kmk');
-    g_oEnv.set('AUTOCFG', oArgs.config_file_autoconfig);
+            g_oArgs.config_file_autoconfig = os.path.join(g_oArgs.config_out_dir, 'AutoConfig.kmk');
+    g_oEnv.set('AUTOCFG', g_oArgs.config_file_autoconfig);
 
     # Apply updates from command line arguments.
     # This can override the defaults set above.
-    g_oEnv.updateFromArgs(oArgs);
+    g_oEnv.updateFromArgs(g_oArgs);
 
     # Filter libs and tools based on --only-XXX flags.
     # Replace '-' with '_' so that we can use variables directly w/o getattr lateron.
-    aoOnlyLibs = [lib for lib in g_aoLibs if getattr(oArgs, f'config_libs_only_{lib.sName.replace("-", "_")}', False)];
-    aoOnlyTools = [tool for tool in g_aoTools if getattr(oArgs, f'config_tools_only_{tool.sName.replace("-", "_")}', False)];
+    aoOnlyLibs = [lib for lib in g_aoLibs if getattr(g_oArgs, f'config_libs_only_{lib.sName.replace("-", "_")}', False)];
+    aoOnlyTools = [tool for tool in g_aoTools if getattr(g_oArgs, f'config_tools_only_{tool.sName.replace("-", "_")}', False)];
     aoLibsToCheck = aoOnlyLibs if aoOnlyLibs else g_aoLibs;
     aoToolsToCheck = aoOnlyTools if aoOnlyTools else g_aoTools;
     # Filter libs and tools based on build target.
@@ -3845,7 +3840,7 @@ def main():
     #
     # Handle OSE building.
     #
-    fOSE = True if g_oEnv.get('config_ose') else None;
+    fOSE = True if g_oArgs.config_ose else None;
     if  not fOSE  \
     and pathExists('src/VBox/ExtPacks/Puel/ExtPack.xml'):
         print('Found ExtPack, assuming to build PUEL version');
@@ -3869,82 +3864,81 @@ def main():
         #
         # Generic
         #
-        lambda env: { 'VBOX_ONLY_ADDITIONS': '1' } if g_oEnv['config_only_additions'] else {},
+        lambda env: { 'VBOX_ONLY_ADDITIONS': '1' } if g_oArgs.config_only_additions else {},
         # Disabling building the docs when only building Additions or explicitly disabled building the docs.
-        lambda env: { 'VBOX_WITH_DOCS_PACKING': '' } if g_oEnv['config_only_additions']
+        lambda env: { 'VBOX_WITH_DOCS_PACKING': '' } if g_oArgs.config_only_additions
                                                      or g_oEnv['VBOX_WITH_DOCS'] == '' else {},
-        lambda env: { 'VBOX_WITH_WEBSERVICES': '' } if g_oEnv['config_only_additions'] else {},
+        lambda env: { 'VBOX_WITH_WEBSERVICES': '' } if g_oArgs.config_only_additions else {},
         # Disable stuff which aren't available in OSE.
-        lambda env: { 'VBOX_WITH_VALIDATIONKIT': '' , 'VBOX_WITH_WIN32_ADDITIONS': '' } if g_oEnv['config_ose'] else {},
+        lambda env: { 'VBOX_WITH_VALIDATIONKIT': '' , 'VBOX_WITH_WIN32_ADDITIONS': '' } if g_oArgs.config_ose else {},
         # Disable building the Extension Pack VNC feature when only building Additions.
-        lambda env: { 'VBOX_WITH_EXTPACK_VNC': '' } if g_oEnv['config_only_additions']
-                                                    or g_oEnv['config_ose'] else {},
+        lambda env: { 'VBOX_WITH_EXTPACK_VNC': '' } if g_oArgs.config_only_additions
+                                                    or g_oArgs.config_ose else {},
         # Disable Extension Pack PUEL features when building OSE.
         lambda env: { 'VBOX_WITH_EXTPACK_PUEL': '', \
-                      'VBOX_WITH_EXTPACK_PUEL_BUILD': '' } if g_oEnv['config_ose'] else {},
+                      'VBOX_WITH_EXTPACK_PUEL_BUILD': '' } if g_oArgs.config_ose else {},
         # Disable Extension Pack feature (plus PUEL stuff) when building only Guest Additions
         # or with Extension Pack feature disabled.
-        lambda env: { 'VBOX_WITH_EXTPACK_PUEL_BUILD': '' } if g_oEnv['config_only_additions']
-                                                           or g_oEnv['config_disable_extpack'] else {},
+        lambda env: { 'VBOX_WITH_EXTPACK_PUEL_BUILD': '' } if g_oArgs.config_only_additions
+                                                           or g_oArgs.config_disable_extpack else {},
         # Disable FE/Qt if Qt is disabled.
-        lambda env: { 'VBOX_WITH_QTGUI': '' } if g_oEnv['config_libs_disable_qt'] else {},
+        lambda env: { 'VBOX_WITH_QTGUI': '' } if g_oArgs.config_libs_disable_qt else {},
         # Disable components if we want to build headless.
         lambda env: { 'VBOX_WITH_HEADLESS': '1', \
                       'VBOX_WITH_QTGUI': '', \
                       'VBOX_WITH_SECURELABEL': '', \
                       'VBOX_WITH_VMSVGA3D': '', \
                       'VBOX_WITH_3D_ACCELERATION' : '', \
-                      'VBOX_GUI_USE_QGL' : '' } if g_oEnv['config_build_headless'] else {},
+                      'VBOX_GUI_USE_QGL' : '' } if g_oArgs.config_build_headless else {},
         # Disable features when OpenGL is disabled.
         lambda env: { 'VBOX_WITH_VMSVGA3D': '', \
                       'VBOX_WITH_3D_ACCELERATION' : '', \
-                      'VBOX_GUI_USE_QGL' : '' } if g_oEnv['config_disable_opengl'] else {},
+                      'VBOX_GUI_USE_QGL' : '' } if g_oArgs.config_disable_opengl else {},
         # Disable recording if libvpx is disabled.
         lambda env: { 'VBOX_WITH_LIBVPX': '', \
-                      'VBOX_WITH_RECORDING': '' } if g_oEnv['config_libs_disable_libvpx'] else {},
+                      'VBOX_WITH_RECORDING': '' } if g_oArgs.config_libs_disable_libvpx else {},
         # Disable audio recording if libvpx is disabled.
         lambda env: { 'VBOX_WITH_LIBOGG': '', \
                       'VBOX_WITH_LIBVORBIS': '', \
-                      'VBOX_WITH_AUDIO_RECORDING': '' } if  g_oEnv['config_libs_disable_libogg'] \
-                                                        and g_oEnv['config_libs_disable_libvorbis'] else {},
+                      'VBOX_WITH_AUDIO_RECORDING': '' } if  g_oArgs.config_libs_disable_libogg \
+                                                        and g_oArgs.config_libs_disable_libvorbis else {},
         # Disable building webservices if GSOAP is disabled.
         lambda env: { 'VBOX_WITH_GSOAP': '', \
-                      'VBOX_WITH_WEBSERVICES': '' } if g_oEnv['config_tools_disable_gsoap'] \
-                                                    or g_oEnv['config_libs_disable_libgsoapssl++'] else {},
+                      'VBOX_WITH_WEBSERVICES': '' } if g_oArgs.config_tools_disable_gsoap else {},
         # Disable building Java webservices if java is disabled.
         lambda env: { 'VBOX_WITH_JWS' : '', \
                       'VBOX_WITH_JMSCOM': '', \
-                      'VBOX_WITH_JXPCOM' : '' } if g_oEnv['config_tools_disable_java'] else {},
+                      'VBOX_WITH_JXPCOM' : '' } if g_oArgs.config_tools_disable_java else {},
         # Disable components which require COM.
         lambda env: { 'VBOX_WITH_MAIN': '', \
                       'VBOX_WITH_QTGUI': '', \
                       'VBOX_WITH_VBOXSDL': '', \
-                      'VBOX_WITH_DEBUGGER_GUI': '' } if g_oEnv['config_disable_com'] else {},
+                      'VBOX_WITH_DEBUGGER_GUI': '' } if g_oArgs.config_disable_com else {},
         # Disable components which require Python. Most likely this will blow up the build, as Python is mandatory nowadays.
-        lambda env: { 'VBOX_WITH_PYTHON': '' } if g_oEnv['config_disable_python'] else {},
+        lambda env: { 'VBOX_WITH_PYTHON': '' } if g_oArgs.config_disable_python else {},
         # Python is mandatory nowadays.
-        lambda env: { 'VBOX_BLD_PYTHON': os.path.join(g_oEnv['config_python_path'], 'python' + getExeSuff() ) } if g_oEnv['config_python_path'] else {},
+        lambda env: { 'VBOX_BLD_PYTHON': os.path.join(g_oArgs.config_python_path, 'python' + getExeSuff() ) } if g_oArgs.config_python_path else {},
         # Disable DTrace stuff if specified.
         lambda env: { 'VBOX_WITH_EXTPACK_VBOXDTRACE': '', \
-                      'VBOX_WITH_DTRACE': ''  } if g_oEnv['config_disable_dtrace'] else {},
+                      'VBOX_WITH_DTRACE': ''  } if g_oArgs.config_disable_dtrace else {},
         # Disable other stuff depending on SDL if SDL is disabled (like libsdl2_ttf).
         lambda env: { 'VBOX_WITH_SDL': '', \
-                      'VBOX_WITH_SECURE_LABEL': '' } if g_oEnv['config_libs_disable_libsdl2'] else {},
+                      'VBOX_WITH_SECURE_LABEL': '' } if g_oArgs.config_libs_disable_libsdl2 else {},
 
         #
         # Windows
         #
-        lambda env: { 'VBOX_PATH_WIN_DDK_ROOT': g_oEnv['config_win_ddk_path'] } if g_oEnv['config_win_ddk_path'] else {},
-        lambda env: { 'VBOX_PATH_WIN_SDK_ROOT': g_oEnv['config_win_sdk_path'] } if g_oEnv['config_win_sdk_path'] else {},
-        lambda env: { 'VBOX_PATH_WIN_SDK10_ROOT': g_oEnv['config_win_sdk10_path'] } if g_oEnv['config_win_sdk10_path'] else {},
+        lambda env: { 'VBOX_PATH_WIN_DDK_ROOT': g_oArgs.config_tools_path_win_ddk } if g_oArgs.config_tools_path_win_ddk else {},
+        lambda env: { 'VBOX_PATH_WIN_SDK_ROOT': g_oArgs.config_tools_path_win_sdk10 } if g_oArgs.config_tools_path_win_sdk10 else {},
+        lambda env: { 'VBOX_PATH_WIN_SDK10_ROOT': g_oArgs.config_tools_path_win_sdk10 } if g_oArgs.config_tools_path_win_sdk10 else {},
         # Note: Pre-defined environment variable by vcpkg. Do not change.
-        lambda env: { 'VCPKG_ROOT': g_oEnv['config_win_vcpkg_root'] } if g_oEnv['config_win_vcpkg_root'] else {},
+        lambda env: { 'VCPKG_ROOT': g_oArgs.config_win_vcpkg_root } if g_oArgs.config_win_vcpkg_root else {},
 
         #
         # macOS
         #
         # Sets the macOS SDK path.
-        lambda env: { 'VBOX_PATH_MACOSX_SDK_ROOT': g_oEnv['config_macos_sdk_path'] } if g_oEnv['config_macos_sdk_path'] else {},
+        lambda env: { 'VBOX_PATH_MACOSX_SDK_ROOT': g_oArgs.config_macos_sdk_path } if g_oArgs.config_macos_sdk_path else {},
     ];
     g_oEnv.transform(envTransforms);
 
@@ -3954,10 +3948,10 @@ def main():
         print();
 
     print(f'Log file                    : {g_sFileLog }');
-    print(f'Output directory            : {oArgs.config_out_dir}');
-    print(f'Build directory             : {oArgs.config_build_dir}');
-    print(f'Location of environment file: {oArgs.config_file_env}');
-    print(f'Location of AutoConfig.kmk  : {oArgs.config_file_autoconfig}');
+    print(f'Output directory            : {g_oArgs.config_out_dir}');
+    print(f'Build directory             : {g_oArgs.config_build_dir}');
+    print(f'Location of environment file: {g_oArgs.config_file_env}');
+    print(f'Location of AutoConfig.kmk  : {g_oArgs.config_file_autoconfig}');
     print();
 
     #
@@ -3971,10 +3965,10 @@ def main():
         BuildTarget.WINDOWS: [ ], # Done via own callbacks in the ToolCheck class down below.
         BuildTarget.SOLARIS: [ 'pkg-config', 'gcc', 'gmake' ]
     };
-    aOsToolsToCheck = aOsTools.get(g_enmBuildTarget, None);
+    aOsToolsToCheck = aOsTools.get(g_oArgs.config_build_target, None);
     printVerbose(1, f'Checking for essential OS tools: {aOsToolsToCheck}');
     if aOsToolsToCheck is None:
-        printWarn(f"Unsupported build target \'{ g_enmBuildTarget }\' for OS tool checks, probably leading to build errors");
+        printWarn(f"Unsupported build target \'{ g_oArgs.config_build_target }\' for OS tool checks, probably leading to build errors");
     else:
         oOsToolsTable = SimpleTable([ 'Tool', 'Status', 'Version', 'Path' ]);
         for sBinary in aOsToolsToCheck:
@@ -3996,7 +3990,7 @@ def main():
     or g_fContOnErr:
         print();
         for oToolCur in aoToolsToCheck:
-            if not oToolCur.setArgs(oArgs):
+            if not oToolCur.setArgs(g_oArgs):
                 break;
             fRc = oToolCur.performCheck();
             if      fRc is False \
@@ -4010,7 +4004,7 @@ def main():
     or g_fContOnErr:
         print();
         for oLibCur in aoLibsToCheck:
-            if not oLibCur.setArgs(oArgs):
+            if not oLibCur.setArgs(g_oArgs):
                 break;
             fRc = oLibCur.performCheck();
             if      fRc is False \
@@ -4050,27 +4044,27 @@ def main():
 
     # Delete output files when in debug mode.
     if g_fDebug:
-        try: os.remove(oArgs.config_file_autoconfig);
+        try: os.remove(g_oArgs.config_file_autoconfig);
         except: pass;
-        try: os.remove(oArgs.config_file_env);
+        try: os.remove(g_oArgs.config_file_env);
         except: pass;
 
     if g_cErrors == 0 \
     or g_fContOnErr:
-        if write_autoconfig_kmk(oArgs.config_file_autoconfig, g_enmBuildTarget, g_oEnv, g_aoLibs, g_aoTools):
-            if write_env(oArgs.config_file_env, g_enmBuildTarget, g_enmBuildArch, g_oEnv, g_aoLibs, g_aoTools):
+        if write_autoconfig_kmk(g_oArgs.config_file_autoconfig, g_oArgs.config_build_target, g_oEnv, g_aoLibs, g_aoTools):
+            if write_env(g_oArgs.config_file_env, g_oArgs.config_build_target, g_oArgs.config_build_arch, g_oEnv, g_aoLibs, g_aoTools):
                 print();
-                print(f'Successfully generated \"{oArgs.config_file_autoconfig}\" and \"{oArgs.config_file_env}\".');
+                print(f'Successfully generated \"{g_oArgs.config_file_autoconfig}\" and \"{g_oArgs.config_file_env}\".');
                 print();
-                if g_enmBuildTarget == BuildTarget.WINDOWS:
+                if g_oArgs.config_build_target == BuildTarget.WINDOWS:
                     print();
                     print('Execute env.bat once before you starting to build VirtualBox:');
                     print();
                     print('  env.bat');
                 else:
-                    print(f'Source {oArgs.config_file_env} once before you starting to build VirtualBox:');
+                    print(f'Source {g_oArgs.config_file_env} once before you starting to build VirtualBox:');
                     print();
-                    print(f'  source "{oArgs.config_file_env}"');
+                    print(f'  source "{g_oArgs.config_file_env}"');
 
                 print();
                 print( 'Then run the build with:');
@@ -4078,19 +4072,19 @@ def main():
                 print( '  kmk');
                 print();
 
-        if g_enmBuildTarget == BuildTarget.LINUX:
+        if g_oArgs.config_build_target == BuildTarget.LINUX:
             print('To compile the kernel modules, do:');
             print();
-            print(f"  cd {g_sOutPath}/{ g_enmBuildTarget }.{ g_enmBuildArch }/{ g_oEnv['KBUILD_TYPE'] }/bin/src");
+            print(f"  cd {g_sOutPath}/{ g_oArgs.config_build_target }.{ g_oArgs.config_build_arch }/{ g_oArgs.config_build_type }/bin/src");
             print('  make');
             print();
 
-        if g_oEnv['VBOX_ONLY_ADDITIONS']:
+        if g_oArgs.config_only_additions:
             print('Tree configured to build only the Guest Additions');
             print();
 
-        if g_oEnv['VBOX_WITH_HARDENING'] \
-        or g_oEnv['VBOX_WITHOUT_HARDENING'] == '':
+        if      g_oArgs.config_with_hardening \
+        and not g_oArgs.config_without_hardening:
             print('  +++ WARNING +++ WARNING +++ WARNING +++ WARNING +++ WARNING +++ WARNING +++');
             print('  Hardening is enabled which means that the VBox binaries will not run from');
             print('  the binary directory. The binaries have to be installed suid root and some');
