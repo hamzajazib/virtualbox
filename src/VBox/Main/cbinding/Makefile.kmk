@@ -1,4 +1,4 @@
-# $Id: Makefile.kmk 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $
+# $Id: Makefile.kmk 112892 2026-02-09 11:03:02Z knut.osmundsen@oracle.com $
 ## @file
 # Sub-Makefile for the VBox C Binding.
 #
@@ -90,7 +90,7 @@ ifndef VBOX_ONLY_SDK
  VBoxCAPI_TEMPLATE = VBoxMainClientDll
  ifdef VBOX_WITH_XPCOM
   # Keep old name on XPCOM so that legacy code is happy.
-  VBoxCAPI_INST = $(INST_BIN)VBoxXPCOMC$(VBOX_SUFF_DLL)
+  VBoxCAPI_NAME = VBoxXPCOMC
  endif
  VBoxCAPI_DEFS = IN_VBOXCAPI
  VBoxCAPI_SOURCES = \
