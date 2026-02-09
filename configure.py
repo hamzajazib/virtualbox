@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# $Id: configure.py 112894 2026-02-09 11:10:23Z andreas.loeffler@oracle.com $
+# $Id: configure.py 112899 2026-02-09 12:53:55Z andreas.loeffler@oracle.com $
 """
 Configuration script for building VirtualBox.
 
@@ -61,7 +61,7 @@ SPDX-License-Identifier: GPL-3.0-only
 # External Python modules or other dependencies are not allowed!
 #
 
-__revision__ = "$Revision: 112894 $"
+__revision__ = "$Revision: 112899 $"
 
 import argparse
 import ctypes
@@ -472,8 +472,13 @@ def checkWhich(sCmdName, sToolDesc = None, sCustomPath = None, asVersionSwitches
                 if oProc.returncode == 0:
                     try:
                         sVer = oProc.stdout.decode('utf-8', 'replace').strip().splitlines();
-                    except: # Some programs (java, for instance) output their version info in stderr.
-                        sVer = oProc.stderr.decode('utf-8', 'replace').strip().splitlines();
+                    except UnicodeDecodeError:
+                        pass;
+                    if not sVer: # Some programs (java, for instance) output their version info in stderr.
+                        try:
+                            sVer = oProc.stderr.decode('utf-8', 'replace').strip().splitlines();
+                        except UnicodeDecodeError:
+                            pass;
                     if sVer:
                         sVer = sVer[0] if (not fMultiline or isinstance(sVer, str)) else sVer;
                         printVerbose(1, f"Detected version for '{sCmdName}' is: {sVer}");
@@ -2045,7 +2050,6 @@ class ToolCheck(CheckBase):
         """
 
         # Detect Java home directory.
-        fRc       = True;
         sJavaHome = self.sRootPath;
         if not sJavaHome:
             sJavaHome = os.environ.get('JAVA_HOME');
@@ -2064,61 +2068,66 @@ class ToolCheck(CheckBase):
                 except:
                     pass;
 
+        uVerMaj = None; # Acts as success beacon.
+
         if isDir(sJavaHome):
             # Strip 'jre' component if found.
             sHead, sTail = os.path.split(os.path.normpath(sJavaHome));
             if sTail == 'jre':
                 sJavaHome = sHead;
 
-            mapCmds = { 'java':  [ r'openjdk (\d+)\.(\d+)\.(\d+)-?.*',
-                                   r'java (\d+)\.(\d+)\.(\d+)' ],
+            mapCmds = { 'java':  [ r'(?:java|openjdk)(?:\s+version)?\s+["]?(\d+)\.(\d+)\.(\d+)["]?' ],
                         'javac': [ r'javac (\d+)\.(\d+)\.(\d+)_?.*' ] };
+
             for sCmd, (asRegEx) in mapCmds.items():
-                for sRegEx in asRegEx:
-                    try:
-                        _, sVer = checkWhich(sCmd, sCustomPath = os.path.join(sJavaHome, 'bin') if sJavaHome else None);
-                        reMatch = re.search(sRegEx, sVer);
-                        if reMatch:
-                            uMaj = int(reMatch.group(1));
-                            # Parsing the version is a bit more tricky, as the output changed between versions.
-                            # See also: https://openjdk.org/jeps/223
-                            #
-                            # Examples:
-                            #   java version "1.8.0_361"             ->  v8
-                            #   openjdk version "11.0.20" 2023-07-18 -> v11
-                            #   java version "17.0.2" 2022-01-18 LTS -> v17
-                            #
-                            # So for Java 8 and below, major version is 1 and minor is 8 or less.
-                            if uMaj == 1:
-                                uMaj = int(reMatch.group(2));
-                            # We prefer Java <= 8, as only there the 'wsimport' binary is available.
-                            # See also: https://openjdk.org/jeps/320
-                            if uMaj > 8:
-                                # Check if 'wsimport' installed via other packages onto the system.
-                                _, sVer = checkWhich('wsimport');
-                                if not sVer:
-                                    self.printWarn(f"Java {uMaj} installed ({sCmd}), which does not include the 'wsimport' binary anymore.");
-                                    self.printWarn( "Please either install Java <= 8, or install 'wsimport' according to your distribution / OS.", fDontCount = True);
-                                    fRc = False;
+                sPath = os.path.join(sJavaHome, 'bin') if sJavaHome else None;
+                _, sVer = checkWhich(sCmd, sCustomPath = sPath);
+                if sVer:
+                    for sRegEx in asRegEx:
+                        try:
+                            reMatch = re.search(sRegEx, sVer);
+                            if reMatch:
+                                uVerMaj = int(reMatch.group(1));
+                                # Parsing the version is a bit more tricky, as the output changed between versions.
+                                # See also: https://openjdk.org/jeps/223
+                                #
+                                # Examples:
+                                #   java version "1.8.0_361"             ->  v8
+                                #   openjdk version "11.0.20" 2023-07-18 -> v11
+                                #   java version "17.0.2" 2022-01-18 LTS -> v17
+                                #
+                                # So for Java 8 and below, major version is 1 and minor is 8 or less.
+                                if uVerMaj == 1:
+                                    uVerMaj = int(reMatch.group(2));
+                                # We prefer Java <= 8, as only there the 'wsimport' binary is available.
+                                # See also: https://openjdk.org/jeps/320
+                                if uVerMaj > 8:
+                                    # Check if 'wsimport' installed via other packages onto the system.
+                                    _, sVer = checkWhich('wsimport');
+                                    if not sVer:
+                                        self.printWarn(f"Found Java {uVerMaj} installed ({sCmd}), which does not include the 'wsimport' binary anymore.");
+                                        self.printWarn( "Please either install Java <= 8, or install 'wsimport' according to your distribution / OS.", fDontCount = True);
+                                        uVerMaj = None; # Reset version to continue iteration.
+                                else: # Java <= 8 found, bail out.
+                                    self.printVerbose(1, f"Found: {sCmd}, {uVerMaj}");
                                     break;
-                        else:
-                            self.printWarn('Unable to detect Java version');
-                            fRc = False;
-                            break;
-                    except:
-                        self.printWarn('Java is not installed or not found in PATH');
-                        fRc = False;
-                        break;
-            if fRc:
-                self.printVerbose(1, f'Java {uMaj} installed');
-                if uMaj:
-                    self.sVer = str(uMaj);
+                            else:
+                                self.printVerbose(1, f"No match for: {sCmd}, {sVer}");
+                        except:
+                            pass;
+                if uVerMaj:
+                    break;
+
+            if uVerMaj:
+                self.printVerbose(1, f'Java {uVerMaj} installed');
+                if uVerMaj:
+                    self.sVer = str(uVerMaj);
                 self.sCmdPath = sJavaHome;
                 g_oEnv.set('VBOX_JAVA_HOME', sJavaHome);
         else:
             self.printWarn('Unable to detect Java home directory');
 
-        return fRc;
+        return True if uVerMaj else False;
 
     def checkCallback_makeself(self):
         """
