@@ -1,4 +1,4 @@
-/* $Id: UIVisoCreator.cpp 112785 2026-02-02 16:38:44Z sergey.dubov@oracle.com $ */
+/* $Id: UIVisoCreator.cpp 112901 2026-02-09 14:34:18Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIVisoCreator classes implementation.
  */
@@ -969,7 +969,7 @@ QUuid UIVisoCreatorDialog::createViso(UIActionPool *pActionPool, QWidget *pParen
         {
             QString strFilePath = pVisoCreator->visoFileFullPath();
             gEDataManager->setVISOCreatorRecentFolder(pVisoCreator->currentPath());
-            mediumId = UIMediumTools::openMedium(UIMediumDeviceType_DVD, strFilePath);
+            mediumId = UIMediumTools::openMedium(UIMediumDeviceType_DVD, strFilePath, pParent);
         }
     }
 
@@ -997,7 +997,7 @@ QUuid UIVisoCreatorDialog::editViso(UIActionPool *pActionPool, QWidget *pParent,
         {
             QString strFilePath = pVisoCreator->visoFileFullPath();
             gEDataManager->setVISOCreatorRecentFolder(pVisoCreator->currentPath());
-            mediumId = UIMediumTools::openMedium(UIMediumDeviceType_DVD, strFilePath);
+            mediumId = UIMediumTools::openMedium(UIMediumDeviceType_DVD, strFilePath, pParent);
         }
     }
 

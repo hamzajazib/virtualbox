@@ -1,4 +1,4 @@
-/* $Id: UIMediumTools.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIMediumTools.cpp 112901 2026-02-09 14:34:18Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMediumTools class implementation.
  */
@@ -218,7 +218,7 @@ QUuid UIMediumTools::openMedium(UIMediumDeviceType enmMediumType,
         return guiMedium.id();
     }
     else
-        msgCenter().cannotOpenMedium(comVBox, strLocation, pParent);
+        UINotificationMessage::cannotOpenMedium(comVBox, strLocation, pParent);
 
     return QUuid();
 }

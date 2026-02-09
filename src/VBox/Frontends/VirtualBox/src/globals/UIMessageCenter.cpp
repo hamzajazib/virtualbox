@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.cpp 112842 2026-02-05 14:06:53Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.cpp 112901 2026-02-09 14:34:18Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class implementation.
  */
@@ -547,13 +547,6 @@ void UIMessageCenter::cannotSetExtraData(const CVirtualBox &comVBox, const QStri
           tr("Failed to set the global VirtualBox extra data for key <i>%1</i> to value <i>{%2}</i>.")
              .arg(strKey, strValue),
           UIErrorString::formatErrorInfo(comVBox));
-}
-
-void UIMessageCenter::cannotOpenMedium(const CVirtualBox &comVBox, const QString &strLocation, QWidget *pParent /* = 0 */) const
-{
-    /* Show the error: */
-    error(pParent, MessageType_Error,
-          tr("Failed to open the disk image file <nobr><b>%1</b></nobr>.").arg(strLocation), UIErrorString::formatErrorInfo(comVBox));
 }
 
 void UIMessageCenter::cannotOpenSession(const CSession &comSession) const
