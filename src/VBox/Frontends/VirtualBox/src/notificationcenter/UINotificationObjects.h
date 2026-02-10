@@ -1,4 +1,4 @@
-/* $Id: UINotificationObjects.h 112914 2026-02-10 10:24:39Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationObjects.h 112915 2026-02-10 11:20:35Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationObjects declarations.
  */
@@ -802,13 +802,6 @@ private:
 
     /** Holds the IDs of messages registered. */
     static QMap<QString, QUuid>  m_messages;
-
-    /** Holds the message name. */
-    QString  m_strName;
-    /** Holds the message details. */
-    QString  m_strDetails;
-    /** Holds the message internal name. */
-    QString  m_strInternalName;
 };
 
 /** UINotificationProgress extension for medium create functionality. */
