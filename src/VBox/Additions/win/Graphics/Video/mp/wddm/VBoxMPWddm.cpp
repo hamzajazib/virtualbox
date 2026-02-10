@@ -1,4 +1,4 @@
-/* $Id: VBoxMPWddm.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: VBoxMPWddm.cpp 112925 2026-02-10 17:57:15Z vitali.pelenjow@oracle.com $ */
 /** @file
  * VBox WDDM Miniport driver
  */
@@ -1771,6 +1771,9 @@ static void vmsvgaDXGetSegmentDescription(PVBOXMP_DEVEXT pDevExt, int idxSegment
 }
 #endif
 
+#pragma warning(push)
+#pragma warning(disable:4063) /* case '47' is not a valid value for switch of enum '_DXGK_QUERYADAPTERINFOTYPE' */
+
 /**
  * DxgkDdiQueryAdapterInfo
  */
@@ -2041,9 +2044,11 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
 
 #if defined(RT_ARCH_ARM64) || defined(RT_ARCH_ARM32)
         case DXGKQAITYPE_64BITONLYCAPS:
+#else
+        case (DXGK_QUERYADAPTERINFOTYPE)47: /* Older WDK header on amd64/x86 does not have the enum value. */
+#endif
             memset(pQueryAdapterInfo->pOutputData, 0, pQueryAdapterInfo->OutputDataSize);
             break;
-#endif
 
         default:
             WARN(("unsupported Type (%d)", pQueryAdapterInfo->Type));
@@ -2053,6 +2058,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
     LOGF(("LEAVE, context(0x%x), Status(0x%x)", hAdapter, Status));
     return Status;
 }
+# pragma warning(pop)
 
 /**
  * DxgkDdiCreateDevice
