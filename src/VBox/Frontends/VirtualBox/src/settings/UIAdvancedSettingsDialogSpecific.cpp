@@ -1,4 +1,4 @@
-/* $Id: UIAdvancedSettingsDialogSpecific.cpp 112908 2026-02-09 15:53:11Z sergey.dubov@oracle.com $ */
+/* $Id: UIAdvancedSettingsDialogSpecific.cpp 112917 2026-02-10 11:27:42Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIAdvancedSettingsDialogSpecific class implementation.
  */
@@ -73,6 +73,9 @@
 #include "CGraphicsAdapter.h"
 #include "CPlatform.h"
 #include "CUSBController.h"
+
+/* Other VBox includes: */
+#include "iprt/cpp/utils.h" // for unconst stuff
 
 
 /*********************************************************************************************************************************
@@ -793,7 +796,7 @@ bool UIAdvancedSettingsDialogMachine::isPageAvailable(int iPageId) const
             if (   !m_machine.isReallyOk()
                 && controllerColl.size() > 0
                 && !m_machine.GetUSBControllers().isEmpty())
-                msgCenter().warnAboutUnaccessibleUSB(m_machine, parentWidget());
+                UINotificationMessage::cannotAccessUSBSubsystem(m_machine, unconst(this));
             break;
         }
         default:

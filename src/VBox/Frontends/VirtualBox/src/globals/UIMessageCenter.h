@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.h 112914 2026-02-10 10:24:39Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.h 112917 2026-02-10 11:27:42Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class declaration.
  */
@@ -290,7 +290,6 @@ public:
         bool confirmResetMachine(const QString &strNames) const;
 
         bool confirmCreatingPath(const QString &strPath, QWidget *pParent = 0);
-        void warnAboutUnaccessibleUSB(const COMBaseWithEI &object, QWidget *pParent = 0) const;
         void warnAboutStateChange(QWidget *pParent = 0) const;
         bool confirmSettingsDiscarding(QWidget *pParent = 0) const;
         bool confirmSettingsReloading(QWidget *pParent = 0) const;

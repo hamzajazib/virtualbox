@@ -1,4 +1,4 @@
-/* $Id: UINotificationObjects.h 112916 2026-02-10 11:23:50Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationObjects.h 112917 2026-02-10 11:27:42Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationObjects declarations.
  */
@@ -480,6 +480,9 @@ public:
         /** Notifies about inability to enumerate host USB devices.
           * @param  comHost  Brings the host devices enumerated for. */
         static void cannotEnumerateHostUSBDevices(const CHost &comHost);
+        /** Notifies about inability to access USB subsystem.
+          * @param  comObject  Brings the machine USB subsystem accessed for. */
+        static void cannotAccessUSBSubsystem(const CMachine &comMachine, QWidget *pParent);
         /** Notifies about inability to open medium.
           * @param  comVBox      Brings common VBox object trying to open medium.
           * @param  strLocation  Brings the medium location. */

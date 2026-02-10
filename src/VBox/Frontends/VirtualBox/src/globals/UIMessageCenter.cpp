@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.cpp 112914 2026-02-10 10:24:39Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.cpp 112917 2026-02-10 11:27:42Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class implementation.
  */
@@ -655,21 +655,6 @@ bool UIMessageCenter::confirmCreatingPath(const QString &strPath, QWidget *pPare
                           QString() /* ok button text */,
                           QString() /* cancel button text */,
                           false /* ok button by default? */);
-}
-
-void UIMessageCenter::warnAboutUnaccessibleUSB(const COMBaseWithEI &object, QWidget *pParent /* = 0*/) const
-{
-    /* If IMachine::GetUSBController(), IHost::GetUSBDevices() etc. return
-     * E_NOTIMPL, it means the USB support is intentionally missing
-     * (as in the OSE version). Don't show the error message in this case. */
-    COMResult res(object);
-    if (res.rc() == E_NOTIMPL)
-        return;
-    /* Show the error: */
-    error(pParent, res.isWarning() ? MessageType_Warning : MessageType_Error,
-          tr("Failed to access the USB subsystem."),
-          UIErrorString::formatErrorInfo(res),
-          "warnAboutUnaccessibleUSB");
 }
 
 void UIMessageCenter::warnAboutStateChange(QWidget *pParent /* = 0*/) const

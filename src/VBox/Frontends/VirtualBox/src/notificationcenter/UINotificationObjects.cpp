@@ -1,4 +1,4 @@
-/* $Id: UINotificationObjects.cpp 112916 2026-02-10 11:23:50Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationObjects.cpp 112917 2026-02-10 11:27:42Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationObjects implementations.
  */
@@ -1216,6 +1216,23 @@ void UINotificationMessage::cannotEnumerateHostUSBDevices(const CHost &comHost)
         UIErrorString::formatErrorInfo(comHost),
         "cannotEnumerateHostUSBDevices",
         strHelpKeyword);
+}
+
+/* static */
+void UINotificationMessage::cannotAccessUSBSubsystem(const CMachine &comMachine, QWidget *pParent)
+{
+    /* If IMachine::GetUSBController() return E_NOTIMPL, it means the USB support is intentionally
+     * missing (as in the OSE version). Don't show the error message in this case. */
+    COMResult res(comMachine);
+    if (res.rc() == E_NOTIMPL)
+        return;
+
+    createMessage(QApplication::translate("UIMessageCenter", "Can't access USB subsystem ..."),
+                  QApplication::translate("UIMessageCenter", "Failed to access the USB subsystem.") +
+                  UIErrorString::formatErrorInfo(res),
+                  "cannotAccessUSBSubsystem",
+                  QString(),
+                  pParent);
 }
 
 /* static */
