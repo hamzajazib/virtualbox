@@ -1,4 +1,4 @@
-/* $Id: UnattendedImpl.cpp 112840 2026-02-05 13:29:59Z serkan.bayraktar@oracle.com $ */
+/* $Id: UnattendedImpl.cpp 112941 2026-02-11 11:41:13Z serkan.bayraktar@oracle.com $ */
 /** @file
  * Unattended class implementation
  */
@@ -4582,7 +4582,7 @@ Utf8Str const &Unattended::i_getAdminPassword() const
     return mStrAdminPassword.isEmpty() ? mStrUserPassword : mStrAdminPassword;
 }
 
-bool          Unattended::i_getIsAdminPasswordEmpty() const
+bool Unattended::i_getIsAdminPasswordEmpty() const
 {
     Assert(isReadLockedOnCurrentThread());
     return mStrAdminPassword.isEmpty();
