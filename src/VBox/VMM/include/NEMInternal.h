@@ -1,4 +1,4 @@
-/* $Id: NEMInternal.h 112771 2026-01-30 16:30:17Z alexander.eichner@oracle.com $ */
+/* $Id: NEMInternal.h 112928 2026-02-11 09:04:28Z ramshankar.venkataraman@oracle.com $ */
 /** @file
  * NEM - Internal header file.
  */
@@ -537,7 +537,12 @@ typedef struct NEMCPU
     bool                        fIrqWindowRegistered: 1;
     /** Flag whether it is possible inject a PIC interrupt. */
     bool                        fPicReadyForInterrupt: 1;
+    /** Whether debug breakpoints / events are armed or if single-stepping is active
+     *  (can be removed later when dedicated debug loop is implemented). */
+    bool                        fGuestDebug : 1;
     uint32_t                    uPadding;
+    /** Pending debug exceptions. */
+    uint64_t                    uPendingDebugXcpt;
     /** The VID_MSHAGN_F_XXX flags.
      * Either VID_MSHAGN_F_HANDLE_MESSAGE | VID_MSHAGN_F_GET_NEXT_MESSAGE or zero. */
     uint32_t                    fHandleAndGetFlags;

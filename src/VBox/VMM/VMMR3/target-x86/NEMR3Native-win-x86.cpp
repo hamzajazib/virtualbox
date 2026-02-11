@@ -1,4 +1,4 @@
-/* $Id: NEMR3Native-win-x86.cpp 112831 2026-02-05 06:13:51Z ramshankar.venkataraman@oracle.com $ */
+/* $Id: NEMR3Native-win-x86.cpp 112928 2026-02-11 09:04:28Z ramshankar.venkataraman@oracle.com $ */
 /** @file
  * NEM - Native execution manager, native ring-3 Windows backend.
  *
@@ -2588,18 +2588,29 @@ static int nemHCWinCopyStateToHyperV(PVMCC pVM, PVMCPUCC pVCpu)
         ADD_REG64(WHvX64RegisterCr8, CPUMGetGuestCR8(pVCpu));
 
     /* Debug registers. */
-/** @todo fixme. Figure out what the hyper-v version of KVM_SET_GUEST_DEBUG would be. */
-    if (fWhat & CPUMCTX_EXTRN_DR0_DR3)
+    if (!pVCpu->nem.s.fGuestDebug)
     {
-        ADD_REG64(WHvX64RegisterDr0, pVCpu->cpum.GstCtx.dr[0]); // CPUMGetHyperDR0(pVCpu));
-        ADD_REG64(WHvX64RegisterDr1, pVCpu->cpum.GstCtx.dr[1]); // CPUMGetHyperDR1(pVCpu));
-        ADD_REG64(WHvX64RegisterDr2, pVCpu->cpum.GstCtx.dr[2]); // CPUMGetHyperDR2(pVCpu));
-        ADD_REG64(WHvX64RegisterDr3, pVCpu->cpum.GstCtx.dr[3]); // CPUMGetHyperDR3(pVCpu));
+        if (fWhat & CPUMCTX_EXTRN_DR0_DR3)
+        {
+            ADD_REG64(WHvX64RegisterDr0, pVCpu->cpum.GstCtx.dr[0]);
+            ADD_REG64(WHvX64RegisterDr1, pVCpu->cpum.GstCtx.dr[1]);
+            ADD_REG64(WHvX64RegisterDr2, pVCpu->cpum.GstCtx.dr[2]);
+            ADD_REG64(WHvX64RegisterDr3, pVCpu->cpum.GstCtx.dr[3]);
+        }
+        if (fWhat & CPUMCTX_EXTRN_DR6)
+            ADD_REG64(WHvX64RegisterDr6, pVCpu->cpum.GstCtx.dr[6]);
+        if (fWhat & CPUMCTX_EXTRN_DR7)
+            ADD_REG64(WHvX64RegisterDr7, pVCpu->cpum.GstCtx.dr[7]);
     }
-    if (fWhat & CPUMCTX_EXTRN_DR6)
-        ADD_REG64(WHvX64RegisterDr6, pVCpu->cpum.GstCtx.dr[6]); // CPUMGetHyperDR6(pVCpu));
-    if (fWhat & CPUMCTX_EXTRN_DR7)
-        ADD_REG64(WHvX64RegisterDr7, pVCpu->cpum.GstCtx.dr[7]); // CPUMGetHyperDR7(pVCpu));
+    else
+    {
+        ADD_REG64(WHvX64RegisterDr0, CPUMGetHyperDR0(pVCpu));
+        ADD_REG64(WHvX64RegisterDr1, CPUMGetHyperDR1(pVCpu));
+        ADD_REG64(WHvX64RegisterDr2, CPUMGetHyperDR2(pVCpu));
+        ADD_REG64(WHvX64RegisterDr3, CPUMGetHyperDR3(pVCpu));
+        ADD_REG64(WHvX64RegisterDr6, CPUMGetHyperDR6(pVCpu));
+        ADD_REG64(WHvX64RegisterDr7, CPUMGetHyperDR7(pVCpu));
+    }
 
     if (fWhat & CPUMCTX_EXTRN_XCRx)
         ADD_REG64(WHvX64RegisterXCr0, pVCpu->cpum.GstCtx.aXcr[0]);
@@ -2951,22 +2962,30 @@ static int nemHCWinCopyStateFromHyperV(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat
         aenmNames[iReg++] = WHvX64RegisterCr8;
 
     /* Debug registers. */
-    if (fWhat & CPUMCTX_EXTRN_DR7)
-        aenmNames[iReg++] = WHvX64RegisterDr7;
-    if (fWhat & CPUMCTX_EXTRN_DR0_DR3)
+    if (!pVCpu->nem.s.fGuestDebug)
     {
-        if (!(fWhat & CPUMCTX_EXTRN_DR7) && (pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_DR7))
-        {
-            fWhat |= CPUMCTX_EXTRN_DR7;
+        if (fWhat & CPUMCTX_EXTRN_DR7)
             aenmNames[iReg++] = WHvX64RegisterDr7;
+        if (fWhat & CPUMCTX_EXTRN_DR0_DR3)
+        {
+            if (!(fWhat & CPUMCTX_EXTRN_DR7) && (pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_DR7))
+            {
+                fWhat |= CPUMCTX_EXTRN_DR7;
+                aenmNames[iReg++] = WHvX64RegisterDr7;
+            }
+            aenmNames[iReg++] = WHvX64RegisterDr0;
+            aenmNames[iReg++] = WHvX64RegisterDr1;
+            aenmNames[iReg++] = WHvX64RegisterDr2;
+            aenmNames[iReg++] = WHvX64RegisterDr3;
         }
-        aenmNames[iReg++] = WHvX64RegisterDr0;
-        aenmNames[iReg++] = WHvX64RegisterDr1;
-        aenmNames[iReg++] = WHvX64RegisterDr2;
-        aenmNames[iReg++] = WHvX64RegisterDr3;
+        if (fWhat & CPUMCTX_EXTRN_DR6)
+            aenmNames[iReg++] = WHvX64RegisterDr6;
     }
-    if (fWhat & CPUMCTX_EXTRN_DR6)
-        aenmNames[iReg++] = WHvX64RegisterDr6;
+    else
+    {
+        if (fWhat & CPUMCTX_EXTRN_DR6)
+            aenmNames[iReg++] = WHvX64RegisterDr6;
+    }
 
     if (fWhat & CPUMCTX_EXTRN_XCRx)
         aenmNames[iReg++] = WHvX64RegisterXCr0;
@@ -3260,37 +3279,49 @@ static int nemHCWinCopyStateFromHyperV(PVMCC pVM, PVMCPUCC pVCpu, uint64_t fWhat
     }
 
     /* Debug registers. */
-    if (fWhat & CPUMCTX_EXTRN_DR7)
+    if (!pVCpu->nem.s.fGuestDebug)
     {
-        Assert(aenmNames[iReg] == WHvX64RegisterDr7);
-        if (pVCpu->cpum.GstCtx.dr[7] != aValues[iReg].Reg64)
-            CPUMSetGuestDR7(pVCpu, aValues[iReg].Reg64);
-        pVCpu->cpum.GstCtx.fExtrn &= ~CPUMCTX_EXTRN_DR7; /* Hack alert! Avoids asserting when processing CPUMCTX_EXTRN_DR0_DR3. */
-        iReg++;
+        if (fWhat & CPUMCTX_EXTRN_DR7)
+        {
+            Assert(aenmNames[iReg] == WHvX64RegisterDr7);
+            if (pVCpu->cpum.GstCtx.dr[7] != aValues[iReg].Reg64)
+                CPUMSetGuestDR7(pVCpu, aValues[iReg].Reg64);
+            pVCpu->cpum.GstCtx.fExtrn &= ~CPUMCTX_EXTRN_DR7; /* Hack alert! Avoids asserting when processing CPUMCTX_EXTRN_DR0_DR3. */
+            iReg++;
+        }
+        if (fWhat & CPUMCTX_EXTRN_DR0_DR3)
+        {
+            Assert(aenmNames[iReg] == WHvX64RegisterDr0);
+            Assert(aenmNames[iReg+3] == WHvX64RegisterDr3);
+            if (pVCpu->cpum.GstCtx.dr[0] != aValues[iReg].Reg64)
+                CPUMSetGuestDR0(pVCpu, aValues[iReg].Reg64);
+            iReg++;
+            if (pVCpu->cpum.GstCtx.dr[1] != aValues[iReg].Reg64)
+                CPUMSetGuestDR1(pVCpu, aValues[iReg].Reg64);
+            iReg++;
+            if (pVCpu->cpum.GstCtx.dr[2] != aValues[iReg].Reg64)
+                CPUMSetGuestDR2(pVCpu, aValues[iReg].Reg64);
+            iReg++;
+            if (pVCpu->cpum.GstCtx.dr[3] != aValues[iReg].Reg64)
+                CPUMSetGuestDR3(pVCpu, aValues[iReg].Reg64);
+            iReg++;
+        }
+        if (fWhat & CPUMCTX_EXTRN_DR6)
+        {
+            Assert(aenmNames[iReg] == WHvX64RegisterDr6);
+            if (pVCpu->cpum.GstCtx.dr[6] != aValues[iReg].Reg64)
+                CPUMSetGuestDR6(pVCpu, aValues[iReg].Reg64);
+            iReg++;
+        }
     }
-    if (fWhat & CPUMCTX_EXTRN_DR0_DR3)
+    else
     {
-        Assert(aenmNames[iReg] == WHvX64RegisterDr0);
-        Assert(aenmNames[iReg+3] == WHvX64RegisterDr3);
-        if (pVCpu->cpum.GstCtx.dr[0] != aValues[iReg].Reg64)
-            CPUMSetGuestDR0(pVCpu, aValues[iReg].Reg64);
-        iReg++;
-        if (pVCpu->cpum.GstCtx.dr[1] != aValues[iReg].Reg64)
-            CPUMSetGuestDR1(pVCpu, aValues[iReg].Reg64);
-        iReg++;
-        if (pVCpu->cpum.GstCtx.dr[2] != aValues[iReg].Reg64)
-            CPUMSetGuestDR2(pVCpu, aValues[iReg].Reg64);
-        iReg++;
-        if (pVCpu->cpum.GstCtx.dr[3] != aValues[iReg].Reg64)
-            CPUMSetGuestDR3(pVCpu, aValues[iReg].Reg64);
-        iReg++;
-    }
-    if (fWhat & CPUMCTX_EXTRN_DR6)
-    {
-        Assert(aenmNames[iReg] == WHvX64RegisterDr6);
-        if (pVCpu->cpum.GstCtx.dr[6] != aValues[iReg].Reg64)
-            CPUMSetGuestDR6(pVCpu, aValues[iReg].Reg64);
-        iReg++;
+        if (fWhat & CPUMCTX_EXTRN_DR6)
+        {
+            Assert(aenmNames[iReg] == WHvX64RegisterDr6);
+            CPUMSetHyperDR6(pVCpu, aValues[iReg].Reg64);
+            iReg++;
+        }
     }
 
     bool fUpdateXcr0 = false;
@@ -4735,23 +4766,64 @@ static VBOXSTRICTRC nemR3WinHandleExitException(PVMCC pVM, PVMCPUCC pVCpu, WHV_R
          * Filter debug exceptions.
          */
         case X86_XCPT_DB:
+        {
             AssertCompile(X86_XCPT_DB == WHvX64ExceptionTypeDebugTrapOrFault);
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionDb);
-            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_XCPT_DB),
-                             pExit->VpContext.Rip + pExit->VpContext.Cs.Base, ASMReadTSC());
-            Log4(("XcptExit/%u: %04x:%08RX64/%s: #DB - TODO\n",
-                  pVCpu->idCpu, pExit->VpContext.Cs.Selector, pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext) ));
-            break;
+
+            uint64_t const uHyperDr6       = CPUMGetHyperDR6(pVCpu);
+            bool const     fSingleStepping = pVCpu->nem.s.fSingleInstruction || DBGFIsStepping(pVCpu);
+            int rc = DBGFTrap01Handler(pVM, pVCpu, &pVCpu->cpum.GstCtx, uHyperDr6, fSingleStepping);
+            if (rc == VINF_EM_RAW_GUEST_TRAP)
+            {
+                if (CPUMIsHyperDebugStateActive(pVCpu))
+                    CPUMSetGuestDR6(pVCpu, pVCpu->cpum.GstCtx.dr[6] | uHyperDr6);
+
+                /* Reflect the exception back to the guest. */
+                EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_XCPT_DB),
+                                 pExit->VpContext.Rip + pExit->VpContext.Cs.Base, ASMReadTSC());
+                Log4(("XcptExit/%u: %04x:%08RX64/%s: #DB - TODO\n",
+                      pVCpu->idCpu, pExit->VpContext.Cs.Selector, pExit->VpContext.Rip,
+                      nemR3WinExecStateToLogStr(&pExit->VpContext)));
+
+                IEMTlbInvalidateAll(pVCpu);
+                rc = IEMInjectTrap(pVCpu, pExit->VpException.ExceptionType, enmEvtType, pExit->VpException.ErrorCode,
+                                          pExit->VpException.ExceptionParameter /*??*/, pExit->VpContext.InstructionLength);
+            }
+            else
+                Assert(rc == VINF_SUCCESS || rc == VINF_EM_DBG_BREAKPOINT || rc == VINF_EM_DBG_STEPPED);
+
+            /* Clear DR6 if hypervisor debugging caused this exception. */
+            if (CPUMIsHyperDebugStateActive(pVCpu))
+                CPUMSetHyperDR6(pVCpu, X86_DR6_INIT_VAL);
+
+            return rc;
+        }
 
         case X86_XCPT_BP:
+        {
             AssertCompile(X86_XCPT_BP == WHvX64ExceptionTypeBreakpointTrap);
             STAM_REL_COUNTER_INC(&pVCpu->nem.s.StatExitExceptionBp);
-            EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_XCPT_BP),
-                             pExit->VpContext.Rip + pExit->VpContext.Cs.Base, ASMReadTSC());
-            Log4(("XcptExit/%u: %04x:%08RX64/%s: #BP - TODO - %u\n", pVCpu->idCpu, pExit->VpContext.Cs.Selector,
-                  pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext), pExit->VpContext.InstructionLength));
-            enmEvtType = TRPM_SOFTWARE_INT; /* We're at the INT3 instruction, not after it. */
-            break;
+
+            rcStrict = DBGFTrap03Handler(pVM, pVCpu, &pVCpu->cpum.GstCtx);
+            if (rcStrict == VINF_EM_RAW_GUEST_TRAP)
+            {
+                /* Reflect the exception back to the guest. */
+                EMHistoryAddExit(pVCpu, EMEXIT_MAKE_FT(EMEXIT_F_KIND_NEM, NEMEXITTYPE_XCPT_BP),
+                                 pExit->VpContext.Rip + pExit->VpContext.Cs.Base, ASMReadTSC());
+                Log4(("XcptExit/%u: %04x:%08RX64/%s: #BP - TODO - %u\n", pVCpu->idCpu, pExit->VpContext.Cs.Selector,
+                      pExit->VpContext.Rip, nemR3WinExecStateToLogStr(&pExit->VpContext), pExit->VpContext.InstructionLength));
+
+                IEMTlbInvalidateAll(pVCpu);
+                rcStrict = IEMInjectTrap(pVCpu, pExit->VpException.ExceptionType, TRPM_SOFTWARE_INT, pExit->VpException.ErrorCode,
+                                   pExit->VpException.ExceptionParameter /*??*/, pExit->VpContext.InstructionLength);
+                Log4(("XcptExit/%u: %04x:%08RX64/%s: %#u -> injected -> %Rrc\n",
+                      pVCpu->idCpu, pExit->VpContext.Cs.Selector, pExit->VpContext.Rip,
+                      nemR3WinExecStateToLogStr(&pExit->VpContext), pExit->VpException.ExceptionType, VBOXSTRICTRC_VAL(rcStrict)));
+            }
+            else
+                Assert(rcStrict == VINF_SUCCESS || rcStrict == VINF_EM_DBG_BREAKPOINT);
+            return rcStrict;
+        }
 
         /* This shouldn't happen. */
         default:
@@ -5068,11 +5140,44 @@ static VBOXSTRICTRC nemHCWinRunGC(PVMCC pVM, PVMCPUCC pVCpu)
      * Current approach to state updating to use the sledgehammer and sync
      * everything every time.  This will be optimized later.
      */
-    const bool      fSingleStepping     = DBGFIsStepping(pVCpu);
+    const bool      fSingleStepping     = pVCpu->nem.s.fSingleInstruction || DBGFIsStepping(pVCpu);
 //    const uint32_t  fCheckVmFFs         = !fSingleStepping ? VM_FF_HP_R0_PRE_HM_MASK
 //                                                           : VM_FF_HP_R0_PRE_HM_STEP_MASK;
 //    const uint32_t  fCheckCpuFFs        = !fSingleStepping ? VMCPU_FF_HP_R0_PRE_HM_MASK : VMCPU_FF_HP_R0_PRE_HM_STEP_MASK;
     VBOXSTRICTRC    rcStrict            = VINF_SUCCESS;
+    pVCpu->nem.s.fGuestDebug            =  pVCpu->nem.s.fUseDebugLoop
+                                        || fSingleStepping
+                                        || pVM->dbgf.ro.cEnabledSwBreakpoints
+                                        || pVM->dbgf.ro.cEnabledHwBreakpoints;
+
+    /* Make sure the hypervisor debug register values are up to date. */
+    if (   pVCpu->nem.s.fGuestDebug
+        && (CPUMGetHyperDR7(pVCpu) & X86_DR7_ENABLED_MASK))
+    {
+        if (pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_DR_MASK)
+        {
+            int rc = nemHCWinCopyStateFromHyperV(pVM, pVCpu, CPUMCTX_EXTRN_DR_MASK);
+            if (RT_SUCCESS(rc))
+                pVCpu->cpum.GstCtx.fExtrn &= ~CPUMCTX_EXTRN_DR_MASK;
+            else
+                return rc;
+        }
+
+        /*
+         * Use the combined guest and host DRx values found in the hypervisor register set
+         * because the hypervisor debugger has breakpoints active.
+         */
+        if (!CPUMIsHyperDebugStateActive(pVCpu))
+        {
+            /*
+             * Make sure the hypervisor values are up to date.
+             */
+            CPUMR3NemActivateHyperDebugState(pVCpu);
+            Assert(CPUMIsHyperDebugStateActive(pVCpu));
+            Assert(!CPUMIsGuestDebugStateActive(pVCpu));
+        }
+    }
+
     for (unsigned iLoop = 0;; iLoop++)
     {
         /*
@@ -5224,6 +5329,12 @@ static VBOXSTRICTRC nemHCWinRunGC(PVMCC pVM, PVMCPUCC pVCpu)
         break;
     } /* the run loop */
 
+    if (CPUMIsHyperDebugStateActive(pVCpu))
+    {
+        CPUMR3NemActivateGuestDebugState(pVCpu);
+        Assert(CPUMIsGuestDebugStateActive(pVCpu));
+        Assert(!CPUMIsHyperDebugStateActive(pVCpu));
+    }
 
     /*
      * If the CPU is running, make sure to stop it before we try sync back the
@@ -5327,8 +5438,11 @@ DECLHIDDEN(bool) nemR3NativeNeedSpecialWaitMethod(PVM pVM)
 
 DECLHIDDEN(bool) nemR3NativeSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable)
 {
-    NOREF(pVM); NOREF(pVCpu); NOREF(fEnable);
-    return false;
+    VMCPU_ASSERT_EMT(pVCpu);
+    bool fOld = pVCpu->nem.s.fSingleInstruction;
+    pVCpu->nem.s.fSingleInstruction = fEnable;
+    pVCpu->nem.s.fUseDebugLoop = fEnable || pVM->nem.s.fUseDebugLoop;
+    return fOld;
 }
 
 
