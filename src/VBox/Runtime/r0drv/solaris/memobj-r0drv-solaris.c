@@ -1,4 +1,4 @@
-/* $Id: memobj-r0drv-solaris.c 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: memobj-r0drv-solaris.c 112973 2026-02-12 14:08:39Z alexander.eichner@oracle.com $ */
 /** @file
  * IPRT - Ring-0 Memory Objects, Solaris.
  */
@@ -887,10 +887,10 @@ DECLHIDDEN(int) rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS P
 
 
 DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess,
-                                         RTR0PROCESS R0Process, const char *pszTag)
+                                         uint32_t fFlags, RTR0PROCESS R0Process, const char *pszTag)
 {
     AssertReturn(R0Process == RTR0ProcHandleSelf(), VERR_INVALID_PARAMETER);
-    NOREF(fAccess);
+    RT_NOREF(fAccess, fFlags);
 
     /* Create the locking object */
     PRTR0MEMOBJSOL pMemSolaris = (PRTR0MEMOBJSOL)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_LOCK,
