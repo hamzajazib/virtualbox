@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.cpp 112969 2026-02-12 13:01:11Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.cpp 112975 2026-02-12 15:04:16Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class implementation.
  */
@@ -1538,22 +1538,6 @@ bool UIMessageCenter::cannotRestoreSnapshot(const CProgress &progress, const QSt
              .arg(strSnapshotName, strMachineName),
           UIErrorString::formatErrorInfo(progress));
     return false;
-}
-
-void UIMessageCenter::cannotStartMachine(const CConsole &console, const QString &strName) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to start the virtual machine <b>%1</b>.")
-             .arg(strName),
-          UIErrorString::formatErrorInfo(console));
-}
-
-void UIMessageCenter::cannotStartMachine(const CProgress &progress, const QString &strName) const
-{
-    error(0, MessageType_Error,
-          tr("Failed to start the virtual machine <b>%1</b>.")
-             .arg(strName),
-          UIErrorString::formatErrorInfo(progress));
 }
 
 bool UIMessageCenter::warnAboutNetworkInterfaceNotFound(const QString &strMachineName, const QString &strIfNames) const

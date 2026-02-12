@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.h 112969 2026-02-12 13:01:11Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.h 112975 2026-02-12 15:04:16Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class declaration.
  */
@@ -391,8 +391,6 @@ public:
       * @{ */
         bool cannotRestoreSnapshot(const CMachine &machine, const QString &strSnapshotName, const QString &strMachineName) const;
         bool cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const;
-        void cannotStartMachine(const CConsole &console, const QString &strName) const;
-        void cannotStartMachine(const CProgress &progress, const QString &strName) const;
 
         bool warnAboutNetworkInterfaceNotFound(const QString &strMachineName, const QString &strIfNames) const;
 

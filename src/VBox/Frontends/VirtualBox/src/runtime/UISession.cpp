@@ -1,4 +1,4 @@
-/* $Id: UISession.cpp 112914 2026-02-10 10:24:39Z sergey.dubov@oracle.com $ */
+/* $Id: UISession.cpp 112975 2026-02-12 15:04:16Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UISession class implementation.
  */
@@ -224,8 +224,8 @@ bool UISession::powerUp()
     if (!console().isOk() || comProgress.isNull())
     {
         if (uiCommon().showStartVMErrors())
-            msgCenter().cannotStartMachine(console(), machineName());
-        LogRel(("GUI: Aborting startup due to power up issue detected...\n"));
+            UINotificationMessage::cannotStartMachine(console(), machineName());
+        LogRel(("GUI: Aborting startup due to immediate power up issue detected...\n"));
         return false;
     }
 
@@ -271,7 +271,7 @@ bool UISession::powerUp()
     if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
     {
         if (uiCommon().showStartVMErrors())
-            msgCenter().cannotStartMachine(comProgress, machineName());
+            UINotificationMessage::cannotStartMachine(comProgress, machineName());
         LogRel(("GUI: Aborting startup due to power up progress issue detected...\n"));
         return false;
     }
