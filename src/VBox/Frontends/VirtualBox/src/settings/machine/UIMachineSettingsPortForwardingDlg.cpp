@@ -1,4 +1,4 @@
-/* $Id: UIMachineSettingsPortForwardingDlg.cpp 113039 2026-02-16 13:51:39Z sergey.dubov@oracle.com $ */
+/* $Id: UIMachineSettingsPortForwardingDlg.cpp 113042 2026-02-16 14:07:21Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMachineSettingsPortForwardingDlg class implementation.
  */
@@ -35,6 +35,7 @@
 #include "UIIconPool.h"
 #include "UIMachineSettingsPortForwardingDlg.h"
 #include "UIMessageCenter.h"
+#include "UINotificationCenter.h"
 #include "UITranslationEventListener.h"
 
 
@@ -43,6 +44,7 @@ UIMachineSettingsPortForwardingDlg::UIMachineSettingsPortForwardingDlg(QWidget *
     : QIDialog(pParent)
     , m_pTable(0)
     , m_pButtonBox(0)
+    , m_pNotificationCenter(0)
 {
 #ifndef VBOX_WS_MAC
     /* Assign window icon: */
@@ -51,6 +53,14 @@ UIMachineSettingsPortForwardingDlg::UIMachineSettingsPortForwardingDlg(QWidget *
 
     /* Limit the minimum size to 33% of screen size: */
     setMinimumSize(gpDesktop->screenGeometry(this).size() / 3);
+
+    /* Prepare local notification-center (parent to be assigned in the end): */
+    m_pNotificationCenter = new UINotificationCenter(0);
+    if (m_pNotificationCenter)
+    {
+        QPointer<UINotificationCenter> target = m_pNotificationCenter;
+        setProperty("notification_center", QVariant::fromValue(target));
+    }
 
     /* Create layout: */
     QVBoxLayout *pLayout = new QVBoxLayout(this);
@@ -73,6 +83,9 @@ UIMachineSettingsPortForwardingDlg::UIMachineSettingsPortForwardingDlg(QWidget *
             pLayout->addWidget(m_pButtonBox);
         }
     }
+
+    /* Assign notification-center parent (after everything else is done): */
+    m_pNotificationCenter->setParent(this);
 
     /* Apply language settings: */
     sltRetranslateUI();

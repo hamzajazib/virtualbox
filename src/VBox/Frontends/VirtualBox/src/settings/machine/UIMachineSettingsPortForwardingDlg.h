@@ -1,4 +1,4 @@
-/* $Id: UIMachineSettingsPortForwardingDlg.h 113039 2026-02-16 13:51:39Z sergey.dubov@oracle.com $ */
+/* $Id: UIMachineSettingsPortForwardingDlg.h 113042 2026-02-16 14:07:21Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMachineSettingsPortForwardingDlg class declaration.
  */
@@ -37,6 +37,7 @@
 
 /* Forward declarations: */
 class QIDialogButtonBox;
+class UINotificationCenter;
 
 /* Machine settings / Network page / NAT attachment / Port forwarding dialog: */
 class SHARED_LIBRARY_STUFF UIMachineSettingsPortForwardingDlg : public QIDialog
@@ -70,6 +71,9 @@ private:
     UIPortForwardingTable *m_pTable;
     /** Holds the button-box instance. */
     QIDialogButtonBox     *m_pButtonBox;
+
+    /** Holds the local notification-center instance. */
+    UINotificationCenter *m_pNotificationCenter;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsPortForwardingDlg_h */
