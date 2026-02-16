@@ -1,4 +1,4 @@
-/* $Id: DevPciVfio.cpp 113049 2026-02-16 18:00:59Z alexander.eichner@oracle.com $ */
+/* $Id: DevPciVfio.cpp 113050 2026-02-16 18:20:43Z alexander.eichner@oracle.com $ */
 /** @file
  * PCI passthrough device emulation using VFIO/IOMMUFD.
  */
@@ -81,9 +81,9 @@
  * is in a single IOMMU group.
  *
  * In order to override the default driver directly on boot get at the modalias for all devices using
- *     cat /sys/bus/pci/devices/0000\:0a\:00.0/modalias
+ *     cat /sys/bus/pci/devices/0000\\:0a\\:00.0/modalias
  *     pci:v00001002d0000731Fsv00001682sd00005701bc03sc00i00
- *     cat /sys/bus/pci/devices/0000\:0a\:00.1/modalias
+ *     cat /sys/bus/pci/devices/0000\\:0a\\:00.1/modalias
  *     pci:v00001002d0000AB38sv00001002sd0000AB38bc04sc03i00
  *
  * Then edit /etc/modprobe.d/local.conf and add the following lines to override the kernel module
@@ -99,7 +99,7 @@
  *
  * In case the device to be passed through to the guest doesn't suffer from broken state after a driver unload the following
  * commands will unbind the driver from the device and bind it to vfio-pci
- *    echo 0000:09:00.0 > /sys/bus/pci/devices/0000\:09\:00.0/driver/unbind (the bus, device and function number is dependent on the device)
+ *    echo 0000:09:00.0 > /sys/bus/pci/devices/0000\\:09\\:00.0/driver/unbind (the bus, device and function number is dependent on the device)
  *    modprobe vfio-pci
  *    echo 10ec 8126 > /sys/bus/pci/drivers/vfio-pci/new_id (the two hex numbers are the PCI vendor and device ID of the device being passed through)
  *
@@ -119,8 +119,8 @@
  *
  * If you intend to pass through multiple devices you have to change the pci-vfio instance number to 1, 2, etc.
  * and adjust the PCI device number accordingly
- *    VBoxManage setextradata vmname "VBoxInternal/Devices/pci-vfio/<instance>/..."
- *    VBoxManage setextradata vmname "VBoxInternal/Devices/pci-vfio/<instance>/PCIDeviceNo" <instance>
+ *    VBoxManage setextradata vmname "VBoxInternal/Devices/pci-vfio/instance/..."
+ *    VBoxManage setextradata vmname "VBoxInternal/Devices/pci-vfio/instance/PCIDeviceNo" instance
  *
  * The ExposeVga setting is only required for graphics card devices which expose the legacy VGA I/O ranges to the guest
  * so it can output early during boot. However you need to disable the VirtualBox emulated graphics controller or starting the VM
