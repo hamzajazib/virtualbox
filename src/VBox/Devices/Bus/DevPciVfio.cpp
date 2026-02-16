@@ -1,4 +1,4 @@
-/* $Id: DevPciVfio.cpp 113048 2026-02-16 17:43:34Z alexander.eichner@oracle.com $ */
+/* $Id: DevPciVfio.cpp 113049 2026-02-16 18:00:59Z alexander.eichner@oracle.com $ */
 /** @file
  * PCI passthrough device emulation using VFIO/IOMMUFD.
  */
@@ -80,14 +80,14 @@
  * As this is a multi function device all functions need to be passed through. Also ensure that the device being passed through
  * is in a single IOMMU group.
  *
- * In order to override the default driver directly on boot get at the modalias for all devices using:
+ * In order to override the default driver directly on boot get at the modalias for all devices using
  *     cat /sys/bus/pci/devices/0000\:0a\:00.0/modalias
  *     pci:v00001002d0000731Fsv00001682sd00005701bc03sc00i00
  *     cat /sys/bus/pci/devices/0000\:0a\:00.1/modalias
  *     pci:v00001002d0000AB38sv00001002sd0000AB38bc04sc03i00
  *
  * Then edit /etc/modprobe.d/local.conf and add the following lines to override the kernel module
- * for the devices (insert your modalias output for the devices):
+ * for the devices (insert your modalias output for the devices)
  *     alias pci:v00001002d0000AB38sv00001002sd0000AB38bc04sc03i00 vfio-pci
  *     alias pci:v00001002d0000731Fsv00001682sd00005701bc03sc00i00 vfio-pci
  *
@@ -98,34 +98,34 @@
  * have vfio0 and vfio1.
  *
  * In case the device to be passed through to the guest doesn't suffer from broken state after a driver unload the following
- * commands will unbind the driver from the device and bind it to vfio-pci:
+ * commands will unbind the driver from the device and bind it to vfio-pci
  *    echo 0000:09:00.0 > /sys/bus/pci/devices/0000\:09\:00.0/driver/unbind (the bus, device and function number is dependent on the device)
  *    modprobe vfio-pci
  *    echo 10ec 8126 > /sys/bus/pci/drivers/vfio-pci/new_id (the two hex numbers are the PCI vendor and device ID of the device being passed through)
  *
  * Make /dev/vfio/devices/vfio0, /dev/vfio/devices/vfio1 and /dev/iommu read/write accessible to the user running the VM.
  *
- * Create a VM and configure it to make use of the ICH9 chipset and enable EFI. Then add the following extradata to the VM:
- *    VBoxManage setextradata <VM name> "VBoxInternal/Devices/ich9pcibridge/0/Config/ExpressEnabled" 1
- *    VBoxManage setextradata <VM name> "VBoxInternal/Devices/ich9pcibridge/0/Config/ExpressPortType" "RootCmplxRootPort"
- *    VBoxManage setextradata <VM name> "VBoxInternal/Devices/pci-vfio/0/Config/Fun0/ExposeVga" 1
- *    VBoxManage setextradata <VM name> "VBoxInternal/Devices/pci-vfio/0/Config/Fun0/VfioPath" /dev/vfio/devices/vfio0
- *    VBoxManage setextradata <VM name> "VBoxInternal/Devices/pci-vfio/0/Config/Fun1/VfioPath" /dev/vfio/devices/vfio1
- *    VBoxManage setextradata <VM name> "VBoxInternal/Devices/pci-vfio/0/Config/IommuPath" /dev/iommu
- *    VBoxManage setextradata <VM name> "VBoxInternal/Devices/pci-vfio/0/PCIBusNo" 1
- *    VBoxManage setextradata <VM name> "VBoxInternal/Devices/pci-vfio/0/PCIDeviceNo" 0
- *    VBoxManage setextradata <VM name> "VBoxInternal/Devices/pci-vfio/0/PCIFunctionNo" 0
- *    VBoxManage setextradata <VM name> "VBoxInternal/Devices/pci-vfio/0/Trusted" 1
+ * Create a VM and configure it to make use of the ICH9 chipset and enable EFI. Then add the following extradata to the VM
+ *    VBoxManage setextradata vmname "VBoxInternal/Devices/ich9pcibridge/0/Config/ExpressEnabled" 1
+ *    VBoxManage setextradata vmname "VBoxInternal/Devices/ich9pcibridge/0/Config/ExpressPortType" "RootCmplxRootPort"
+ *    VBoxManage setextradata vmname "VBoxInternal/Devices/pci-vfio/0/Config/Fun0/ExposeVga" 1
+ *    VBoxManage setextradata vmname "VBoxInternal/Devices/pci-vfio/0/Config/Fun0/VfioPath" /dev/vfio/devices/vfio0
+ *    VBoxManage setextradata vmname "VBoxInternal/Devices/pci-vfio/0/Config/Fun1/VfioPath" /dev/vfio/devices/vfio1
+ *    VBoxManage setextradata vmname "VBoxInternal/Devices/pci-vfio/0/Config/IommuPath" /dev/iommu
+ *    VBoxManage setextradata vmname "VBoxInternal/Devices/pci-vfio/0/PCIBusNo" 1
+ *    VBoxManage setextradata vmname "VBoxInternal/Devices/pci-vfio/0/PCIDeviceNo" 0
+ *    VBoxManage setextradata vmname "VBoxInternal/Devices/pci-vfio/0/PCIFunctionNo" 0
+ *    VBoxManage setextradata vmname "VBoxInternal/Devices/pci-vfio/0/Trusted" 1
  *
  * If you intend to pass through multiple devices you have to change the pci-vfio instance number to 1, 2, etc.
- * and adjust the PCI device number accordingly:
- *    VBoxManage setextradata <VM name> "VBoxInternal/Devices/pci-vfio/<instance>/..."
- *    VBoxManage setextradata <VM name> "VBoxInternal/Devices/pci-vfio/<instance>/PCIDeviceNo" <instance>
+ * and adjust the PCI device number accordingly
+ *    VBoxManage setextradata vmname "VBoxInternal/Devices/pci-vfio/<instance>/..."
+ *    VBoxManage setextradata vmname "VBoxInternal/Devices/pci-vfio/<instance>/PCIDeviceNo" <instance>
  *
  * The ExposeVga setting is only required for graphics card devices which expose the legacy VGA I/O ranges to the guest
  * so it can output early during boot. However you need to disable the VirtualBox emulated graphics controller or starting the VM
- * fails because both devices want to register those ranges. Disable the emulated graphics controller with:
- *    VBoxManage modifyvm <VM name> --graphicscontroller none
+ * fails because both devices want to register those ranges. Disable the emulated graphics controller with
+ *    VBoxManage modifyvm vmname --graphicscontroller none
  *
  * After that you can start the VM with either the usual GUI or VBoxHeadless.
  */
