@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.h 113044 2026-02-16 14:57:20Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.h 113051 2026-02-17 09:39:27Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class declaration.
  */
@@ -390,7 +390,6 @@ public:
         bool warnAboutNetworkInterfaceNotFound(const QString &strMachineName, const QString &strIfNames) const;
 
         bool warnAboutGuruMeditation(const QString &strLogFolder);
-        void showRuntimeError(MessageType emnMessageType, const QString &strErrorId, const QString &strErrorMsg) const;
 
         bool confirmInputCapture(bool &fAutoConfirmed) const;
         bool confirmGoingFullscreen(const QString &strHotKey) const;

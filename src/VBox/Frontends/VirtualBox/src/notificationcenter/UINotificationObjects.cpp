@@ -1,4 +1,4 @@
-/* $Id: UINotificationObjects.cpp 113044 2026-02-16 14:57:20Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationObjects.cpp 113051 2026-02-17 09:39:27Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationObjects implementations.
  */
@@ -618,6 +618,94 @@ void UINotificationMessage::warnAboutStateChange(QWidget *pParent)
                   "warnAboutStateChange",
                   QString(),
                   pParent);
+}
+
+/* static */
+void UINotificationMessage::showRuntimeError(NotificationType emnNotificationType,
+                                             const QString &strErrorId,
+                                             const QString &strErrorMsg)
+{
+    /* Gather suitable severity and confirm id: */
+    QString strSeverity;
+    QByteArray autoConfimId = "showRuntimeError.";
+    switch (emnNotificationType)
+    {
+        case NotificationType_Warning:
+        {
+            strSeverity = QApplication::translate("UIMessageCenter", "<nobr>Warning</nobr>", "runtime error info");
+            autoConfimId += "warning.";
+            break;
+        }
+        case NotificationType_Error:
+        {
+            strSeverity = QApplication::translate("UIMessageCenter", "<nobr>Non-Fatal Error</nobr>", "runtime error info");
+            autoConfimId += "error.";
+            break;
+        }
+        case NotificationType_Critical:
+        {
+            strSeverity = QApplication::translate("UIMessageCenter", "<nobr>Fatal Error</nobr>", "runtime error info");
+            autoConfimId += "fatal.";
+            break;
+        }
+        default:
+            break;
+    }
+    autoConfimId += strErrorId.toUtf8();
+
+    /* Format error-details: */
+    QString formatted("<!--EOM-->");
+    if (!strErrorMsg.isEmpty())
+        formatted.prepend(QString("<p>%1.</p>").arg(UITranslator::emphasize(strErrorMsg)));
+    if (!strErrorId.isEmpty())
+        formatted += QString("<table bgcolor=%1 border=0 cellspacing=5 "
+                             "cellpadding=0 width=100%>"
+                             "<tr><td>%2</td><td>%3</td></tr>"
+                             "<tr><td>%4</td><td>%5</td></tr>"
+                             "</table>")
+                             .arg(QApplication::palette().color(QPalette::Active, QPalette::Window).name(QColor::HexRgb))
+                             .arg(QApplication::translate("UIMessageCenter", "<nobr>Error ID:</nobr>", "runtime error info"), strErrorId)
+                             .arg(QApplication::translate("UIMessageCenter", "Severity:", "runtime error info"), strSeverity);
+    if (!formatted.isEmpty())
+        formatted = "<qt>" + formatted + "</qt>";
+
+    /* Show the error: */
+    switch (emnNotificationType)
+    {
+        case NotificationType_Warning:
+        {
+            createMessage(
+                strSeverity,
+                QApplication::translate("UIMessageCenter", "<p>The virtual machine execution ran into a non-fatal problem as "
+                                                           "described below. We suggest that you take appropriate action to "
+                                                           "prevent the problem from recurring.</p>") + formatted,
+                autoConfimId.data());
+            break;
+        }
+        case NotificationType_Error:
+        {
+            createMessage(
+                strSeverity,
+                QApplication::translate("UIMessageCenter", "<p>An error has occurred during virtual machine execution! The "
+                                                           "error details are shown below. You may try to correct the error "
+                                                           "and resume the virtual machine execution.</p>") + formatted,
+                autoConfimId.data());
+            break;
+        }
+        case NotificationType_Critical:
+        {
+            createBlockingMessage(
+                strSeverity,
+                QApplication::translate("UIMessageCenter", "<p>A fatal error has occurred during virtual machine execution! "
+                                                           "The virtual machine will be powered off. Please copy the following "
+                                                           "error message using the clipboard to help diagnose the "
+                                                           "problem:</p>") + formatted,
+                autoConfimId.data());
+            break;
+        }
+        default:
+            break;
+    }
 }
 
 /* static */

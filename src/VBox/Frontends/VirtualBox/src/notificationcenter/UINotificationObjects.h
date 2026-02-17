@@ -1,4 +1,4 @@
-/* $Id: UINotificationObjects.h 113044 2026-02-16 14:57:20Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationObjects.h 113051 2026-02-17 09:39:27Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationObjects declarations.
  */
@@ -96,6 +96,17 @@ class SHARED_LIBRARY_STUFF UINotificationMessage : public UINotificationSimple
     Q_OBJECT;
 
 public:
+
+    /** Possible notification types <= coped from MessageType. */
+    enum NotificationType
+    {
+        NotificationType_Info = 1,
+        NotificationType_Question,
+        NotificationType_Warning,
+        NotificationType_Error,
+        NotificationType_Critical,
+        NotificationType_GuruMeditation
+    };
 
     /** @name Simple general warnings.
       * @{ */
@@ -294,6 +305,14 @@ public:
 
     /** @name Simple Runtime UI warnings.
       * @{ */
+        /** Notifies about runtime error.
+          * @param  enmType      Brings the notification type.
+          * @param  strErrorId   Brings the error ID.
+          * @param  strErrorMsg  Brings the error message. */
+        static void showRuntimeError(NotificationType enmType,
+                                     const QString &strErrorId,
+                                     const QString &strErrorMsg);
+
         /** Notifies about inability to mount image.
           * @param  strMachineName  Brings the machine name.
           * @param  strMediumName   Brings the medium name. */

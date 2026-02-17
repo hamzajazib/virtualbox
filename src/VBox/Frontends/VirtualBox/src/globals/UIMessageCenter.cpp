@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.cpp 113044 2026-02-16 14:57:20Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.cpp 113051 2026-02-17 09:39:27Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class implementation.
  */
@@ -1535,90 +1535,6 @@ bool UIMessageCenter::warnAboutGuruMeditation(const QString &strLogFolder)
                           0 /* auto-confirm id */,
                           QIMessageBox::tr("OK"),
                           tr("Ignore"));
-}
-
-void UIMessageCenter::showRuntimeError(MessageType emnMessageType, const QString &strErrorId, const QString &strErrorMsg) const
-{
-    /* Gather suitable severity and confirm id: */
-    QString strSeverity;
-    QByteArray autoConfimId = "showRuntimeError.";
-    switch (emnMessageType)
-    {
-        case MessageType_Warning:
-        {
-            strSeverity = tr("<nobr>Warning</nobr>", "runtime error info");
-            autoConfimId += "warning.";
-            break;
-        }
-        case MessageType_Error:
-        {
-            strSeverity = tr("<nobr>Non-Fatal Error</nobr>", "runtime error info");
-            autoConfimId += "error.";
-            break;
-        }
-        case MessageType_Critical:
-        {
-            strSeverity = tr("<nobr>Fatal Error</nobr>", "runtime error info");
-            autoConfimId += "fatal.";
-            break;
-        }
-        default:
-            break;
-    }
-    autoConfimId += strErrorId.toUtf8();
-
-    /* Format error-details: */
-    QString formatted("<!--EOM-->");
-    if (!strErrorMsg.isEmpty())
-        formatted.prepend(QString("<p>%1.</p>").arg(UITranslator::emphasize(strErrorMsg)));
-    if (!strErrorId.isEmpty())
-        formatted += QString("<table bgcolor=%1 border=0 cellspacing=5 "
-                             "cellpadding=0 width=100%>"
-                             "<tr><td>%2</td><td>%3</td></tr>"
-                             "<tr><td>%4</td><td>%5</td></tr>"
-                             "</table>")
-                             .arg(QApplication::palette().color(QPalette::Active, QPalette::Window).name(QColor::HexRgb))
-                             .arg(tr("<nobr>Error ID:</nobr>", "runtime error info"), strErrorId)
-                             .arg(tr("Severity:", "runtime error info"), strSeverity);
-    if (!formatted.isEmpty())
-        formatted = "<qt>" + formatted + "</qt>";
-
-    /* Show the error: */
-    switch (emnMessageType)
-    {
-        case MessageType_Warning:
-        {
-            /** @todo r=bird: This is a very annoying message as it refers to invisible text
-             * below.  User have to expand "Details" to see what actually went wrong.
-             * Probably a good idea to check strErrorId and see if we can come up with better
-             * messages here, at least for common stuff like DvdOrFloppyImageInaccesssible... */
-            error(0, emnMessageType,
-                  tr("<p>The virtual machine execution ran into a non-fatal problem as described below. "
-                     "We suggest that you take appropriate action to prevent the problem from recurring.</p>"),
-                  formatted, autoConfimId.data());
-            break;
-        }
-        case MessageType_Error:
-        {
-            error(0, emnMessageType,
-                  tr("<p>An error has occurred during virtual machine execution! "
-                     "The error details are shown below. You may try to correct the error "
-                     "and resume the virtual machine execution.</p>"),
-                  formatted, autoConfimId.data());
-            break;
-        }
-        case MessageType_Critical:
-        {
-            error(0, emnMessageType,
-                  tr("<p>A fatal error has occurred during virtual machine execution! "
-                     "The virtual machine will be powered off. Please copy the following error message "
-                     "using the clipboard to help diagnose the problem:</p>"),
-                  formatted, autoConfimId.data());
-            break;
-        }
-        default:
-            break;
-    }
 }
 
 bool UIMessageCenter::confirmInputCapture(bool &fAutoConfirmed) const
