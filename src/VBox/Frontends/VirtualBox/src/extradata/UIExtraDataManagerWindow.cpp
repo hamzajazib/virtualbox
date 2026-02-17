@@ -1,4 +1,4 @@
-/* $Id: UIExtraDataManagerWindow.cpp 112953 2026-02-11 14:30:58Z sergey.dubov@oracle.com $ */
+/* $Id: UIExtraDataManagerWindow.cpp 113052 2026-02-17 09:56:11Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIExtraDataManagerWindow class implementation.
  */
@@ -236,7 +236,7 @@ void UIAddExtraDataRecordDialog::prepare()
     AssertPtrReturnVoid(pMainLayout);
     {
         /* Create dialog validator group: */
-        QObjectValidatorGroup *pValidatorGroup = new QObjectValidatorGroup(this);
+        QIObjectValidatorGroup *pValidatorGroup = new QIObjectValidatorGroup(this);
         AssertReturnVoid(pValidatorGroup);
         /* Create input-layout: */
         QGridLayout *pInputLayout = new QGridLayout;
@@ -258,13 +258,13 @@ void UIAddExtraDataRecordDialog::prepare()
                 m_pEditorKey->addItems(knownExtraDataKeys());
                 pLabelKey->setBuddy(m_pEditorKey);
                 /* Create key-editor validator: */
-                QObjectValidator *pKeyValidator
-                    = new QObjectValidator(new QRegularExpressionValidator(QRegularExpression("[\\s\\S]+"), this));
+                QIObjectValidator *pKeyValidator
+                    = new QIObjectValidator(new QRegularExpressionValidator(QRegularExpression("[\\s\\S]+"), this));
                 AssertPtrReturnVoid(pKeyValidator);
                 {
                     /* Configure key-editor validator: */
                     connect(m_pEditorKey, &QComboBox::editTextChanged,
-                            pKeyValidator, &QObjectValidator::sltValidate);
+                            pKeyValidator, &QIObjectValidator::sltValidate);
                     /* Add key-editor validator into dialog validator group: */
                     pValidatorGroup->addObjectValidator(pKeyValidator);
                 }
@@ -285,13 +285,13 @@ void UIAddExtraDataRecordDialog::prepare()
                 /* Configure value-editor: */
                 pLabelValue->setBuddy(m_pEditorValue);
                 /* Create value-editor validator: */
-                QObjectValidator *pValueValidator
-                    = new QObjectValidator(new QRegularExpressionValidator(QRegularExpression("[\\s\\S]+"), this));
+                QIObjectValidator *pValueValidator
+                    = new QIObjectValidator(new QRegularExpressionValidator(QRegularExpression("[\\s\\S]+"), this));
                 AssertPtrReturnVoid(pValueValidator);
                 {
                     /* Configure value-editor validator: */
                     connect(m_pEditorValue, &QLineEdit::textEdited,
-                            pValueValidator, &QObjectValidator::sltValidate);
+                            pValueValidator, &QIObjectValidator::sltValidate);
                     /* Add value-editor validator into dialog validator group: */
                     pValidatorGroup->addObjectValidator(pValueValidator);
                 }
@@ -312,7 +312,7 @@ void UIAddExtraDataRecordDialog::prepare()
             pButtonBox->button(QDialogButtonBox::Ok)->setAutoDefault(true);
             pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(pValidatorGroup->result());
             pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
-            connect(pValidatorGroup, &QObjectValidatorGroup::sigValidityChange,
+            connect(pValidatorGroup, &QIObjectValidatorGroup::sigValidityChange,
                     pButtonBox->button(QDialogButtonBox::Ok), &QPushButton::setEnabled);
             connect(pButtonBox, &QIDialogButtonBox::accepted, this, &QIDialog::accept);
             connect(pButtonBox, &QIDialogButtonBox::rejected, this, &QIDialog::reject);

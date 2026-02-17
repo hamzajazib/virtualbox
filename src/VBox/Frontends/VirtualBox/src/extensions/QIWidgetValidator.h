@@ -1,4 +1,4 @@
-/* $Id: QIWidgetValidator.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: QIWidgetValidator.h 113052 2026-02-17 09:56:11Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Qt extensions: QIWidgetValidator class declaration.
  */
@@ -41,7 +41,7 @@
 
 /** QObject sub-class,
   * providing passed QObject with validation routine. */
-class SHARED_LIBRARY_STUFF QObjectValidator : public QObject
+class SHARED_LIBRARY_STUFF QIObjectValidator : public QObject
 {
     Q_OBJECT;
 
@@ -55,7 +55,7 @@ public:
     /** Constructs object validator passing @a pParent to the base-class.
       * @param  pValidator  Brings the validator passed on to the OObject
       *                     children and used to perform validation itself. */
-    QObjectValidator(QValidator *pValidator, QObject *pParent = 0);
+    QIObjectValidator(QValidator *pValidator, QObject *pParent = 0);
 
     /** Returns last validation state. */
     QValidator::State state() const { return m_enmState; }
@@ -79,8 +79,8 @@ private:
 
 
 /** QObject sub-class,
-  * which can group various QObjectValidator instances to operate on. */
-class SHARED_LIBRARY_STUFF QObjectValidatorGroup : public QObject
+  * which can group various QIObjectValidator instances to operate on. */
+class SHARED_LIBRARY_STUFF QIObjectValidatorGroup : public QObject
 {
     Q_OBJECT;
 
@@ -92,12 +92,12 @@ signals:
 public:
 
     /** Constructs validation group passing @a pParent to the base-class. */
-    QObjectValidatorGroup(QObject *pParent);
+    QIObjectValidatorGroup(QObject *pParent);
 
     /** Adds @a pObjectValidator.
       * @note The ownership of @a pObjectValidator is transferred to the group,
       *       and it's the group's responsibility to delete it. */
-    void addObjectValidator(QObjectValidator *pObjectValidator);
+    void addObjectValidator(QIObjectValidator *pObjectValidator);
 
     /** Returns last validation result. */
     bool result() const { return m_fResult; }
@@ -113,7 +113,7 @@ private:
     static bool toResult(QValidator::State enmState);
 
     /** Holds object-validators and their states. */
-    QMap<QObjectValidator*, bool> m_group;
+    QMap<QIObjectValidator*, bool> m_group;
 
     /** Holds validation result. */
     bool m_fResult;
