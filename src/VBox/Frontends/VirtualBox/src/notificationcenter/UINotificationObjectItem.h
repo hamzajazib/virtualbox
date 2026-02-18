@@ -1,4 +1,4 @@
-/* $Id: UINotificationObjectItem.h 113075 2026-02-18 16:06:47Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationObjectItem.h 113078 2026-02-18 18:30:11Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINotificationObjectItem class declaration.
  */
@@ -38,15 +38,18 @@
 #include <iprt/cdefs.h> // for RT_OVERRIDE stuff
 
 /* Forward declarations: */
+class QAbstractButton;
 class QHBoxLayout;
 class QLabel;
 class QProgressBar;
 class QPushButton;
 class QVBoxLayout;
+class QIDialogButtonBox;
 class QIRichTextLabel;
 class QIToolButton;
 class UINotificationObject;
 class UINotificationProgress;
+class UINotificationQuestion;
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 class UINotificationDownloader;
 #endif
@@ -118,6 +121,43 @@ private slots:
 
     /** Handles help request. */
     void sltHandleHelpRequest();
+};
+
+/** UINotificationObjectItem extension for notification-question. */
+class UINotificationQuestionItem : public UINotificationObjectItem
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs notification-question item, passing @a pParent to the base-class.
+      * @param  pObject     Brings the notification-object this item created for.
+      * @param  iWidthHint  Brings the width hint this item could use to adjust details label size.
+      * @param  fToggled    Brings whether notification details pane should be initially toggled. */
+    UINotificationQuestionItem(QWidget *pParent,
+                               UINotificationObject *pObject,
+                               int iWidthHint,
+                               bool fToggled);
+
+protected:
+
+    /** Prepares widgets. */
+    virtual void prepareWidgets() RT_OVERRIDE RT_FINAL;
+    /** Prepares connections. */
+    virtual void prepareConnections() RT_OVERRIDE RT_FINAL;
+
+private slots:
+
+    /** Handles @a pButton click. */
+    void sltHandleButtonClick(QAbstractButton *pButton);
+
+private:
+
+    /** Holds the notification-question this item created for. */
+    UINotificationQuestion *question() const;
+
+    /** Holds the button-box instance. */
+    QIDialogButtonBox *m_pButtonBox;
 };
 
 /** UINotificationObjectItem extension for notification-progress. */

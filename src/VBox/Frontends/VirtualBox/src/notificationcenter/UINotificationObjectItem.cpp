@@ -1,4 +1,4 @@
-/* $Id: UINotificationObjectItem.cpp 113075 2026-02-18 16:06:47Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationObjectItem.cpp 113078 2026-02-18 18:30:11Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINotificationObjectItem class implementation.
  */
@@ -37,12 +37,14 @@
 #include <QVBoxLayout>
 
 /* GUI includes: */
+#include "QIDialogButtonBox.h"
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
 #include "UIHelpBrowserDialog.h"
 #include "UIIconPool.h"
 #include "UINotificationObject.h"
 #include "UINotificationObjectItem.h"
+#include "UINotificationQuestion.h"
 #include "UITranslationEventListener.h"
 
 
@@ -294,6 +296,102 @@ void UINotificationObjectItem::sltHandleHelpRequest()
 
 
 /*********************************************************************************************************************************
+*   Class UINotificationQuestionItem implementation.                                                                             *
+*********************************************************************************************************************************/
+
+UINotificationQuestionItem::UINotificationQuestionItem(QWidget *pParent,
+                                                       UINotificationObject *pObject,
+                                                       int iWidthHint,
+                                                       bool fToggled)
+    : UINotificationObjectItem(pParent, pObject, iWidthHint, fToggled)
+    , m_pButtonBox(0)
+{
+}
+
+void UINotificationQuestionItem::prepareWidgets()
+{
+    /* Call to base-class: */
+    UINotificationObjectItem::prepareWidgets();
+
+    /* Main layout was prepared in base-class: */
+    if (m_pLayoutMain)
+    {
+        /* Acquire button names and check their amount: */
+        UINotificationQuestion *pQuestion = question();
+        AssertPtrReturnVoid(pQuestion);
+        const QStringList buttonNames = pQuestion->buttonNames();
+        const int iButtonAmount = buttonNames.size();
+        AssertReturnVoid(iButtonAmount >= 2 && iButtonAmount < 3);
+
+        /* Compose a list of button types: */
+        QList<QDialogButtonBox::StandardButton> buttonTypes;
+            buttonTypes << QDialogButtonBox::Cancel
+                        << QDialogButtonBox::Ok;
+        if (iButtonAmount == 3)
+            buttonTypes << QDialogButtonBox::Yes;
+
+        /* Compose a flag of button types: */
+        QDialogButtonBox::StandardButtons enmButtons = QDialogButtonBox::NoButton;
+        foreach (QDialogButtonBox::StandardButton enmButtonType, buttonTypes)
+            enmButtons |= enmButtonType;
+
+        /* Preparing button-box: */
+        m_pButtonBox = new QIDialogButtonBox(enmButtons, Qt::Horizontal, this);
+        if (m_pButtonBox)
+        {
+            /* Apply button names: */
+            for (int i = 0; i < iButtonAmount; ++i)
+            {
+                const QString strName = buttonNames.value(i);
+                if (!strName.isEmpty())
+                {
+                    QPushButton *pButton = m_pButtonBox->button(buttonTypes.value(i));
+                    if (pButton)
+                        pButton->setText(strName);
+                }
+            }
+
+            m_pLayoutMain->addWidget(m_pButtonBox);
+        }
+    }
+}
+
+void UINotificationQuestionItem::prepareConnections()
+{
+    /* Call to base-class: */
+    UINotificationObjectItem::prepareConnections();
+
+    /* Connect buttons: */
+    connect(m_pButtonBox, &QIDialogButtonBox::clicked, this, &UINotificationQuestionItem::sltHandleButtonClick);
+}
+
+void UINotificationQuestionItem::sltHandleButtonClick(QAbstractButton *pButton)
+{
+    /* Sanity check: */
+    AssertPtrReturnVoid(pButton);
+    UINotificationQuestion *pQuestion = question();
+    AssertPtrReturnVoid(pQuestion);
+
+    /* Acquire result: */
+    QMap<Question::Result, QAbstractButton*> results;
+    results[Question::Result_Accept] = m_pButtonBox->button(QDialogButtonBox::Ok);
+    results[Question::Result_AcceptAlternative] = m_pButtonBox->button(QDialogButtonBox::Yes);
+    const Question::Result enmResult = results.key(pButton, Question::Result_Cancel);
+
+    /* Assign result: */
+    pQuestion->setResult(enmResult);
+
+    /* Click close button: */
+    m_pButtonClose->click();
+}
+
+UINotificationQuestion *UINotificationQuestionItem::question() const
+{
+    return qobject_cast<UINotificationQuestion*>(m_pObject);
+}
+
+
+/*********************************************************************************************************************************
 *   Class UINotificationProgressItem implementation.                                                                             *
 *********************************************************************************************************************************/
 
@@ -539,7 +637,9 @@ UINotificationObjectItem *UINotificationItem::create(QWidget *pParent,
     UINotificationObjectItem *pItem = 0;
 
     /* Handle known types: */
-    if (pObject->inherits("UINotificationProgress"))
+    if (pObject->inherits("UINotificationQuestion"))
+        pItem = new UINotificationQuestionItem(pParent, pObject, iWidthHint, fToggled);
+    else if (pObject->inherits("UINotificationProgress"))
         pItem = new UINotificationProgressItem(pParent, pObject, iWidthHint);
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     else if (pObject->inherits("UINotificationDownloader"))
