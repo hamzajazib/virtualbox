@@ -1,4 +1,4 @@
-/* $Id: NEMR3NativeTemplate-linux.cpp.h 112793 2026-02-02 18:36:58Z alexander.eichner@oracle.com $ */
+/* $Id: NEMR3NativeTemplate-linux.cpp.h 113079 2026-02-18 20:15:09Z klaus.espenlaub@oracle.com $ */
 /** @file
  * NEM - Native execution manager, native ring-3 Linux backend, common bits for x86 and arm64.
  */
@@ -171,6 +171,9 @@
 /*
  * Capabilities
  */
+#ifndef KVM_CAP_PPC_NESTED_HV
+# define KVM_CAP_PPC_NESTED_HV 160
+#endif
 #ifndef KVM_CAP_HYPERV_SEND_IPI
 # define KVM_CAP_HYPERV_SEND_IPI 161
 #endif
@@ -523,7 +526,7 @@ static int nemR3LnxInitCheckCapabilities(PVM pVM, PRTERRINFO pErrInfo)
         CAP_ENTRY__U(17),
         CAP_ENTRY__L(KVM_CAP_IOMMU),
         CAP_ENTRY__U(19), /* Buggy KVM_CAP_JOIN_MEMORY_REGIONS? */
-        CAP_ENTRY__U(20), /* Mon-working KVM_CAP_DESTROY_MEMORY_REGION? */
+        CAP_ENTRY__U(20), /* Non-working KVM_CAP_DESTROY_MEMORY_REGION? */
         CAP_ENTRY__L(KVM_CAP_DESTROY_MEMORY_REGION_WORKS),   /* 21 */
         CAP_ENTRY__L(KVM_CAP_USER_NMI),
 #ifdef __KVM_HAVE_GUEST_DEBUG
