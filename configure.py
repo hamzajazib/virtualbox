@@ -11,7 +11,7 @@
 # pylint: disable=invalid-name
 # pylint: disable=multiple-statements
 # pylint: disable=line-too-long
-# $Id: configure.py 113097 2026-02-19 17:19:33Z andreas.loeffler@oracle.com $
+# $Id: configure.py 113098 2026-02-19 17:23:36Z andreas.loeffler@oracle.com $
 #
 # The following checks for the right (i.e. most recent) Python binary available
 # and re-starts the script using that binary (like a shell wrapper).
@@ -90,7 +90,7 @@ SPDX-License-Identifier: GPL-3.0-only
 # External Python modules or other dependencies are not allowed!
 #
 
-__revision__ = "$Revision: 113097 $"
+__revision__ = "$Revision: 113098 $"
 
 import argparse
 import collections;
@@ -526,7 +526,7 @@ def checkWhich(sCmdName, sToolDesc = None, sCustomPath = None, asVersionSwitches
                 fWinCreationFlags = 0;
                 if g_enmHostOS == BuildTarget.WINDOWS: # Watcom wlink hacks:
                     fWinCreationFlags = getattr(subprocess, 'DETACHED_PROCESS', 0) | getattr(subprocess, 'CREATE_NO_WINDOW', 0);
-                oProc = subprocess.run([sCmdPath, sSwitch],
+                oProc = subprocess.run([ sCmdPath, sSwitch ],
                                        stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                        check=False, timeout=10, creationflags=fWinCreationFlags);
                 if oProc.returncode == 0:
@@ -772,7 +772,7 @@ def compileAndRun(sName, asIncPaths, asLibPaths, asIncFiles, asLibFiles, \
                 # Try executing the compiled binary and capture stdout + stderr.
                 try:
                     printVerbose(2, f"Executing '{sFileImage}' ...");
-                    oProc = subprocess.run([sFileImage], env = oProcEnv.env, shell = True, stdout = subprocess.PIPE, stderr = subprocess.STDOUT, check = False, timeout = 10);
+                    oProc = subprocess.run([ sFileImage ], env = oProcEnv.env, shell = True, stdout = subprocess.PIPE, stderr = subprocess.STDOUT, check = False, timeout = 10);
                     if oProc.returncode == 0:
                         printLog(f'Running test program for {sName} successful (exit code 0)');
                         sStdOut = oProc.stdout.decode('utf-8', 'replace').strip();
@@ -837,7 +837,7 @@ def getPackageLibs(sPackageName):
         if g_enmHostOS in [ BuildTarget.LINUX, BuildTarget.SOLARIS, BuildTarget.DARWIN ]:
             # Use pkg-config on Linux and macOS.
             sCmd = f"pkg-config --libs {shlex.quote(sPackageName)}"
-            oProc = subprocess.run(sCmd, shell = True, check = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True);
+            oProc = subprocess.run([ sCmd ], shell = True, check = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True);
             if oProc \
             and oProc.returncode == 0:
                 asArg = shlex.split(oProc.stdout.strip());
@@ -919,7 +919,7 @@ def getPackageVar(sPackageName, enmPkgMgrVar : PkgMgrVar):
             raise RuntimeError('Unsupported OS');
 
         if sCmd:
-            oProc = subprocess.run(sCmd, shell = True, check = False, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True);
+            oProc = subprocess.run([ sCmd ], shell = True, check = False, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True);
             if oProc.returncode == 0 and oProc.stdout.strip():
                 sRet = oProc.stdout.strip();
                 # Output parsing.
@@ -930,7 +930,7 @@ def getPackageVar(sPackageName, enmPkgMgrVar : PkgMgrVar):
         # If pkg-config fails on Darwin, try asking brew instead.
         if g_enmHostOS == BuildTarget.DARWIN:
             sCmd = f'brew {enmPkgMgrVar[PkgMgr.BREW]} {sPackageName}';
-            oProc = subprocess.run(sCmd, shell = True, check = False, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True);
+            oProc = subprocess.run([ sCmd ], shell = True, check = False, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True);
             if oProc.returncode == 0 and oProc.stdout.strip():
                 sRet = oProc.stdout.strip();
                 return True, sRet;
@@ -2934,7 +2934,7 @@ int main()
         # Detect Xcode.
         #
         try:
-            oProc = subprocess.run(['xcode-select', '-p'], capture_output = True, check = False, universal_newlines = True)
+            oProc = subprocess.run([ 'xcode-select', '-p' ], capture_output = True, check = False, universal_newlines = True)
             if oProc.returncode == 0:
                 asPathsToCheck.extend([ oProc.stdout.strip() ]);
         except subprocess.SubprocessError:
