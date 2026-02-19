@@ -1,7 +1,7 @@
 #! /bin/sh
-# $Id: vboxadd-x11.sh 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $
+# $Id: vboxadd-x11.sh 113085 2026-02-19 11:49:12Z vadim.galitsyn@oracle.com $
 ## @file
-# Linux Additions X11 setup init script ($Revision: 112403 $)
+# Linux Additions X11 setup init script ($Revision: 113085 $)
 #
 
 #
@@ -265,8 +265,9 @@ setup()
     # needs a rule to allow this.  Send all output to /dev/null in case this is
     # completely irrelevant on the target system.
     # chcon is needed on old Fedora/Redhat systems.  No one remembers which.
+    command -v semanage > /dev/null &&
+        semanage fcontext -a -t unconfined_execmem_exec_t '/usr/bin/VBoxClient' > /dev/null 2>&1
     chcon -t unconfined_execmem_exec_t '/usr/bin/VBoxClient' > /dev/null 2>&1
-    semanage fcontext -a -t unconfined_execmem_exec_t '/usr/bin/VBoxClient' > /dev/null 2>&1
 
     # And set up VBoxClient to start when the X session does
     install_x11_startup_app "${lib_dir}/98vboxadd-xclient" "${lib_dir}/vboxclient.desktop" VBoxClient VBoxClient-all ||
@@ -589,6 +590,13 @@ EOF
 
     # Remove other files
     rm /usr/share/xserver-xorg/pci/vboxvideo.ids 2>/dev/null
+
+    # Cleanup SELinux records.
+    if command -v semanage > /dev/null; then
+        semanage fcontext -d -t lib_t "/var/lib/VBoxGuestAdditions/lib/libGL.so.1" > /dev/null 2>&1
+        semanage fcontext -d -t unconfined_execmem_exec_t '/usr/bin/VBoxClient' > /dev/null 2>&1
+    fi
+
     return 0
 }
 
@@ -617,7 +625,7 @@ status)
     dmnstatus
     ;;
 *)
-    echo "Usage: $0 {start|stop|restart|status}"
+    echo "Usage: $0 {start|stop|restart|setup|cleanup|status}"
     exit 1
 esac
 
