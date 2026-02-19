@@ -1,4 +1,4 @@
-/* $Id: UINotificationCenter.cpp 113087 2026-02-19 13:24:09Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationCenter.cpp 113088 2026-02-19 13:38:35Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINotificationCenter class implementation.
  */
@@ -274,7 +274,7 @@ void UINotificationCenter::showBlocking(UINotificationMessage *pMessage)
     AssertMsgReturnVoid(!m_pEventLoop, ("UINotificationCenter::showBlocking() is called recursively!\n"));
 
     /* Switch to extended mode: */
-    m_fExtendedMode = true;
+    setExtendedMode(true);
 
     /* Guard message for the case
      * it destroyed itself in his append call: */
@@ -305,7 +305,7 @@ void UINotificationCenter::showBlocking(UINotificationMessage *pMessage)
 
     /* Revert values back: */
     m_uId = QUuid();
-    m_fExtendedMode = false;
+    setExtendedMode(false);
 }
 
 int UINotificationCenter::showBlocking(UINotificationQuestion *pQuestion)
@@ -317,7 +317,7 @@ int UINotificationCenter::showBlocking(UINotificationQuestion *pQuestion)
     m_enmLastResult = Question::Result_Cancel;
 
     /* Switch to extended mode: */
-    m_fExtendedMode = true;
+    setExtendedMode(true);
 
     /* Guard question for the case
      * it destroyed itself in his append call: */
@@ -351,7 +351,7 @@ int UINotificationCenter::showBlocking(UINotificationQuestion *pQuestion)
 
     /* Revert values back: */
     m_uId = QUuid();
-    m_fExtendedMode = false;
+    setExtendedMode(false);
 
     /* Return actual result: */
     return m_enmLastResult;
@@ -979,6 +979,17 @@ void UINotificationCenter::paintFrame(QPainter *pPainter)
     pPainter->fillRect(QRect(0,       iMetric,            iMetric,           height() - iMetric * 2), grad5);
 }
 
+void UINotificationCenter::setExtendedMode(bool fExtended)
+{
+    m_fExtendedMode = fExtended;
+    m_pButtonOpen->setVisible(!isExtendedMode());
+    m_pButtonToggleSorting->setVisible(!isExtendedMode());
+#ifdef VBOX_NOTIFICATION_CENTER_WITH_KEEP_BUTTON
+    m_pButtonKeepFinished->setVisible(!isExtendedMode());
+#endif
+    m_pButtonRemoveFinished->setVisible(!isExtendedMode());
+}
+
 void UINotificationCenter::setAnimatedValue(int iValue)
 {
     /* Store recent value: */
@@ -1017,7 +1028,7 @@ void UINotificationCenter::adjustGeometry()
     /* Acquire minimum button width (notification-center can't shorter than this hint): */
     const int iMinimumWidth = m_pButtonOpen->minimumSizeHint().width() + iL + iR;
     /* Invent some default width for simple mode, like 200px for example: */
-    int iMaximumWidth = m_fExtendedMode ? iParentWidth : 200;
+    int iMaximumWidth = !isExtendedMode() ? 200 : iParentWidth;
     /* Make sure maximum width is more or equal to minimum one: */
     iMaximumWidth = qMax(iMinimumWidth, iMaximumWidth);
 
@@ -1028,7 +1039,7 @@ void UINotificationCenter::adjustGeometry()
         pItem->setDetailsWidthHint(iDetailsWidthHint);
 
     /* Simple mode: */
-    if (!m_fExtendedMode)
+    if (!isExtendedMode())
     {
         /* Move and resize notification-center finally: */
         move(iParentWidth - (iMinimumWidth + (double)animatedValue() / 100 * (iMaximumWidth - iMinimumWidth)), 0);
@@ -1055,7 +1066,7 @@ void UINotificationCenter::adjustMask()
 void UINotificationCenter::createItem(const QUuid &uId)
 {
     /* Create item itself: */
-    UINotificationObjectItem *pItem = UINotificationItem::create(this, m_pModel->objectById(uId), m_fExtendedMode);
+    UINotificationObjectItem *pItem = UINotificationItem::create(this, m_pModel->objectById(uId), isExtendedMode());
     m_items[uId] = pItem;
     m_pLayoutItems->insertWidget(m_enmOrder == Qt::AscendingOrder ? -1 : 0, pItem);
 }

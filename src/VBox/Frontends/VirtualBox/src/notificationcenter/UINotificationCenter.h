@@ -1,4 +1,4 @@
-/* $Id: UINotificationCenter.h 113077 2026-02-18 18:28:10Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationCenter.h 113088 2026-02-19 13:38:35Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINotificationCenter class declaration.
  */
@@ -184,6 +184,11 @@ private:
     void paintBackground(QPainter *pPainter);
     /** Paints frame using pre-configured @a pPainter. */
     void paintFrame(QPainter *pPainter);
+
+    /** Defines whether notification-center is in @a fExtended mode. */
+    void setExtendedMode(bool fExtended);
+    /** Returns whether notification-center is in extended mode. */
+    bool isExtendedMode() { return m_fExtendedMode; }
 
     /** Defines animated @a iValue. */
     void setAnimatedValue(int iValue);
