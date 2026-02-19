@@ -1,4 +1,4 @@
-/* $Id: DevPciVfio.cpp 113082 2026-02-19 10:24:14Z alexander.eichner@oracle.com $ */
+/* $Id: DevPciVfio.cpp 113083 2026-02-19 11:28:35Z alexander.eichner@oracle.com $ */
 /** @file
  * PCI passthrough device emulation using VFIO/IOMMUFD.
  */
@@ -316,17 +316,17 @@ typedef struct VFIOPCI
         struct
         {
             /** The IOMMU file descriptor. */
-            int                  iFdIommu;
+            int          iFdIommu;
             /** The IOMMU page table object id. */
-            uint32_t             idIommuHwpt;
+            uint32_t     idIommuHwpt;
         } IommuFd;
         /** VFIO container based data. */
         struct
         {
             /** The VFIO container file descriptor. */
-            int                 iFdVfioContainer;
+            int          iFdVfioContainer;
             /** The VFIO group filedescriptor. */
-            int                 iFdVfioGroup;
+            int          iFdVfioGroup;
         } VfioGroup;
     };
 
@@ -858,7 +858,7 @@ DECLCALLBACK(int) pciVfioRomRegionMapUnmap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDe
 }
 
 
-static int pciVfioSetupRom(PVFIOPCI pThis, PVFIOPCIFUN pFun, PPDMDEVINS pDevIns)
+static int pciVfioSetupRom(PVFIOPCI pThis, PVFIOPCIFUN pFun, PPDMPCIDEV pPciDev, PPDMDEVINS pDevIns)
 {
     struct vfio_region_info RegionInfo; RT_ZERO(RegionInfo);
     int rc = pciVfioQueryRegionInfo(pThis, pFun, VFIO_PCI_ROM_REGION_INDEX, &RegionInfo);
@@ -879,7 +879,7 @@ static int pciVfioSetupRom(PVFIOPCI pThis, PVFIOPCIFUN pFun, PPDMDEVINS pDevIns)
     pFun->offRom = RegionInfo.offset;
     pFun->cbRom  = RegionInfo.size;
 
-    rc = PDMDevHlpPCIIORegionCreateMmio2Ex(pDevIns, VBOX_PCI_ROM_SLOT, pFun->cbRom,
+    rc = PDMDevHlpPCIIORegionCreateMmio2Ex(pDevIns, pPciDev, VBOX_PCI_ROM_SLOT, pFun->cbRom,
                                            PCI_ADDRESS_SPACE_MEM_PREFETCH, 0 /*fFlags*/,
                                            pciVfioRomRegionMapUnmap, "ROM",
                                            &pFun->pvRom, &pFun->hRom);
@@ -2325,7 +2325,9 @@ static DECLCALLBACK(int) pciVfioConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                 iInstance, iPciFun, DevInfo.num_irqs,
                 iInstance, iPciFun, DevInfo.cap_offset));
 
-        /** @todo Only support PCI devices. */
+        if (!(DevInfo.flags & VFIO_DEVICE_FLAGS_PCI))
+            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                                       N_("VFIO device is not a PCI/PCI Express device. This configuration is not supported"));
 
         /* Setup access to the PCI config space first. */
         struct vfio_region_info RegionInfo;
@@ -2389,7 +2391,7 @@ static DECLCALLBACK(int) pciVfioConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         else
             pFun->fVga = false;
 
-        rc = pciVfioSetupRom(pThis, pFun, pDevIns);
+        rc = pciVfioSetupRom(pThis, pFun, pPciDev, pDevIns);
         if (RT_FAILURE(rc))
             return rc;
 

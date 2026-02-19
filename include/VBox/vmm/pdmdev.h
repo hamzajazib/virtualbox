@@ -8299,8 +8299,9 @@ DECLINLINE(int) PDMDevHlpPCIIORegionCreateMmio2FromExistingEx(PPDMDEVINS pDevIns
  *
  * @returns VBox status code.
  * @param   pDevIns         The device instance to register the ports with.
- * @param   cbRegion        The size of the region in bytes.
+ * @param   pPciDev         The PCI device structure.
  * @param   iPciRegion      The PCI device region.
+ * @param   cbRegion        The size of the region in bytes.
  * @param   enmType         PCI_ADDRESS_SPACE_MEM or
  *                          PCI_ADDRESS_SPACE_MEM_PREFETCH, optionally or-ing in
  *                          PCI_ADDRESS_SPACE_BAR64 or PCI_ADDRESS_SPACE_BAR32.
@@ -8315,15 +8316,15 @@ DECLINLINE(int) PDMDevHlpPCIIORegionCreateMmio2FromExistingEx(PPDMDEVINS pDevIns
  * @param   phRegion        Where to return the MMIO2 region handle.
  *
  */
-DECLINLINE(int) PDMDevHlpPCIIORegionCreateMmio2Ex(PPDMDEVINS pDevIns, uint32_t iPciRegion, RTGCPHYS cbRegion,
+DECLINLINE(int) PDMDevHlpPCIIORegionCreateMmio2Ex(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iPciRegion, RTGCPHYS cbRegion,
                                                   PCIADDRESSSPACE enmType, uint32_t fMmio2Flags, PFNPCIIOREGIONMAP pfnMapUnmap,
                                                   const char *pszDesc, void **ppvMapping, PPGMMMIO2HANDLE phRegion)
 
 {
-    int rc = pDevIns->pHlpR3->pfnMmio2Create(pDevIns, pDevIns->apPciDevs[0], iPciRegion << 16, cbRegion, fMmio2Flags,
+    int rc = pDevIns->pHlpR3->pfnMmio2Create(pDevIns, pPciDev, iPciRegion << 16, cbRegion, fMmio2Flags,
                                              pszDesc, ppvMapping, phRegion);
     if (RT_SUCCESS(rc))
-        rc = pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pDevIns->apPciDevs[0], iPciRegion, cbRegion, enmType,
+        rc = pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pPciDev, iPciRegion, cbRegion, enmType,
                                                      PDMPCIDEV_IORGN_F_MMIO2_HANDLE | PDMPCIDEV_IORGN_F_NEW_STYLE,
                                                      *phRegion, pfnMapUnmap);
     return rc;
