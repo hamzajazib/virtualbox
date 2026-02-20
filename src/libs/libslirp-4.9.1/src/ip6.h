@@ -169,9 +169,18 @@ static inline bool in6_equal_mach(const struct in6_addr *a,
 static inline void in6_compute_ethaddr(struct in6_addr ip,
                                        uint8_t eth[ETH_ALEN])
 {
+#ifdef VBOX
+    eth[0] = 0x52;
+    eth[1] = 0x54;
+    eth[2] = 0x00;
+    eth[3] = 0x12;
+    eth[4] = 0x35;
+    eth[5] = 0x00;
+#else
     eth[0] = 0x52;
     eth[1] = 0x56;
     memcpy(&eth[2], &ip.s6_addr[16 - (ETH_ALEN - 2)], ETH_ALEN - 2);
+#endif
 }
 
 /*
