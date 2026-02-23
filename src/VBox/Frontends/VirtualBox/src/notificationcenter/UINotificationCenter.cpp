@@ -1,4 +1,4 @@
-/* $Id: UINotificationCenter.cpp 113105 2026-02-20 13:58:41Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationCenter.cpp 113120 2026-02-23 13:17:49Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINotificationCenter class implementation.
  */
@@ -1028,9 +1028,11 @@ void UINotificationCenter::adjustGeometry()
     const int iParentWidth = pParent->width();
     const int iParentHeight = pParent->height();
 
-    /* Acquire layout margins: */
+    /* Acquire main layout margins: */
     int iL, iT, iR, iB;
     m_pLayoutMain->getContentsMargins(&iL, &iT, &iR, &iB);
+    /* Acquire item layout spacing: */
+    const int iSpacing = m_pLayoutItems->spacing();
 
     /* Acquire minimum button width (notification-center can't shorter than this hint): */
     const int iMinimumWidth = m_pButtonOpen->minimumSizeHint().width() + iL + iR;
@@ -1046,19 +1048,32 @@ void UINotificationCenter::adjustGeometry()
     foreach (UINotificationObjectItem *pItem, m_items.values())
         pItem->setDetailsWidthHint(iDetailsWidthHint);
 
+    /* Gather suitable notification-center height (parent height in Simple mode): */
+    int iMaximumHeight = iParentHeight;
+    if (isExtendedMode())
+    {
+        /* In Extended mode we're taking into account cumulative items height: */
+        int iItemsHeight = 0;
+        foreach (UINotificationObjectItem *pItem, m_items.values())
+            iItemsHeight += pItem->minimumSizeHint().height() + iSpacing;
+        if (iItemsHeight > 0)
+            iItemsHeight -= iSpacing;
+        iMaximumHeight = iItemsHeight + iT + iB;
+    }
+
     /* Simple mode: */
     if (!isExtendedMode())
     {
         /* Move and resize notification-center finally: */
         move(iParentWidth - (iMinimumWidth + (double)animatedValue() / 100 * (iMaximumWidth - iMinimumWidth)), 0);
-        resize(iMaximumWidth, iParentHeight);
+        resize(iMaximumWidth, iMaximumHeight);
     }
     /* Extended mode: */
     else
     {
         /* Move and resize notification-center finally: */
-        move(0, - iParentHeight + (double)animatedValue() / 100 * iParentHeight);
-        resize(iMaximumWidth, iParentHeight);
+        move(0, - iMaximumHeight + (double)animatedValue() / 100 * iMaximumHeight);
+        resize(iMaximumWidth, iMaximumHeight);
     }
 }
 
