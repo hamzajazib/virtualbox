@@ -1,4 +1,4 @@
-/* $Id: UINotificationObjectItem.h 113122 2026-02-23 14:06:19Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationObjectItem.h 113125 2026-02-23 15:45:01Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINotificationObjectItem class declaration.
  */
@@ -78,6 +78,8 @@ public:
 
     /** Defines details label width @a iHint. */
     void setDetailsWidthHint(int iHint);
+    /** Returns details label width hint. */
+    int detailsWidthHint() const;
 
 protected:
 

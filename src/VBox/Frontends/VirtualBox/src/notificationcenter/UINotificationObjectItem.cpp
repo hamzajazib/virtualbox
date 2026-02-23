@@ -1,4 +1,4 @@
-/* $Id: UINotificationObjectItem.cpp 113122 2026-02-23 14:06:19Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationObjectItem.cpp 113125 2026-02-23 15:45:01Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINotificationObjectItem class implementation.
  */
@@ -107,6 +107,20 @@ void UINotificationObjectItem::setDetailsWidthHint(int iHint)
     /* Calculate effective width hint on the basis of mimumum and details hints: */
     const int iEffectiveWidthHint = qMax(m_iMinimumWidthHint, iDetailsWidthHint);
     m_pLabelDetails->setMinimumTextWidth(iEffectiveWidthHint);
+}
+
+int UINotificationObjectItem::detailsWidthHint() const
+{
+    /* Is there something cached? */
+    if (m_iDetailsWidthHint)
+        return m_iDetailsWidthHint;
+
+    /* Acquire layout margins: */
+    int iL, iT, iR, iB;
+    m_pLayoutMain->getContentsMargins(&iL, &iT, &iR, &iB);
+
+    /* Otherwise return actual details width hint adjusted for margins: */
+    return m_pLabelDetails->minimumTextWidth() + iL + iR;
 }
 
 void UINotificationObjectItem::prepareWidgets()
