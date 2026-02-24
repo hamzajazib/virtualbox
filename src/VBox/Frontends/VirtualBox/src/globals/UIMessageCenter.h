@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.h 113150 2026-02-24 16:11:18Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.h 113151 2026-02-24 16:22:59Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class declaration.
  */
@@ -285,7 +285,6 @@ public:
       * @{ */
         bool confirmSettingsDiscarding(QWidget *pParent = 0) const;
         bool confirmSettingsReloading(QWidget *pParent = 0) const;
-        bool confirmCancelingPortForwardingDialog(QWidget *pParent = 0) const;
         bool confirmRestoringDefaultKeys(QWidget *pParent = 0) const;
     /** @} */
 

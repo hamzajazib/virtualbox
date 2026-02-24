@@ -1,4 +1,4 @@
-/* $Id: UIMachineSettingsPortForwardingDlg.cpp 113042 2026-02-16 14:07:21Z sergey.dubov@oracle.com $ */
+/* $Id: UIMachineSettingsPortForwardingDlg.cpp 113151 2026-02-24 16:22:59Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMachineSettingsPortForwardingDlg class implementation.
  */
@@ -34,7 +34,6 @@
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIIconPool.h"
 #include "UIMachineSettingsPortForwardingDlg.h"
-#include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
 #include "UITranslationEventListener.h"
 
@@ -115,7 +114,7 @@ void UIMachineSettingsPortForwardingDlg::reject()
 {
     /* Ask user to discard table changes if necessary: */
     if (   m_pTable->isChanged()
-        && !msgCenter().confirmCancelingPortForwardingDialog(window()))
+        && !UINotificationQuestion::confirmCancelingPortForwardingDialog(this))
         return;
 
     /* Call to base-class: */

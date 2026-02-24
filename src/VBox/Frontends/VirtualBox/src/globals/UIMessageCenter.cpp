@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.cpp 113150 2026-02-24 16:11:18Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.cpp 113151 2026-02-24 16:22:59Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class implementation.
  */
@@ -656,17 +656,6 @@ bool UIMessageCenter::confirmSettingsReloading(QWidget *pParent /* = 0 */) const
     setWarningShown("confirmSettingsReloading", false);
 
     return fResult;
-}
-
-bool UIMessageCenter::confirmCancelingPortForwardingDialog(QWidget *pParent /* = 0 */) const
-{
-    return questionBinary(pParent, MessageType_Question,
-                          tr("<p>There are unsaved changes in the port forwarding configuration.</p>"
-                             "<p>If you proceed your changes will be discarded.</p>"),
-                          0 /* auto-confirm id */,
-                          QString() /* ok button text */,
-                          QString() /* cancel button text */,
-                          false /* ok button by default? */);
 }
 
 bool UIMessageCenter::confirmRestoringDefaultKeys(QWidget *pParent /* = 0 */) const
