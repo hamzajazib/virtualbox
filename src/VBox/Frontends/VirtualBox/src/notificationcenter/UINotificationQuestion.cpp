@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.cpp 113139 2026-02-24 11:03:16Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.cpp 113144 2026-02-24 12:38:24Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion implementations.
  */
@@ -42,9 +42,7 @@ bool UINotificationQuestion::confirmCreatingPath(const QString &strPath)
     return createBlockingQuestion(
         QApplication::translate("UIMessageCenter", "Create machine path?"),
         QApplication::translate("UIMessageCenter", "<p>Selected path doesn't exist:<br>%1</p>"
-                                "<p>Would you like to create it?</p>").arg(strPath),
-        QStringList(),
-        true /* Ok by default? */);
+                                "<p>Would you like to create it?</p>").arg(strPath));
 }
 
 /* static */
@@ -73,8 +71,7 @@ bool UINotificationQuestion::confirmSnapshotRemoval(const QString &strName)
                                                    "recovered.</p></p>Are you sure you want to delete the selected snapshot "
                                                    "<b>%1</b>?</p>").arg(strName),
         QStringList() << QString() /* cancel button text */
-                      << QApplication::translate("UIMessageCenter", "Delete") /* ok button text */,
-        true /* Ok by default? */);
+                      << QApplication::translate("UIMessageCenter", "Delete") /* ok button text */);
 }
 
 UINotificationQuestion::UINotificationQuestion(const QString &strName,
@@ -165,24 +162,9 @@ int UINotificationQuestion::createBlockingQuestionInt(UINotificationCenter *pPar
 /* static */
 void UINotificationQuestion::createQuestion(const QString &strName,
                                             const QString &strDetails,
-                                            const QStringList &buttonNames,
-                                            bool fOkByDefault,
-                                            QWidget *pParent /* = 0 */)
-{
-    /* Acquire notification-center, make sure it's present: */
-    UINotificationCenter *pCenter = UINotificationCenter::acquire(pParent);
-    AssertPtrReturnVoid(pCenter);
-
-    /* Redirect to wrapper above: */
-    return createQuestionInt(pCenter, strName, strDetails, buttonNames, fOkByDefault, QString(), QString());
-}
-
-/* static */
-void UINotificationQuestion::createQuestion(const QString &strName,
-                                            const QString &strDetails,
-                                            const QStringList &buttonNames,
-                                            bool fOkByDefault,
-                                            const QString &strInternalName,
+                                            const QStringList &buttonNames /* = QStringList() */,
+                                            bool fOkByDefault /* = true */,
+                                            const QString &strInternalName /* = QString() */,
                                             const QString &strHelpKeyword /* = QString() */,
                                             QWidget *pParent /* = 0 */)
 {
@@ -197,24 +179,9 @@ void UINotificationQuestion::createQuestion(const QString &strName,
 /* static */
 int UINotificationQuestion::createBlockingQuestion(const QString &strName,
                                                    const QString &strDetails,
-                                                   const QStringList &buttonNames,
-                                                   bool fOkByDefault,
-                                                   QWidget *pParent /* = 0 */)
-{
-    /* Acquire notification-center, make sure it's present: */
-    UINotificationCenter *pCenter = UINotificationCenter::acquire(pParent);
-    AssertPtrReturn(pCenter, 0);
-
-    /* Redirect to wrapper above: */
-    return createBlockingQuestionInt(pCenter, strName, strDetails, buttonNames, fOkByDefault, QString(), QString());
-}
-
-/* static */
-int UINotificationQuestion::createBlockingQuestion(const QString &strName,
-                                                   const QString &strDetails,
-                                                   const QStringList &buttonNames,
-                                                   bool fOkByDefault,
-                                                   const QString &strInternalName,
+                                                   const QStringList &buttonNames /* = QStringList() */,
+                                                   bool fOkByDefault /* = true */,
+                                                   const QString &strInternalName /* = QString() */,
                                                    const QString &strHelpKeyword /* = QString() */,
                                                    QWidget *pParent /* = 0 */)
 {
