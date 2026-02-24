@@ -1,4 +1,4 @@
-/* $Id: NEMR3Native-linux-x86.cpp 113132 2026-02-23 18:18:04Z alexander.eichner@oracle.com $ */
+/* $Id: NEMR3Native-linux-x86.cpp 113140 2026-02-24 11:12:44Z alexander.eichner@oracle.com $ */
 /** @file
  * NEM - Native execution manager, native ring-3 Linux backend.
  */
@@ -386,6 +386,30 @@ DECLHIDDEN(int) nemR3NativeInitCompletedRing3(PVM pVM)
         MSR_RANGE_ADD(MSR_IA32_X2APIC_SELF_IPI);
 #endif
     }
+    if (pVM->cpum.ro.GuestFeatures.fVmx)
+    {
+        MSR_RANGE_ADD(MSR_IA32_FEATURE_CONTROL);
+        MSR_RANGE_ADD(MSR_IA32_VMX_BASIC);
+        MSR_RANGE_ADD(MSR_IA32_VMX_PINBASED_CTLS);
+        MSR_RANGE_ADD(MSR_IA32_VMX_PROCBASED_CTLS);
+        MSR_RANGE_ADD(MSR_IA32_VMX_EXIT_CTLS);
+        MSR_RANGE_ADD(MSR_IA32_VMX_ENTRY_CTLS);
+        MSR_RANGE_ADD(MSR_IA32_VMX_MISC);
+        MSR_RANGE_ADD(MSR_IA32_VMX_CR0_FIXED0);
+        MSR_RANGE_ADD(MSR_IA32_VMX_CR0_FIXED1);
+        MSR_RANGE_ADD(MSR_IA32_VMX_CR4_FIXED0);
+        MSR_RANGE_ADD(MSR_IA32_VMX_CR4_FIXED1);
+        MSR_RANGE_ADD(MSR_IA32_VMX_VMCS_ENUM);
+        MSR_RANGE_ADD(MSR_IA32_VMX_PROCBASED_CTLS2);
+        MSR_RANGE_ADD(MSR_IA32_VMX_EPT_VPID_CAP);
+        MSR_RANGE_ADD(MSR_IA32_VMX_TRUE_PINBASED_CTLS);
+        MSR_RANGE_ADD(MSR_IA32_VMX_TRUE_PROCBASED_CTLS);
+        MSR_RANGE_ADD(MSR_IA32_VMX_TRUE_EXIT_CTLS);
+        MSR_RANGE_ADD(MSR_IA32_VMX_TRUE_ENTRY_CTLS);
+        MSR_RANGE_ADD(MSR_IA32_VMX_VMFUNC);
+        MSR_RANGE_ADD(MSR_IA32_VMX_PROCBASED_CTLS3);
+        MSR_RANGE_ADD(MSR_IA32_VMX_EXIT_CTLS2);
+    }
     /** @todo more? */
     MSR_RANGE_END(64);
 
@@ -442,7 +466,8 @@ DECLHIDDEN(int) nemR3NativeInitCompletedRing3(PVM pVM)
             AssertLogRelMsgReturn(rcLnx == 0, ("rcLnx=%d errno=%d\n", rcLnx, errno), VERR_NEM_IPE_4);
         }
 
-        if (   pVM->cpum.ro.GuestFeatures.fSvm
+        if (   (   pVM->cpum.ro.GuestFeatures.fSvm
+                || pVM->cpum.ro.GuestFeatures.fVmx)
             && pVM->nem.s.cbNestedState)
         {
             pVCpu->nem.s.pNestedState = (struct kvm_nested_state *)RTMemAllocZ(pVM->nem.s.cbNestedState);
@@ -710,7 +735,7 @@ static int nemHCLnxImportState(PVMCPUCC pVCpu, uint64_t fWhat, PCPUMCTX pCtx, st
      */
     if (   (fWhat & (  CPUMCTX_EXTRN_KERNEL_GS_BASE | CPUMCTX_EXTRN_SYSCALL_MSRS | CPUMCTX_EXTRN_SYSENTER_MSRS
                      | CPUMCTX_EXTRN_TSC_AUX        | CPUMCTX_EXTRN_OTHER_MSRS))
-        || (  pVM->cpum.ro.GuestFeatures.fSvm
+        || (   pVM->cpum.ro.GuestFeatures.fSvm
             && (fWhat & CPUMCTX_EXTRN_HWVIRT)))
     {
         union
@@ -807,21 +832,40 @@ static int nemHCLnxImportState(PVMCPUCC pVCpu, uint64_t fWhat, PCPUMCTX pCtx, st
     }
 
     if (   (fWhat & CPUMCTX_EXTRN_HWVIRT)
-        && pVM->cpum.ro.GuestFeatures.fSvm)
+        && (   pVM->cpum.ro.GuestFeatures.fSvm
+            || pVM->cpum.ro.GuestFeatures.fVmx))
     {
         struct kvm_nested_state *pNestedState = pVCpu->nem.s.pNestedState;
         AssertPtr(pNestedState);
         AssertCompile(sizeof(pCtx->hwvirt.svm.Vmcb) == KVM_STATE_NESTED_SVM_VMCB_SIZE);
+        AssertCompile(sizeof(pCtx->hwvirt.vmx.Vmcs) == KVM_STATE_NESTED_VMX_VMCS_SIZE);
+        AssertCompile(sizeof(pCtx->hwvirt.vmx.ShadowVmcs) == KVM_STATE_NESTED_VMX_VMCS_SIZE);
 
         int rcLnx = ioctl(pVCpu->nem.s.fdVCpu, KVM_GET_NESTED_STATE, pNestedState);
         AssertLogRelMsgReturn(rcLnx == 0, ("rcLnx=%d errno=%d\n", rcLnx, errno), VERR_NEM_IPE_3);
-        Assert(pNestedState->format == KVM_STATE_NESTED_FORMAT_SVM);
 
-        pCtx->hwvirt.svm.GCPhysVmcb = pNestedState->hdr.svm.vmcb_pa;
-        memcpy(&pCtx->hwvirt.svm.Vmcb, &pNestedState->data.svm[0], KVM_STATE_NESTED_SVM_VMCB_SIZE);
-        pCtx->hwvirt.fGif = RT_BOOL(pNestedState->flags & KVM_STATE_NESTED_GIF_SET);
+        if (pVM->cpum.ro.GuestFeatures.fSvm)
+        {
+            Assert(pNestedState->format == KVM_STATE_NESTED_FORMAT_SVM);
 
-        /** @todo What about abMsrBitmap, abIoBitmap, HostState, uPrevPauseTick, cPauseFilter, cPauseFilterThreshold and fInterceptEvents. */
+            pCtx->hwvirt.svm.GCPhysVmcb = pNestedState->hdr.svm.vmcb_pa;
+            memcpy(&pCtx->hwvirt.svm.Vmcb, &pNestedState->data.svm[0], KVM_STATE_NESTED_SVM_VMCB_SIZE);
+            pCtx->hwvirt.fGif = RT_BOOL(pNestedState->flags & KVM_STATE_NESTED_GIF_SET);
+
+            /** @todo What about abMsrBitmap, abIoBitmap, HostState, uPrevPauseTick, cPauseFilter, cPauseFilterThreshold and fInterceptEvents. */
+        }
+        else
+        {
+            Assert(pNestedState->format == KVM_STATE_NESTED_FORMAT_VMX);
+
+            pCtx->hwvirt.vmx.GCPhysVmxon      = pNestedState->hdr.vmx.vmxon_pa;
+            pCtx->hwvirt.vmx.GCPhysVmcs       = pNestedState->hdr.vmx.vmcs12_pa;
+            pCtx->hwvirt.vmx.GCPhysShadowVmcs = pNestedState->hdr.vmx.vmcs12_pa; /** @todo Which one is correct? */
+            memcpy(&pCtx->hwvirt.vmx.Vmcs, &pNestedState->data.vmx[0].vmcs12[0], KVM_STATE_NESTED_VMX_VMCS_SIZE);
+            memcpy(&pCtx->hwvirt.vmx.ShadowVmcs, &pNestedState->data.vmx[0].shadow_vmcs12[0], KVM_STATE_NESTED_VMX_VMCS_SIZE);
+            pCtx->hwvirt.fGif = true;
+            /** @todo Rest of the fields */
+        }
     }
 
     /*
@@ -1140,7 +1184,7 @@ static int nemHCLnxExportState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, struct kvm_
      */
     if (   (fExtrn & (  CPUMCTX_EXTRN_KERNEL_GS_BASE | CPUMCTX_EXTRN_SYSCALL_MSRS | CPUMCTX_EXTRN_SYSENTER_MSRS
                       | CPUMCTX_EXTRN_TSC_AUX        | CPUMCTX_EXTRN_OTHER_MSRS))
-        || (  pVM->cpum.ro.GuestFeatures.fSvm
+        || (   pVM->cpum.ro.GuestFeatures.fSvm
             && (fExtrn & CPUMCTX_EXTRN_HWVIRT)))
     {
         union
@@ -1215,6 +1259,8 @@ static int nemHCLnxExportState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, struct kvm_
             /** @todo What about MSR_K8_VM_CR ? */
         }
 
+#undef ADD_MSR
+
         uBuf.Core.pad   = 0;
         uBuf.Core.nmsrs = iMsr;
         int rc = ioctl(pVCpu->nem.s.fdVCpu, KVM_SET_MSRS, &uBuf);
@@ -1272,18 +1318,35 @@ static int nemHCLnxExportState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, struct kvm_
     }
 
     if (   (fExtrn & CPUMCTX_EXTRN_HWVIRT)
-        && pVM->cpum.ro.GuestFeatures.fSvm)
+        && (   pVM->cpum.ro.GuestFeatures.fSvm
+            || pVM->cpum.ro.GuestFeatures.fVmx))
     {
         struct kvm_nested_state *pNestedState = pVCpu->nem.s.pNestedState;
         AssertPtr(pNestedState);
         AssertCompile(sizeof(pCtx->hwvirt.svm.Vmcb) == KVM_STATE_NESTED_SVM_VMCB_SIZE);
 
-        pNestedState->format = KVM_STATE_NESTED_FORMAT_SVM;
-        pNestedState->size   = KVM_STATE_NESTED_SVM_VMCB_SIZE + RT_UOFFSETOF(struct kvm_nested_state, data);
-        pNestedState->flags  = pCtx->hwvirt.fGif ? KVM_STATE_NESTED_GIF_SET : 0;
+        if (pVM->cpum.ro.GuestFeatures.fSvm)
+        {
+            pNestedState->format = KVM_STATE_NESTED_FORMAT_SVM;
+            pNestedState->size   = KVM_STATE_NESTED_SVM_VMCB_SIZE + RT_UOFFSETOF(struct kvm_nested_state, data);
+            pNestedState->flags  = pCtx->hwvirt.fGif ? KVM_STATE_NESTED_GIF_SET : 0;
 
-        pNestedState->hdr.svm.vmcb_pa = pCtx->hwvirt.svm.GCPhysVmcb;
-        memcpy(&pNestedState->data.svm[0], &pCtx->hwvirt.svm.Vmcb, KVM_STATE_NESTED_SVM_VMCB_SIZE);
+            pNestedState->hdr.svm.vmcb_pa = pCtx->hwvirt.svm.GCPhysVmcb;
+            memcpy(&pNestedState->data.svm[0], &pCtx->hwvirt.svm.Vmcb, KVM_STATE_NESTED_SVM_VMCB_SIZE);
+        }
+        else
+        {
+            pNestedState->format = KVM_STATE_NESTED_FORMAT_VMX;
+            pNestedState->size   = 2 * KVM_STATE_NESTED_VMX_VMCS_SIZE + RT_UOFFSETOF(struct kvm_nested_state, data);
+            pNestedState->flags  = KVM_STATE_NESTED_GIF_SET;
+
+            pNestedState->hdr.vmx.vmxon_pa  = pCtx->hwvirt.vmx.GCPhysVmxon;
+            pNestedState->hdr.vmx.vmcs12_pa = pCtx->hwvirt.vmx.GCPhysVmcs;
+            //pNestedState->hdr.vmx.vmcs12_pa = pCtx->hwvirt.vmx.GCPhysShadowVmcs; /** @todo Which one is correct? */
+            memcpy(&pNestedState->data.vmx[0].vmcs12[0], &pCtx->hwvirt.vmx.Vmcs, KVM_STATE_NESTED_VMX_VMCS_SIZE);
+            memcpy(&pNestedState->data.vmx[0].shadow_vmcs12[0], &pCtx->hwvirt.vmx.ShadowVmcs, KVM_STATE_NESTED_VMX_VMCS_SIZE);
+            /** @todo Rest of the fields */
+        }
 
         int rcLnx = ioctl(pVCpu->nem.s.fdVCpu, KVM_SET_NESTED_STATE, pNestedState);
         AssertLogRelMsgReturn(rcLnx == 0, ("rcLnx=%d errno=%d\n", rcLnx, errno), VERR_NEM_IPE_3);
@@ -2570,6 +2633,65 @@ VMMR3_INT_DECL(int) NEMR3LinuxGetKvmVCpuFd(PVMCPU pVCpu, int *piFdKvmVcpu)
     AssertPtrReturn(pVCpu, VERR_INVALID_PARAMETER);
     AssertPtrReturn(piFdKvmVcpu, VERR_INVALID_PARAMETER);
     *piFdKvmVcpu = pVCpu->nem.s.fdVCpu;
+    return VINF_SUCCESS;
+}
+
+
+VMMR3_INT_DECL(int) NEMR3QueryHostHwvirtMsrs(PVM pVM, PSUPHWVIRTMSRS pMsrs)
+{
+    int rcLnx = ioctl(pVM->nem.s.fdKvm, KVM_CHECK_EXTENSION, KVM_CAP_GET_MSR_FEATURES);
+    if (rcLnx != 1)
+        return VERR_NOT_SUPPORTED;
+
+    union
+    {
+        struct kvm_msrs Core;
+        uint64_t padding[2 + sizeof(struct kvm_msr_entry) * 20];
+    }                   uBuf;
+    uint64_t           *pauDsts[20];
+    uint32_t            iMsr        = 0;
+
+#define ADD_MSR(a_Msr, a_uValue) do { \
+            Assert(iMsr < RT_ELEMENTS(pauDsts)); \
+            uBuf.Core.entries[iMsr].index    = (a_Msr); \
+            uBuf.Core.entries[iMsr].reserved = 0; \
+            uBuf.Core.entries[iMsr].data     = UINT64_MAX; \
+            pauDsts[iMsr] = &(a_uValue); \
+            iMsr += 1; \
+        } while (0)
+
+    ADD_MSR(MSR_IA32_FEATURE_CONTROL,         pMsrs->u.vmx.u64FeatCtrl);
+    ADD_MSR(MSR_IA32_VMX_BASIC,               pMsrs->u.vmx.u64Basic);
+    ADD_MSR(MSR_IA32_VMX_PINBASED_CTLS,       pMsrs->u.vmx.PinCtls.u);
+    ADD_MSR(MSR_IA32_VMX_PROCBASED_CTLS,      pMsrs->u.vmx.ProcCtls.u);
+    ADD_MSR(MSR_IA32_VMX_EXIT_CTLS,           pMsrs->u.vmx.ExitCtls.u);
+    ADD_MSR(MSR_IA32_VMX_ENTRY_CTLS,          pMsrs->u.vmx.EntryCtls.u);
+    ADD_MSR(MSR_IA32_VMX_MISC,                pMsrs->u.vmx.u64Misc);
+    ADD_MSR(MSR_IA32_VMX_CR0_FIXED0,          pMsrs->u.vmx.u64Cr0Fixed0);
+    ADD_MSR(MSR_IA32_VMX_CR0_FIXED1,          pMsrs->u.vmx.u64Cr0Fixed1);
+    ADD_MSR(MSR_IA32_VMX_CR4_FIXED0,          pMsrs->u.vmx.u64Cr4Fixed0);
+    ADD_MSR(MSR_IA32_VMX_CR4_FIXED1,          pMsrs->u.vmx.u64Cr4Fixed1);
+    ADD_MSR(MSR_IA32_VMX_VMCS_ENUM,           pMsrs->u.vmx.u64VmcsEnum);
+    ADD_MSR(MSR_IA32_VMX_PROCBASED_CTLS2,     pMsrs->u.vmx.ProcCtls2.u);
+    ADD_MSR(MSR_IA32_VMX_EPT_VPID_CAP,        pMsrs->u.vmx.u64EptVpidCaps);
+    ADD_MSR(MSR_IA32_VMX_TRUE_PINBASED_CTLS,  pMsrs->u.vmx.TruePinCtls.u);
+    ADD_MSR(MSR_IA32_VMX_TRUE_PROCBASED_CTLS, pMsrs->u.vmx.TrueProcCtls.u);
+    ADD_MSR(MSR_IA32_VMX_TRUE_EXIT_CTLS,      pMsrs->u.vmx.TrueExitCtls.u);
+    ADD_MSR(MSR_IA32_VMX_TRUE_ENTRY_CTLS,     pMsrs->u.vmx.TrueEntryCtls.u);
+    ADD_MSR(MSR_IA32_VMX_VMFUNC,              pMsrs->u.vmx.u64VmFunc);
+
+    uBuf.Core.pad   = 0;
+    uBuf.Core.nmsrs = iMsr;
+    rcLnx = ioctl(pVM->nem.s.fdKvm, KVM_GET_MSRS, &uBuf);
+    AssertMsgReturn(rcLnx == (int)iMsr,
+                    ("rcLnx=%d iMsr=%d (->%#x) errno=%d\n",
+                     rcLnx, iMsr, (uint32_t)rcLnx < iMsr ? uBuf.Core.entries[rcLnx].index : 0, errno),
+                    VERR_NOT_SUPPORTED);
+
+    while (iMsr-- > 0)
+        *pauDsts[iMsr] = uBuf.Core.entries[iMsr].data;
+#undef ADD_MSR
+
     return VINF_SUCCESS;
 }
 

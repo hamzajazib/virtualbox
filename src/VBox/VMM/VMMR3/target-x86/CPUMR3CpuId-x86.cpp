@@ -1,4 +1,4 @@
-/* $Id: CPUMR3CpuId-x86.cpp 113132 2026-02-23 18:18:04Z alexander.eichner@oracle.com $ */
+/* $Id: CPUMR3CpuId-x86.cpp 113140 2026-02-24 11:12:44Z alexander.eichner@oracle.com $ */
 /** @file
  * CPUM - CPU ID part.
  */
@@ -2920,14 +2920,7 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
             if (VM_IS_NEM_ENABLED(pVM))
             {
 #ifdef RT_OS_LINUX
-                if (   pVM->cpum.s.HostFeatures.s.enmCpuVendor == CPUMCPUVENDOR_AMD
-                    || pVM->cpum.s.HostFeatures.s.enmCpuVendor == CPUMCPUVENDOR_HYGON)
-                    LogRel(("CPUM: Warning! Nested AMD-V is considered highly experimental, use at your own risk\n"));
-                else
-                {
-                    LogRel(("CPUM: Warning! Can't turn on nested VT-x when NEM is used! (later)\n"));
-                    pConfig->fNestedHWVirt = false;
-                }
+                LogRel(("CPUM: Warning! Nested VT-x/AMD-V with NEM is considered highly experimental, use at your own risk\n"));
 #else
                 LogRel(("CPUM: Warning! Can't turn on nested VT-x/AMD-V when NEM is used! (later)\n"));
                 pConfig->fNestedHWVirt = false;

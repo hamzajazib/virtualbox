@@ -1,4 +1,4 @@
-/* $Id: NEMR3Native-darwin-x86.cpp 112691 2026-01-26 11:03:45Z alexander.eichner@oracle.com $ */
+/* $Id: NEMR3Native-darwin-x86.cpp 113140 2026-02-24 11:12:44Z alexander.eichner@oracle.com $ */
 /** @file
  * NEM - Native execution manager, native ring-3 macOS backend using Hypervisor.framework.
  *
@@ -4617,6 +4617,14 @@ VMM_INT_DECL(uint32_t) NEMHCGetFeatures(PVMCC pVM)
      * and unrestricted guest execution support so we can safely return these flags here always.
      */
     return NEM_FEAT_F_NESTED_PAGING | NEM_FEAT_F_FULL_GST_EXEC | NEM_FEAT_F_XSAVE_XRSTOR;
+}
+
+
+VMMR3_INT_DECL(int) NEMR3QueryHostHwvirtMsrs(PVM pVM, PSUPHWVIRTMSRS pMsrs)
+{
+    RT_NOREF(pVM, pMsrs);
+    /** @todo */
+    return VERR_NOT_SUPPORTED;
 }
 
 

@@ -1,4 +1,4 @@
-/* $Id: CPUMR3.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: CPUMR3.cpp 113140 2026-02-24 11:12:44Z alexander.eichner@oracle.com $ */
 /** @file
  * CPUM - CPU Monitor / Manager.
  */
@@ -124,6 +124,7 @@
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/iem.h>
+#include <VBox/vmm/nem.h>
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/hm.h>
@@ -217,11 +218,24 @@ static void cpumR3CheckLeakyFpu(PVM pVM)
  * Gets the host hardware-virtualization MSRs.
  *
  * @returns VBox status code.
- * @param   pMsrs       Where to store the MSRs.
+ * @param   pVM             The cross-context VM structure.
+ * @param   pMsrs           Where to store the MSRs.
  */
-static int cpumR3GetX86HostHwvirtMsrs(PSUPHWVIRTMSRS pMsrs)
+static int cpumR3GetX86HostHwvirtMsrs(PVM pVM, PSUPHWVIRTMSRS pMsrs)
 {
     Assert(pMsrs);
+
+#ifdef VBOX_WITH_NATIVE_NEM
+    if (VM_IS_NEM_ENABLED(pVM))
+    {
+        int rc = NEMR3QueryHostHwvirtMsrs(pVM, pMsrs);
+        if (RT_SUCCESS(rc))
+            return rc;
+        /* else: Try to gather them using our support driver (NEM on Windows for instance). */
+    }
+#else
+    RT_NOREF(pVM);
+#endif
 
     uint32_t fCaps = 0;
     int rc = SUPR3QueryVTCaps(&fCaps);
@@ -296,7 +310,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
 
     SUPHWVIRTMSRS HostMsrs;
     RT_ZERO(HostMsrs);
-    rc = cpumR3GetX86HostHwvirtMsrs(&HostMsrs);
+    rc = cpumR3GetX86HostHwvirtMsrs(pVM, &HostMsrs);
     AssertLogRelRCReturn(rc, rc);
 #endif
 

@@ -1,4 +1,4 @@
-/* $Id: CPUMR3-x86.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: CPUMR3-x86.cpp 113140 2026-02-24 11:12:44Z alexander.eichner@oracle.com $ */
 /** @file
  * CPUM - CPU Monitor / Manager.
  */
@@ -1569,8 +1569,12 @@ DECLHIDDEN(void) cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCFGMNODE pCpumCfg, 
     if (fVmxEpt)
     {
         const char *pszWhy = NULL;
-        if (!VM_IS_HM_ENABLED(pVM) && !VM_IS_EXEC_ENGINE_IEM(pVM))
-            pszWhy = "execution engine is neither HM nor IEM";
+        if (!VM_IS_HM_ENABLED(pVM) && !VM_IS_EXEC_ENGINE_IEM(pVM)
+#ifdef RT_OS_LINUX
+            && !VM_IS_NEM_ENABLED(pVM)
+#endif
+            )
+            pszWhy = "execution engine is neither HM nor IEM (nor NEM on Linux)";
 #ifdef RT_ARCH_AMD64
         else if (VM_IS_HM_ENABLED(pVM) && !HMIsNestedPagingActive(pVM))
             pszWhy = "nested paging is not enabled for the VM or it is not supported by the host";

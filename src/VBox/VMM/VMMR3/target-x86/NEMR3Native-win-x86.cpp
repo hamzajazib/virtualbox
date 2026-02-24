@@ -1,4 +1,4 @@
-/* $Id: NEMR3Native-win-x86.cpp 113034 2026-02-16 07:25:59Z ramshankar.venkataraman@oracle.com $ */
+/* $Id: NEMR3Native-win-x86.cpp 113140 2026-02-24 11:12:44Z alexander.eichner@oracle.com $ */
 /** @file
  * NEM - Native execution manager, native ring-3 Windows backend.
  *
@@ -6165,6 +6165,14 @@ VMMR3_INT_DECL(int) NEMR3WinGetPartitionHandle(PVM pVM, PRTHCUINTPTR pHCPtrHandl
     AssertPtrReturn(pHCPtrHandle, VERR_INVALID_PARAMETER);
     *pHCPtrHandle = (RTHCUINTPTR)pVM->nem.s.hPartition;
     return VINF_SUCCESS;
+}
+
+
+VMMR3_INT_DECL(int) NEMR3QueryHostHwvirtMsrs(PVM pVM, PSUPHWVIRTMSRS pMsrs)
+{
+    RT_NOREF(pVM, pMsrs);
+    /** @todo */
+    return VERR_NOT_SUPPORTED;
 }
 
 
