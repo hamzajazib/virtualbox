@@ -1,4 +1,4 @@
-/* $Id: UINotificationObjectItem.cpp 113137 2026-02-24 10:55:13Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationObjectItem.cpp 113138 2026-02-24 11:01:12Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINotificationObjectItem class implementation.
  */
@@ -423,7 +423,7 @@ void UINotificationQuestionItem::showEvent(QShowEvent *pEvent)
     }
 }
 
-void UINotificationQuestionItem::keyReleaseEvent(QKeyEvent *pEvent)
+void UINotificationQuestionItem::keyPressEvent(QKeyEvent *pEvent)
 {
     switch (pEvent->key())
     {
@@ -456,7 +456,7 @@ void UINotificationQuestionItem::keyReleaseEvent(QKeyEvent *pEvent)
         default:
         {
             /* Call to base-class: */
-            UINotificationObjectItem::keyReleaseEvent(pEvent);
+            UINotificationObjectItem::keyPressEvent(pEvent);
             break;
         }
     }

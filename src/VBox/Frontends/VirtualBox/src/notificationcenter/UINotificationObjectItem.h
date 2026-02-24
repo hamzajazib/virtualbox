@@ -1,4 +1,4 @@
-/* $Id: UINotificationObjectItem.h 113125 2026-02-23 15:45:01Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationObjectItem.h 113138 2026-02-24 11:01:12Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINotificationObjectItem class declaration.
  */
@@ -156,8 +156,8 @@ protected:
 
     /** Handles show @a pEvent. */
     virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE RT_FINAL;
-    /** Handles key-release @a pEvent. */
-    virtual void keyReleaseEvent(QKeyEvent *pEvent) RT_OVERRIDE RT_FINAL;
+    /** Handles key-press @a pEvent. */
+    virtual void keyPressEvent(QKeyEvent *pEvent) RT_OVERRIDE RT_FINAL;
 
 private slots:
 
