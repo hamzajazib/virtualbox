@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.h 113130 2026-02-23 16:10:01Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.h 113133 2026-02-24 09:00:05Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion declarations.
  */
@@ -60,9 +60,6 @@ class SHARED_LIBRARY_STUFF UINotificationQuestion : public UINotificationSimple
 
 public:
 
-    /** Returns whether object is done. */
-    virtual bool isDone() const RT_OVERRIDE RT_FINAL { return m_fDone; }
-
     /** Returns the button names. */
     QStringList buttonNames() const { return m_buttonNames; }
 
@@ -70,6 +67,9 @@ public:
     Question::Result result() const { return m_enmResult; }
     /** Defines the @a enmResult. */
     void setResult(Question::Result enmResult) { m_enmResult = enmResult; m_fDone = true; }
+
+    /** Returns whether object is done. */
+    virtual bool isDone() const RT_OVERRIDE RT_FINAL { return m_fDone; }
 
     /** Confirms reset for the machine with @a strNames specified. */
     static bool confirmResetMachine(const QString &strNames);

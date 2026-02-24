@@ -1,4 +1,4 @@
-/* $Id: UINotificationMessage.cpp 113060 2026-02-17 12:01:37Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationMessage.cpp 113133 2026-02-24 09:00:05Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationMessage implementations.
  */
@@ -2228,7 +2228,7 @@ UINotificationMessage::UINotificationMessage(const QString &strName,
 UINotificationMessage::~UINotificationMessage()
 {
     /* Remove message from known: */
-    m_messages.remove(m_strInternalName);
+    m_messages.remove(internalName());
 }
 
 /* static */

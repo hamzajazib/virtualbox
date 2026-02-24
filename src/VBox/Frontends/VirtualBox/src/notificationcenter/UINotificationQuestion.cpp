@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.cpp 113130 2026-02-23 16:10:01Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.cpp 113133 2026-02-24 09:00:05Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion implementations.
  */
@@ -82,7 +82,7 @@ UINotificationQuestion::UINotificationQuestion(const QString &strName,
 UINotificationQuestion::~UINotificationQuestion()
 {
     /* Remove questions from known: */
-    m_questions.remove(m_strInternalName);
+    m_questions.remove(internalName());
 }
 
 /* static */

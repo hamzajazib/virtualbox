@@ -1,4 +1,4 @@
-/* $Id: UINotificationObject.h 113071 2026-02-18 15:51:58Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationObject.h 113133 2026-02-24 09:00:05Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINotificationObject class declaration.
  */
@@ -63,10 +63,6 @@ public:
     /** Constructs notification-object. */
     UINotificationObject();
 
-    /** Returns whether object is critical. */
-    virtual bool isCritical() const = 0;
-    /** Returns whether object is done. */
-    virtual bool isDone() const = 0;
     /** Returns object name. */
     virtual QString name() const = 0;
     /** Returns object details. */
@@ -75,6 +71,10 @@ public:
     virtual QString internalName() const = 0;
     /** Returns object help keyword. */
     virtual QString helpKeyword() const = 0;
+    /** Returns whether object is critical. */
+    virtual bool isCritical() const = 0;
+    /** Returns whether object is done. */
+    virtual bool isDone() const = 0;
     /** Handles notification-object being added. */
     virtual void handle() = 0;
 
@@ -105,8 +105,6 @@ protected:
                          const QString &strHelpKeyword,
                          bool fCritical = true);
 
-    /** Returns whether object is critical. */
-    virtual bool isCritical() const RT_OVERRIDE RT_FINAL { return m_fCritical; }
     /** Returns object name. */
     virtual QString name() const RT_OVERRIDE RT_FINAL { return m_strName; }
     /** Returns object details. */
@@ -115,6 +113,8 @@ protected:
     virtual QString internalName() const RT_OVERRIDE RT_FINAL { return m_strInternalName; }
     /** Returns object help keyword. */
     virtual QString helpKeyword() const RT_OVERRIDE RT_FINAL { return m_strHelpKeyword; }
+    /** Returns whether object is critical. */
+    virtual bool isCritical() const RT_OVERRIDE RT_FINAL { return m_fCritical; }
     /** Handles notification-object being added. */
     virtual void handle() RT_OVERRIDE RT_FINAL {}
 
@@ -165,14 +165,14 @@ public:
     /** Returns error-message if any. */
     QString error() const;
 
-    /** Returns whether object is critical. */
-    virtual bool isCritical() const RT_OVERRIDE RT_FINAL { return true; }
-    /** Returns whether object is done. */
-    virtual bool isDone() const RT_OVERRIDE RT_FINAL { return m_fDone; }
     /** Returns object internal name. */
     virtual QString internalName() const RT_OVERRIDE RT_FINAL { return QString(); }
     /** Returns object help keyword. */
     virtual QString helpKeyword() const RT_OVERRIDE RT_FINAL { return QString(); }
+    /** Returns whether object is critical. */
+    virtual bool isCritical() const RT_OVERRIDE RT_FINAL { return true; }
+    /** Returns whether object is done. */
+    virtual bool isDone() const RT_OVERRIDE RT_FINAL { return m_fDone; }
     /** Handles notification-object being added. */
     virtual void handle() RT_OVERRIDE RT_FINAL;
 
@@ -235,14 +235,14 @@ public:
     /** Returns error-message if any. */
     QString error() const;
 
-    /** Returns whether object is critical. */
-    virtual bool isCritical() const RT_OVERRIDE RT_FINAL { return true; }
-    /** Returns whether object is done. */
-    virtual bool isDone() const RT_OVERRIDE RT_FINAL { return m_fDone; }
     /** Returns object internal name. */
     virtual QString internalName() const RT_OVERRIDE RT_FINAL { return QString(); }
     /** Returns object help keyword. */
     virtual QString helpKeyword() const RT_OVERRIDE RT_FINAL { return QString(); }
+    /** Returns whether object is critical. */
+    virtual bool isCritical() const RT_OVERRIDE RT_FINAL { return true; }
+    /** Returns whether object is done. */
+    virtual bool isDone() const RT_OVERRIDE RT_FINAL { return m_fDone; }
     /** Handles notification-object being added. */
     virtual void handle() RT_OVERRIDE RT_FINAL;
 
