@@ -193,6 +193,23 @@
   %define SEH64_PE_GREG_r13     13
   %define SEH64_PE_GREG_r14     14
   %define SEH64_PE_GREG_r15     15
+
+  %define SEH64_PE_XREG_xmm0     0
+  %define SEH64_PE_XREG_xmm1     1
+  %define SEH64_PE_XREG_xmm2     2
+  %define SEH64_PE_XREG_xmm3     3
+  %define SEH64_PE_XREG_xmm4     4
+  %define SEH64_PE_XREG_xmm5     5
+  %define SEH64_PE_XREG_xmm6     6
+  %define SEH64_PE_XREG_xmm7     7
+  %define SEH64_PE_XREG_xmm8     8
+  %define SEH64_PE_XREG_xmm9     9
+  %define SEH64_PE_XREG_xmm10    10
+  %define SEH64_PE_XREG_xmm11    11
+  %define SEH64_PE_XREG_xmm12    12
+  %define SEH64_PE_XREG_xmm13    13
+  %define SEH64_PE_XREG_xmm14    14
+  %define SEH64_PE_XREG_xmm15    15
   ;; @}
 
   ;; @name PE unwind operations.
@@ -320,6 +337,60 @@ RT_CONCAT(.seh64_op_label_,seh64_idxOps):
     SEH64_APPEND_SLOT_BYTES RT_CONCAT(.seh64_op_label_,seh64_idxOps) - .start_of_prologue, \
                             SEH64_PE_ALLOC_LARGE | 1, \
                             (%1) & 0xff, ((%1) >> 8) & 0xff, ((%1) >> 16) & 0xff, ((%1) >> 24) & 0xff
+   %endif
+  %endif
+  %assign seh64_idxOps      seh64_idxOps + 1
+ %endif
+%endmacro
+
+;;
+; Records a general register push.
+; @param 1 Register name.
+; @param 2 Frame offset.
+%macro SEH64_SAVE_GREG 2
+ %ifdef RT_ASM_WITH_SEH64
+        [savereg %1, %2]
+
+ %elifdef RT_ASM_WITH_SEH64_ALT
+RT_CONCAT(.seh64_op_label_,seh64_idxOps):
+  %ifdef ASM_FORMAT_PE64
+   %if (%2) & 7
+    %error "SEH64_SAVE_GREG offset must be a multiple of 8"
+   %endif
+   %if (%2) <= (65535*8)
+    SEH64_APPEND_SLOT_BYTES RT_CONCAT(.seh64_op_label_,seh64_idxOps) - .start_of_prologue, \
+                            SEH64_PE_SAVE_NONVOL | (RT_CONCAT(SEH64_PE_GREG_,%1) << 4),
+                            ((%2) / 8) & 0xff, \
+                            ((%2) / 8) >> 8
+   %else
+    %error "SEH64_SAVE_GREG implement far offsets"
+   %endif
+  %endif
+  %assign seh64_idxOps      seh64_idxOps + 1
+ %endif
+%endmacro
+
+;;
+; Records a general register push.
+; @param 1 Register name.
+; @param 2 Frame offset.
+%macro SEH64_SAVE_XMM128 2
+ %ifdef RT_ASM_WITH_SEH64
+        [savexmm128 %1, %2]
+
+ %elifdef RT_ASM_WITH_SEH64_ALT
+RT_CONCAT(.seh64_op_label_,seh64_idxOps):
+  %ifdef ASM_FORMAT_PE64
+   %if (%2) & 15
+    %error "SEH64_SAVE_XMM128 offset must be a multiple of 16"
+   %endif
+   %if (%2) <= (65535*16)
+    SEH64_APPEND_SLOT_BYTES RT_CONCAT(.seh64_op_label_,seh64_idxOps) - .start_of_prologue, \
+                            SEH64_PE_SAVE_XMM128 | (RT_CONCAT(SEH64_PE_XREG_,%1) << 4), \
+                            ((%2) / 16) & 0xff, \
+                            ((%2) / 16) >> 8
+   %else
+    %error "SEH64_SAVE_XMM128 implement far offsets"
    %endif
   %endif
   %assign seh64_idxOps      seh64_idxOps + 1
