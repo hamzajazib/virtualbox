@@ -1,4 +1,4 @@
-/* $Id: tstClipboardMockHGCM.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: tstClipboardMockHGCM.cpp 113171 2026-02-26 11:30:55Z brent.paulson@oracle.com $ */
 /** @file
  * Shared Clipboard host service test case.
  */
@@ -32,8 +32,11 @@
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <VBox/HostServices/VBoxSharedClipboardSvc.h>
 #include <VBox/VBoxGuestLib.h>
-#ifdef RT_OS_LINUX
+#if defined (RT_OS_LINUX) || defined (RT_OS_SOLARIS)
 # include <VBox/GuestHost/SharedClipboard-x11.h>
+# include <VBox/GuestHost/DisplayServerType.h>
+# include <X11/Xlib.h>
+# include <X11/Xatom.h>
 #endif
 #ifdef RT_OS_WINDOWS
 # include <VBox/GuestHost/SharedClipboard-win.h>
@@ -69,9 +72,6 @@ struct CLIPBOARDTESTCTX;
 /** Pointer to a test context. */
 typedef CLIPBOARDTESTCTX *PCLIPBOARDTESTCTX;
 
-/** Pointer a test descriptor. */
-typedef CLIPBOARDTESTDESC *PTESTDESC;
-
 typedef DECLCALLBACKTYPE(int, FNTESTSETUP,(PCLIPBOARDTESTCTX pTstCtx, void **ppvCtx));
 /** Pointer to a test setup callback. */
 typedef FNTESTSETUP *PFNTESTSETUP;
@@ -84,6 +84,15 @@ typedef DECLCALLBACKTYPE(int, FNTESTDESTROY,(PCLIPBOARDTESTCTX pTstCtx, void *pv
 /** Pointer to a test destroy callback. */
 typedef FNTESTDESTROY *PFNTESTDESTROY;
 
+#if defined (RT_OS_LINUX) || defined (RT_OS_SOLARIS)
+typedef struct CLIPBOARDTESTTASKX11
+{
+    /** Thread handle for the X11 "populate clipboard" thread. */
+    RTTHREAD            hThread;
+    /** Shutdown indicator flag. */
+    volatile bool       fShutdown;
+} CLIPBOARDTESTTASKX11;
+#endif
 
 /**
  * Structure for keeping a clipboard test task.
@@ -101,6 +110,10 @@ typedef struct CLIPBOARDTESTTASK
     size_t      cbData;
     /** Number of bytes read / written from / to \a pvData. */
     size_t      cbProcessed;
+#if defined (RT_OS_LINUX) || defined (RT_OS_SOLARIS)
+    /** X11-specific data */
+    CLIPBOARDTESTTASKX11 X11;
+#endif
 } CLIPBOARDTESTTASK;
 typedef CLIPBOARDTESTTASK *PCLIPBOARDTESTTASK;
 
@@ -261,6 +274,7 @@ static void testGuestSimple(void)
     /*
      * Access denied tests.
      */
+    tstClipboardSetMode(pSvc, VBOX_SHCL_MODE_OFF);
 
     /* Try reading data from host. */
     uint8_t abData[32]; uint32_t cbIgnored;
@@ -281,8 +295,6 @@ static void testGuestSimple(void)
      */
     tstClipboardSetMode(pSvc, VBOX_SHCL_MODE_BIDIRECTIONAL);
 
-    /* Try writing data without reporting formats before. */
-    RTTESTI_CHECK_RC_OK(VbglR3ClipboardWriteDataEx(&Ctx, 0xdeadb33f, abData, sizeof(abData)));
     /* Try reading data from host. */
     RTTESTI_CHECK_RC_OK(VbglR3ClipboardReadData(Ctx.idClient, VBOX_SHCL_FMT_UNICODETEXT,
                                                 abData, sizeof(abData), &cbIgnored));
@@ -380,7 +392,7 @@ static DECLCALLBACK(int) tstTestReadFromHost_ReportFormatsCallback(PSHCLCONTEXT 
 {
     RT_NOREF(pCtx, fFormats, pvUser);
 
-    RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "tstTestReadFromHost_SvcReportFormatsCallback: fFormats=%#x\n", fFormats);
+    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "tstTestReadFromHost_SvcReportFormatsCallback: fFormats=%#x\n", fFormats);
     return VINF_SUCCESS;
 }
 
@@ -493,7 +505,7 @@ static int tstTestReadFromHost_DoIt(PCLIPBOARDTESTCTX pCtx, PCLIPBOARDTESTTASK p
             RTThreadSleep(10);
             continue;
         }
-        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Trying reading host clipboard data with a %RU32 buffer -> %Rrc (%RU32)\n", cbChunk, vrc2, cbRead);
+        RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS, "Trying to read host clipboard data with a %RU32 byte buffer -> %Rrc (%RU32)\n", cbChunk, vrc2, cbRead);
         RTTEST_CHECK_MSG(g_hTest, vrc2 == VINF_BUFFER_OVERFLOW, (g_hTest, "Got %Rrc, expected VINF_BUFFER_OVERFLOW\n", vrc2));
     }
 
@@ -561,9 +573,143 @@ static DECLCALLBACK(int) tstTestReadFromHost_ClientConnectedCallback(PTSTHGCMUTI
     return VINF_SUCCESS;
 }
 
+#if defined (RT_OS_LINUX) || defined (RT_OS_SOLARIS)
+/**
+ * This is an X11 clipboard "copy" thread which takes ownership of the
+ * clipboard, waits for requests of the clipboard selection contents from
+ * X11 clients, and processes each request by copying the randomly generated
+ * UTF8 data passed in to the clipboard selection before finally notifying
+ * the requesting X client when complete.
+ */
+static DECLCALLBACK(int) tstSetClipboardContents(RTTHREAD hThread, void *pvUser)
+{
+    PCLIPBOARDTESTTASK pTask = (PCLIPBOARDTESTTASK)pvUser;
+
+    Display *pX11Display = XOpenDisplay(NULL);
+    if (!pX11Display)
+    {
+        RTTestPrintf(g_hTest, RTTESTLVL_FAILURE, "XOpenDisplay(3X11) failed\n");
+        return VERR_NOT_AVAILABLE;
+    }
+
+    /* Create an unmapped subwindow which will own the "CLIPBOARD" selection and
+     * will receive messages from X clients accessing the clipboard. */
+    Window window = XCreateSimpleWindow(pX11Display, XDefaultRootWindow(pX11Display), 0, 0, 1, 1, 0, 0, 0);
+
+    /* Populate the atom identifiers needed for our clipboard operations. */
+    Atom clipboard   = XInternAtom(pX11Display, "CLIPBOARD", False);
+    Atom targets     = XInternAtom(pX11Display, "TARGETS", False);
+    Atom utf8_string = XInternAtom(pX11Display, "UTF8_STRING", False);
+
+    /* In order to copy data to the clipboard we must first have our window
+     * become the owner of the "CLIPBOARD" selection. */
+    XSetSelectionOwner(pX11Display, clipboard, window, CurrentTime);
+    if (XGetSelectionOwner(pX11Display, clipboard) != window)
+    {
+        RTTestPrintf(g_hTest, RTTESTLVL_FAILURE,
+                     "XSetSelectionOwner(3X11): failed to become owner of clipboard selection\n");
+        return VERR_ACCESS_DENIED;
+    }
+
+    /* Initial setup completed, notify our callee that we are now ready for action. */
+    RTThreadUserSignal(hThread);
+
+    while (!ASMAtomicReadBool(&pTask->X11.fShutdown))
+    {
+        /* Check the event queue to see if any events have been received from the X
+         * server. */
+        if (XPending(pX11Display) > 0)
+        {
+            /* Copy the first event from the event queue into the specified XEvent
+             * structure and remove it from the queue. */
+            XEvent event;
+            XNextEvent(pX11Display, &event);
+
+            /* X11 clients which want to paste the contents of the clipboard selection
+             * call XConvertSelection(3X11) which the X server responds to by sending
+             * a 'SelectionRequest' event to the X11 client which currently owns the
+             * clipboard selection. This happens in our case via: svcConnect() ->
+             * ShClBackendConnect() -> ShClX11ThreadStart() -> ShClX11ThreadStartEx() ->
+             * clipThreadMain() -> clipQueryX11Targets() -> XtGetSelectionValue().
+             * XtGetSelectionValue() calls XConvertSelection() internally. */
+            if (event.type == SelectionRequest)
+            {
+                /* The 'SelectionRequest' event contains details of the X11 client requestor
+                 * such as their 'window' ('requestor'), the desired format of the clipboard
+                 * contents ('target'), and which property on their window that they would
+                 * like the clipboard contents copied to ('property'). We use this data to
+                 * populate a 'SelectionNotify' event which we send back to the requestor. */
+                XSelectionRequestEvent *pReq = &event.xselectionrequest;
+                XSelectionEvent selectionNotifyEvent = { 0 };
+
+                selectionNotifyEvent.type      = SelectionNotify;
+                selectionNotifyEvent.display   = pReq->display;
+                selectionNotifyEvent.requestor = pReq->requestor;
+                selectionNotifyEvent.selection = pReq->selection;
+                selectionNotifyEvent.target    = pReq->target;
+                selectionNotifyEvent.property  = pReq->property;
+                selectionNotifyEvent.time      = pReq->time;
+
+                /* X11 clients typically send an initial 'SelectionRequest' event containing
+                 * a 'target' containing the "TARGETS" atom to request a list of valid
+                 * supported target atoms. After taking ownership of the "CLIPBOARD"
+                 * selection other X11 clients may also send a 'SelectionRequest' event with
+                 * a 'target' of the "TARGETS" atom. */
+                if (selectionNotifyEvent.target == targets)
+                {
+                    Atom supported[] = { targets, utf8_string };
+                    XChangeProperty(pX11Display, pReq->requestor, pReq->property, XA_ATOM, 32,
+                        PropModeReplace, (unsigned char *)supported, RT_ELEMENTS(supported));
+                }
+                else if (selectionNotifyEvent.target == utf8_string)
+                {
+                    /* Update the property which the requestor chose to contain the clipboard
+                     * selection contents on the requetor's window with the UTF8-formatted
+                     * contents of the clipboard. */
+                    XChangeProperty(pX11Display, pReq->requestor, pReq->property, pReq->target, 8,
+                        PropModeReplace, (unsigned char *)pTask->pvData, pTask->cbData);
+                }
+                else
+                {
+                    /* We don't support the requested format. Note that if the size of the
+                     * request to the X server exceeds the maximum request size described in the
+                     * X Consortium's Inter-Client Communication Conventions Manual (ICCM)
+                     * section 2.5 'Large Data Transfers' then the requestor will send a target
+                     * of type 'INCR' meaning the data will be sent incrementally. The Xlib
+                     * Programming Manual describes how the maximum request size can be
+                     * calculated:
+                     *   maxsize = XExtendedMaxRequestSize();
+                     *   if (!maxsize) maxsize = XMaxRequestSize();
+                     *   maxsize *= 4
+                     * On Solaris 11.4 and various Linux distros the lower bound is 64K * 4 which
+                     * is greater than the possible maximum size passed in here of 8K so there is
+                     * no need to include support for the 'INCR' target here.
+                     */
+                    selectionNotifyEvent.property = None;
+                }
+
+                /* Send a 'SelectionNotify' event to the requestor of the clipboard
+                 * selection contents with either the list of supported targets or else the
+                 * clipboard contents in their chosen property. */
+                XSendEvent(pX11Display, selectionNotifyEvent.requestor, True, 0, (XEvent *)&selectionNotifyEvent);
+                XFlush(pX11Display);
+            }
+        }
+        else
+            RTThreadSleep(RT_MS_1SEC / 2);
+    }
+
+    XDestroyWindow(pX11Display, window);
+    XCloseDisplay(pX11Display);
+
+    return VINF_SUCCESS;
+}
+#endif
+
 static DECLCALLBACK(int) tstTestReadFromHostSetup(PCLIPBOARDTESTCTX pTstCtx, void **ppvCtx)
 {
     RT_NOREF(ppvCtx);
+    int rc = VINF_SUCCESS;
 
     /* Set the right clipboard mode, so that the guest can read from the host. */
     tstClipboardSetMode(TstHgcmMockSvcInst(), VBOX_SHCL_MODE_BIDIRECTIONAL);
@@ -584,14 +730,20 @@ static DECLCALLBACK(int) tstTestReadFromHostSetup(PCLIPBOARDTESTCTX pTstCtx, voi
 #if !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2)
     pTask->pvData      = tstGenerateUtf8StringA(pTask->cbData);
     pTask->cbData++; /* Add terminating zero. */
+    pTask->X11.fShutdown = false;
+    rc = RTThreadCreate(&pTask->X11.hThread, tstSetClipboardContents, pTask, 0, RTTHREADTYPE_DEFAULT,
+                        RTTHREADFLAGS_WAITABLE, "X11Copy");
+    if (RT_SUCCESS(rc))
+        rc = RTThreadUserWait(pTask->X11.hThread, RT_MS_5SEC);
+    if (RT_FAILURE(rc))
+        return VERR_NOT_SUPPORTED;
+
 #else
     pTask->pvData      = tstGenerateUtf16StringA((uint32_t)(pTask->cbData /* We use bytes == chars here */));
     pTask->cbData     *= sizeof(RTUTF16);
     pTask->cbData     += sizeof(RTUTF16); /* Add terminating zero. */
 #endif
     pTask->cbProcessed = 0;
-
-    int rc = VINF_SUCCESS;
 
 #if defined (RT_OS_LINUX) || defined (RT_OS_SOLARIS)
     /* Initialize the Shared Clipboard backend callbacks. */
@@ -619,9 +771,11 @@ static DECLCALLBACK(int) tstTestReadFromHostExec(PCLIPBOARDTESTCTX pTstCtx, void
 {
     RT_NOREF(pvCtx);
 
+    RTTestISub("Testing guest reading from the host clipboard");
+
     TstHGCMUtilsGuestThreadStart(&pTstCtx->HGCM, tstTestReadFromHost_ThreadGuest, pTstCtx);
 
-    PTSTHGCMUTILSTASK pTask = (PTSTHGCMUTILSTASK)TstHGCMUtilsTaskGetCurrent(&pTstCtx->HGCM);
+    PTSTHGCMUTILSTASK pHGCMTask = (PTSTHGCMUTILSTASK)TstHGCMUtilsTaskGetCurrent(&pTstCtx->HGCM);
 
     bool fUseMock = false;
     TSTUSERMOCK UsrMock;
@@ -629,7 +783,7 @@ static DECLCALLBACK(int) tstTestReadFromHostExec(PCLIPBOARDTESTCTX pTstCtx, void
         tstTestReadFromHost_MockInit(&UsrMock, "tstX11Hst");
 
     /* Wait until the task has been finished. */
-    TstHGCMUtilsTaskWait(pTask, RT_MS_30SEC);
+    TstHGCMUtilsTaskWait(pHGCMTask, RT_MS_30SEC);
 
     if (fUseMock)
         tstTestReadFromHost_MockDestroy(&UsrMock);
@@ -637,12 +791,44 @@ static DECLCALLBACK(int) tstTestReadFromHostExec(PCLIPBOARDTESTCTX pTstCtx, void
     return VINF_SUCCESS;
 }
 
+#if defined (RT_OS_LINUX) || defined (RT_OS_SOLARIS)
+/**
+ * Stops the X11 "copy" thread (tstSetClipboardContents()).
+ *
+ * @return VBox status code.
+ * @param  pTstCtx              A pointer to a clipboard test task which contains
+ *                              the X11 "copy" thread's details.
+ */
+static int tstClipboardCopyThreadStop(PCLIPBOARDTESTCTX pTstCtx)
+{
+    PCLIPBOARDTESTTASK pTask = &pTstCtx->Task;
+    ASMAtomicWriteBool(&pTask->X11.fShutdown, true);
+
+    int rcThread;
+    int rc = RTThreadWait(pTask->X11.hThread, RT_MS_5SEC, &rcThread);
+    if (RT_SUCCESS(rc))
+        rc = rcThread;
+    if (RT_SUCCESS(rc))
+        pTask->X11.hThread = NIL_RTTHREAD;
+
+    return rc;
+}
+#endif
+
 static DECLCALLBACK(int) tstTestReadFromHostDestroy(PCLIPBOARDTESTCTX pTstCtx, void *pvCtx)
 {
     RT_NOREF(pvCtx);
+    int vrc;
 
-    int vrc = TstHGCMUtilsGuestThreadStop(&pTstCtx->HGCM);
+#if defined (RT_OS_LINUX) || defined (RT_OS_SOLARIS)
+    vrc = tstClipboardCopyThreadStop(pTstCtx);
+    if (RT_FAILURE(vrc))
+        RTTestPrintf(g_hTest, RTTESTLVL_FAILURE, "tstSetClipboardContents() failed: rc=%Rrc\n", vrc);
+#endif
+
+    vrc = TstHGCMUtilsGuestThreadStop(&pTstCtx->HGCM);
     AssertRC(vrc);
+
     vrc = TstHGCMUtilsHostThreadStop(&pTstCtx->HGCM);
     AssertRC(vrc);
 
@@ -695,14 +881,6 @@ int main()
     TstHgcmMockSvcCreate(pSvc);
     TstHgcmMockSvcStart(pSvc);
 
-    /*
-     * Run the tests.
-     */
-    if (0) /** @todo triggers assertion */
-        testGuestSimple();
-    if (1)
-        testHostCall();
-
     RT_ZERO(g_TstCtx);
 
     PTSTHGCMUTILSCTX pCtx = &g_TstCtx.HGCM;
@@ -712,8 +890,23 @@ int main()
     TstHGCMUtilsTaskInit(pTask);
     pTask->pvUser = &g_TstCtx.Task;
 
-    for (unsigned i = 0; i < RT_ELEMENTS(g_aTests); i++)
-        tstOne(&g_aTests[i]);
+    /*
+     * Run the tests. The tstOne() and testGuestSimple() tests rely on an X11
+     * display on Unix systems so skip them if not applicable.
+     */
+#if defined (RT_OS_LINUX) || defined (RT_OS_SOLARIS)
+    VBGHDISPLAYSERVERTYPE const enmDisplayType = VBGHDisplayServerTypeDetect();
+    RTTestPrintf(g_hTest, RTTESTLVL_DEBUG, "Display server type = %s\n", VBGHDisplayServerTypeToStr(enmDisplayType));
+    if (enmDisplayType == VBGHDISPLAYSERVERTYPE_X11)
+#endif
+    {
+        for (unsigned i = 0; i < RT_ELEMENTS(g_aTests); i++)
+            tstOne(&g_aTests[i]);
+
+        testGuestSimple();
+    }
+
+    testHostCall();
 
     TstHGCMUtilsTaskDestroy(pTask);
 

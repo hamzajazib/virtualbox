@@ -1,4 +1,4 @@
-# $Id: Makefile.kmk 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $
+# $Id: Makefile.kmk 113171 2026-02-26 11:30:55Z brent.paulson@oracle.com $
 ## @file
 # Sub-Makefile for the Shared Clipboard Host Service testcases.
 #
@@ -54,6 +54,7 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  if1of ($(KBUILD_TARGET), linux solaris)
   PROGRAMS += tstClipboardMockHGCM
   tstClipboardMockHGCM_SOURCES += \
+  	$(PATH_ROOT)/src/VBox/GuestHost/DisplayServerType.cpp \
   	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-x11.cpp \
   	../VBoxSharedClipboardSvc-x11.cpp
   tstClipboardMockHGCM_LIBPATH = \
