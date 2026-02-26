@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.h 113175 2026-02-26 12:33:20Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.h 113177 2026-02-26 13:22:14Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class declaration.
  */
@@ -306,14 +306,6 @@ public:
         bool confirmInaccesibleMediaClear(const QStringList &mediaNameList, UIMediumDeviceType enmType, QWidget *pParent = 0);
         bool confirmVisoDiscard(QWidget *pParent = 0) const;
         int  confirmUnattendedFilesRemoval(QWidget *pParent = 0) const;
-    /** @} */
-
-    /** @name VirtualBox Manager / Network Manager warnings.
-      * @{ */
-        bool confirmCloudNetworkRemoval(const QString &strName, QWidget *pParent = 0) const;
-        bool confirmHostNetworkInterfaceRemoval(const QString &strName, QWidget *pParent = 0) const;
-        bool confirmHostOnlyNetworkRemoval(const QString &strName, QWidget *pParent = 0) const;
-        bool confirmNATNetworkRemoval(const QString &strName, QWidget *pParent = 0) const;
     /** @} */
 
     /** @name VirtualBox Manager / Cloud Profile Manager warnings.

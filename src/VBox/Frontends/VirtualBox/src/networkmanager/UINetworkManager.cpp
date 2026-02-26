@@ -1,4 +1,4 @@
-/* $Id: UINetworkManager.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UINetworkManager.cpp 113177 2026-02-26 13:22:14Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINetworkManager class implementation.
  */
@@ -47,7 +47,6 @@
 #include "UIExtraDataManager.h"
 #include "UIGlobalSession.h"
 #include "UIIconPool.h"
-#include "UIMessageCenter.h"
 #include "UINetworkManager.h"
 #include "UINetworkManagerUtils.h"
 #include "UINotificationCenter.h"
@@ -645,7 +644,7 @@ void UINetworkManagerWidget::sltRemoveHostNetwork()
     const QString strNetworkName(pItem->name());
 
     /* Confirm host network removal: */
-    if (!msgCenter().confirmHostOnlyNetworkRemoval(strNetworkName, this))
+    if (!UINotificationQuestion::confirmHostOnlyNetworkRemoval(strNetworkName, this))
         return;
 
     /* Get VirtualBox for further activities: */
@@ -689,7 +688,7 @@ void UINetworkManagerWidget::sltRemoveHostNetwork()
     const QString strInterfaceName(pItem->name());
 
     /* Confirm host network removal: */
-    if (!msgCenter().confirmHostNetworkInterfaceRemoval(strInterfaceName, this))
+    if (!UINotificationQuestion::confirmHostNetworkInterfaceRemoval(strInterfaceName, this))
         return;
 
     /* Get host for further activities: */
@@ -873,7 +872,7 @@ void UINetworkManagerWidget::sltRemoveNATNetwork()
     const QString strNetworkName(pItem->name());
 
     /* Confirm host network removal: */
-    if (!msgCenter().confirmNATNetworkRemoval(strNetworkName, this))
+    if (!UINotificationQuestion::confirmNATNetworkRemoval(strNetworkName, this))
         return;
 
     /* Get VirtualBox for further activities: */
@@ -998,7 +997,7 @@ void UINetworkManagerWidget::sltRemoveCloudNetwork()
     const QString strNetworkName(pItem->name());
 
     /* Confirm host network removal: */
-    if (!msgCenter().confirmCloudNetworkRemoval(strNetworkName, this))
+    if (!UINotificationQuestion::confirmCloudNetworkRemoval(strNetworkName, this))
         return;
 
     /* Get VirtualBox for further activities: */

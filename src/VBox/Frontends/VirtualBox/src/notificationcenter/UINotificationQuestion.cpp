@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.cpp 113175 2026-02-26 12:33:20Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.cpp 113177 2026-02-26 13:22:14Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion implementations.
  */
@@ -46,7 +46,7 @@ bool UINotificationQuestion::confirmCheckingInaccessibleMedia()
                                                    "they become accessible later.</p><p>Press <b>Check</b> to open the Virtual "
                                                    "Media Manager window and see which files are inaccessible, or press "
                                                    "<b>Ignore</b> to ignore this message.</p>"),
-        QStringList() << QApplication::translate("UIMessageCenter", "Ignore") /* cancel button text */
+        QStringList() << QApplication::translate("UIMessageCenter", "Ignore", "message") /* cancel button text */
                       << QApplication::translate("UIMessageCenter", "Check", "inaccessible media") /* ok button text */,
         true /* Ok by default? */,
         "confirmCheckingInaccessibleMedia" /* internal name */);
@@ -71,7 +71,7 @@ bool UINotificationQuestion::confirmAutomaticCollisionResolve(const QString &str
                                                    "name.</p><p>Would you like to automatically rename it?</p>")
                                                    .arg(strName, strGroupName),
         QStringList() << QString() /* cancel button text */
-                      << QApplication::translate("UIMessageCenter", "Rename") /* ok button text */);
+                      << QApplication::translate("UIMessageCenter", "Rename", "group") /* ok button text */);
 }
 
 /* static */
@@ -82,7 +82,7 @@ bool UINotificationQuestion::confirmMachineItemRemoval(const QString &strNames)
         QApplication::translate("UIMessageCenter", "<p>Remove these virtual machine items from the machine "
                                                    "list?</p><p><b>%1</b></p>").arg(strNames),
         QStringList() << QString() /* cancel button text */
-                      << QApplication::translate("UIMessageCenter", "Remove") /* ok button text */,
+                      << QApplication::translate("UIMessageCenter", "Remove", "machine item") /* ok button text */,
         false /* Ok by default? */);
 }
 
@@ -98,7 +98,7 @@ bool UINotificationQuestion::confirmSnapshotRemoval(const QString &strName)
                                                    "recovered.</p></p>Are you sure you want to delete the selected snapshot "
                                                    "<b>%1</b>?</p>").arg(strName),
         QStringList() << QString() /* cancel button text */
-                      << QApplication::translate("UIMessageCenter", "Delete") /* ok button text */);
+                      << QApplication::translate("UIMessageCenter", "Delete", "snapshot") /* ok button text */);
 }
 
 /* static */
@@ -188,7 +188,7 @@ bool UINotificationQuestion::confirmRemovingOfLastDVDDevice(QWidget *pParent)
                                                    "be able to insert any optical disks or ISO images or install the Guest "
                                                    "Additions without it!</p>"),
         QStringList() << QString() /* cancel button text */
-                      << QApplication::translate("UIMessageCenter", "Remove", "medium") /* ok button text */,
+                      << QApplication::translate("UIMessageCenter", "Remove", "device") /* ok button text */,
         false /* ok button by default? */,
         QString() /* internal name */,
         QString() /* help keyword */,
@@ -281,6 +281,7 @@ bool UINotificationQuestion::confirmInstallExtensionPack(const QString &strPackN
         pParent);
 }
 
+/* static */
 bool UINotificationQuestion::confirmReplaceExtensionPack(const QString &strPackName,
                                                          const QString &strPackVersionNew,
                                                          const QString &strPackVersionOld,
@@ -365,6 +366,7 @@ bool UINotificationQuestion::confirmReplaceExtensionPack(const QString &strPackN
     return fRc;
 }
 
+/* static */
 bool UINotificationQuestion::confirmRemoveExtensionPack(const QString &strPackName,
                                                         QWidget *pParent)
 {
@@ -374,6 +376,80 @@ bool UINotificationQuestion::confirmRemoveExtensionPack(const QString &strPackNa
                                                    "<p>Are you sure you want to proceed?</p>").arg(strPackName),
         QStringList() << QString() /* cancel button text */
                       << QApplication::translate("UIMessageCenter", "Remove", "extension pack") /* ok button text */,
+        false /* ok button by default? */,
+        QString() /* internal name */,
+        QString() /* help keyword */,
+        pParent);
+}
+
+/* static */
+bool UINotificationQuestion::confirmCloudNetworkRemoval(const QString &strName, QWidget *pParent)
+{
+    return createBlockingQuestion(
+        QApplication::translate("UIMessageCenter", "Remove cloud network?"),
+        QApplication::translate("UIMessageCenter", "<p>Do you want to remove the cloud network <nobr><b>%1</b>?</nobr></p>"
+                                                   "<p>If this network is in use by one or more virtual machine network adapters "
+                                                   "these adapters will no longer be usable until you correct their settings by "
+                                                   "either choosing a different network name or a different adapter attachment "
+                                                   "type.</p>").arg(strName),
+        QStringList() << QString() /* cancel button text */
+                      << QApplication::translate("UIMessageCenter", "Remove", "network") /* ok button text */,
+        false /* ok button by default? */,
+        QString() /* internal name */,
+        QString() /* help keyword */,
+        pParent);
+}
+
+/* static */
+bool UINotificationQuestion::confirmHostNetworkInterfaceRemoval(const QString &strName, QWidget *pParent)
+{
+    return createBlockingQuestion(
+        QApplication::translate("UIMessageCenter", "Remove host-only network interface?"),
+        QApplication::translate("UIMessageCenter", "<p>Deleting this host-only network will remove the host-only interface this "
+                                                   "network is based on. Do you want to remove the (host-only network) interface "
+                                                   "<nobr><b>%1</b>?</nobr></p><p><b>Note:</b> this interface may be in use by "
+                                                   "one or more virtual network adapters belonging to one of your VMs. After it "
+                                                   "is removed, these adapters will no longer be usable until you correct their "
+                                                   "settings by either choosing a different interface name or a different "
+                                                   "adapter attachment type.</p>").arg(strName),
+        QStringList() << QString() /* cancel button text */
+                      << QApplication::translate("UIMessageCenter", "Remove", "interface") /* ok button text */,
+        false /* ok button by default? */,
+        QString() /* internal name */,
+        QString() /* help keyword */,
+        pParent);
+}
+
+/* static */
+bool UINotificationQuestion::confirmHostOnlyNetworkRemoval(const QString &strName, QWidget *pParent)
+{
+    return createBlockingQuestion(
+        QApplication::translate("UIMessageCenter", "Remove host-only network?"),
+        QApplication::translate("UIMessageCenter", "<p>Do you want to remove the host-only network <nobr><b>%1</b>?</nobr></p>"
+                                                   "<p>If this network is in use by one or more virtual machine network adapters "
+                                                   "these adapters will no longer be usable until you correct their settings by "
+                                                   "either choosing a different network name or a different adapter attachment "
+                                                   "type.</p>").arg(strName),
+        QStringList() << QString() /* cancel button text */
+                      << QApplication::translate("UIMessageCenter", "Remove", "network") /* ok button text */,
+        false /* ok button by default? */,
+        QString() /* internal name */,
+        QString() /* help keyword */,
+        pParent);
+}
+
+/* static */
+bool UINotificationQuestion::confirmNATNetworkRemoval(const QString &strName, QWidget *pParent)
+{
+    return createBlockingQuestion(
+        QApplication::translate("UIMessageCenter", "Remove NAT network?"),
+        QApplication::translate("UIMessageCenter", "<p>Do you want to remove the NAT network <nobr><b>%1</b>?</nobr></p><p>If "
+                                                   "this network is in use by one or more virtual machine network adapters these "
+                                                   "adapters will no longer be usable until you correct their settings by either "
+                                                   "choosing a different network name or a different adapter attachment "
+                                           "type.</p>").arg(strName),
+        QStringList() << QString() /* cancel button text */
+                      << QApplication::translate("UIMessageCenter", "Remove", "network") /* ok button text */,
         false /* ok button by default? */,
         QString() /* internal name */,
         QString() /* help keyword */,

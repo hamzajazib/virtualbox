@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.cpp 113175 2026-02-26 12:33:20Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.cpp 113177 2026-02-26 13:22:14Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class implementation.
  */
@@ -969,72 +969,6 @@ int UIMessageCenter::confirmUnattendedFilesRemoval(QWidget *pParent /*= 0 */) co
                              AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
                              0,
                              tr("Delete"));
-}
-
-bool UIMessageCenter::confirmCloudNetworkRemoval(const QString &strName, QWidget *pParent /* = 0*/) const
-{
-    return questionBinary(pParent, MessageType_Question,
-                          tr("<p>Do you want to remove the cloud network <nobr><b>%1</b>?</nobr></p>"
-                             "<p>If this network is in use by one or more virtual "
-                             "machine network adapters these adapters will no longer be "
-                             "usable until you correct their settings by either choosing "
-                             "a different network name or a different adapter attachment "
-                             "type.</p>")
-                             .arg(strName),
-                          0 /* auto-confirm id */,
-                          tr("Remove") /* ok button text */,
-                          QString() /* cancel button text */,
-                          false /* ok button by default? */);
-}
-
-bool UIMessageCenter::confirmHostNetworkInterfaceRemoval(const QString &strName, QWidget *pParent /* = 0 */) const
-{
-    return questionBinary(pParent, MessageType_Question,
-                          tr("<p>Deleting this host-only network will remove "
-                             "the host-only interface this network is based on. Do you want to "
-                             "remove the (host-only network) interface <nobr><b>%1</b>?</nobr></p>"
-                             "<p><b>Note:</b> this interface may be in use by one or more "
-                             "virtual network adapters belonging to one of your VMs. "
-                             "After it is removed, these adapters will no longer be usable until "
-                             "you correct their settings by either choosing a different interface "
-                             "name or a different adapter attachment type.</p>")
-                             .arg(strName),
-                          0 /* auto-confirm id */,
-                          tr("Remove") /* ok button text */,
-                          QString() /* cancel button text */,
-                          false /* ok button by default? */);
-}
-
-bool UIMessageCenter::confirmHostOnlyNetworkRemoval(const QString &strName, QWidget *pParent /* = 0 */) const
-{
-    return questionBinary(pParent, MessageType_Question,
-                          tr("<p>Do you want to remove the host-only network <nobr><b>%1</b>?</nobr></p>"
-                             "<p>If this network is in use by one or more virtual "
-                             "machine network adapters these adapters will no longer be "
-                             "usable until you correct their settings by either choosing "
-                             "a different network name or a different adapter attachment "
-                             "type.</p>")
-                             .arg(strName),
-                          0 /* auto-confirm id */,
-                          tr("Remove") /* ok button text */,
-                          QString() /* cancel button text */,
-                          false /* ok button by default? */);
-}
-
-bool UIMessageCenter::confirmNATNetworkRemoval(const QString &strName, QWidget *pParent /* = 0*/) const
-{
-    return questionBinary(pParent, MessageType_Question,
-                          tr("<p>Do you want to remove the NAT network <nobr><b>%1</b>?</nobr></p>"
-                             "<p>If this network is in use by one or more virtual "
-                             "machine network adapters these adapters will no longer be "
-                             "usable until you correct their settings by either choosing "
-                             "a different network name or a different adapter attachment "
-                             "type.</p>")
-                             .arg(strName),
-                          0 /* auto-confirm id */,
-                          tr("Remove") /* ok button text */,
-                          QString() /* cancel button text */,
-                          false /* ok button by default? */);
 }
 
 bool UIMessageCenter::confirmCloudProfileRemoval(const QString &strName, QWidget *pParent /* = 0 */) const

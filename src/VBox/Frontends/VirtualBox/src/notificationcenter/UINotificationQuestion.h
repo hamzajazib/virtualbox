@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.h 113175 2026-02-26 12:33:20Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.h 113177 2026-02-26 13:22:14Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion declarations.
  */
@@ -141,6 +141,22 @@ public:
         /** Confirms removing extension pack. */
         static bool confirmRemoveExtensionPack(const QString &strPackName,
                                                QWidget *pParent);
+    /** @} */
+
+    /** @name Network Manager warnings.
+      * @{ */
+        /** Confirms cloud network removal. */
+        static bool confirmCloudNetworkRemoval(const QString &strName,
+                                               QWidget *pParent);
+        /** Confirms host network interface removal. */
+        static bool confirmHostNetworkInterfaceRemoval(const QString &strName,
+                                                       QWidget *pParent);
+        /** Confirms host-only network removal. */
+        static bool confirmHostOnlyNetworkRemoval(const QString &strName,
+                                                  QWidget *pParent);
+        /** Confirms NAT network removal. */
+        static bool confirmNATNetworkRemoval(const QString &strName,
+                                             QWidget *pParent);
     /** @} */
 
 protected:
