@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.cpp 113163 2026-02-25 16:29:50Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.cpp 113173 2026-02-26 11:58:51Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class implementation.
  */
@@ -656,29 +656,6 @@ bool UIMessageCenter::confirmSettingsReloading(QWidget *pParent /* = 0 */) const
     setWarningShown("confirmSettingsReloading", false);
 
     return fResult;
-}
-
-bool UIMessageCenter::confirmAutomaticCollisionResolve(const QString &strName, const QString &strGroupName) const
-{
-    return questionBinary(0, MessageType_Question,
-                          tr("<p>You are trying to move group <nobr><b>%1</b></nobr> to group "
-                             "<nobr><b>%2</b></nobr> which already have another item with the same name.</p>"
-                             "<p>Would you like to automatically rename it?</p>")
-                             .arg(strName, strGroupName),
-                          0 /* auto-confirm id */,
-                          tr("Rename"));
-}
-
-bool UIMessageCenter::confirmMachineItemRemoval(const QStringList &names) const
-{
-    return questionBinary(0, MessageType_Question,
-                          tr("<p>Remove these virtual machine items from the machine list?</p>"
-                             "<p><b>%1</b></p>")
-                             .arg(names.join(", ")),
-                          0 /* auto-confirm id */,
-                          tr("Remove") /* ok button text */,
-                          QString() /* cancel button text */,
-                          false /* ok button by default? */);
 }
 
 int UIMessageCenter::confirmMachineRemoval(const QList<CMachine> &machines) const

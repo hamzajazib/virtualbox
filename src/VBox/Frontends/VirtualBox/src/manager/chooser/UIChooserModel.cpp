@@ -1,4 +1,4 @@
-/* $Id: UIChooserModel.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIChooserModel.cpp 113173 2026-02-26 11:58:51Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIChooserModel class implementation.
  */
@@ -674,7 +674,7 @@ void UIChooserModel::disbandSelectedGroupItem()
                 /* But we can do it for VM groups: */
                 case UIChooserNodeType_Group:
                 {
-                    if (!msgCenter().confirmAutomaticCollisionResolve(strChildName, pParentNode->name()))
+                    if (!UINotificationQuestion::confirmAutomaticCollisionResolve(strChildName, pParentNode->name()))
                         return;
                     childrenToBeRenamed << pChildNode;
                     break;
@@ -1955,7 +1955,7 @@ void UIChooserModel::removeLocalMachineItems(const QList<UIChooserItemMachine*> 
     QStringList names;
     foreach (UIChooserItemMachine *pItem, machineItems)
         names << pItem->name();
-    if (!msgCenter().confirmMachineItemRemoval(names))
+    if (!UINotificationQuestion::confirmMachineItemRemoval(names.join(", ")))
         return;
 
     /* Find and select closest unselected item: */

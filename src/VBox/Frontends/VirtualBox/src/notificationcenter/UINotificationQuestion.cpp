@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.cpp 113170 2026-02-26 11:25:34Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.cpp 113173 2026-02-26 11:58:51Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion implementations.
  */
@@ -59,6 +59,31 @@ bool UINotificationQuestion::confirmCreatingPath(const QString &strPath)
         QApplication::translate("UIMessageCenter", "Create machine path?"),
         QApplication::translate("UIMessageCenter", "<p>Selected path doesn't exist:<br>%1</p>"
                                 "<p>Would you like to create it?</p>").arg(strPath));
+}
+
+/* static */
+bool UINotificationQuestion::confirmAutomaticCollisionResolve(const QString &strName, const QString &strGroupName)
+{
+    return createBlockingQuestion(
+        QApplication::translate("UIMessageCenter", "Resolve name collision?"),
+        QApplication::translate("UIMessageCenter", "<p>You are trying to move group <nobr><b>%1</b></nobr> to group "
+                                                   "<nobr><b>%2</b></nobr> which already have another item with the same "
+                                                   "name.</p><p>Would you like to automatically rename it?</p>")
+                                                   .arg(strName, strGroupName),
+        QStringList() << QString() /* cancel button text */
+                      << QApplication::translate("UIMessageCenter", "Rename") /* ok button text */);
+}
+
+/* static */
+bool UINotificationQuestion::confirmMachineItemRemoval(const QString &strNames)
+{
+    return createBlockingQuestion(
+        QApplication::translate("UIMessageCenter", "Remove machine items?"),
+        QApplication::translate("UIMessageCenter", "<p>Remove these virtual machine items from the machine "
+                                                   "list?</p><p><b>%1</b></p>").arg(strNames),
+        QStringList() << QString() /* cancel button text */
+                      << QApplication::translate("UIMessageCenter", "Remove") /* ok button text */,
+        false /* Ok by default? */);
 }
 
 /* static */

@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.h 113163 2026-02-25 16:29:50Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.h 113173 2026-02-26 11:58:51Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class declaration.
  */
@@ -289,9 +289,6 @@ public:
 
     /** @name VirtualBox Manager / Chooser Pane warnings.
       * @{ */
-        bool confirmAutomaticCollisionResolve(const QString &strName, const QString &strGroupName) const;
-        /// @todo move after fixing thread stuff
-        bool confirmMachineItemRemoval(const QStringList &names) const;
         int confirmMachineRemoval(const QList<CMachine> &machines) const;
         int confirmCloudMachineRemoval(const QList<CCloudMachine> &machines) const;
     /** @} */

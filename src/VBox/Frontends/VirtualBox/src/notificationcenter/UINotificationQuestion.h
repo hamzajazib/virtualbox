@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.h 113170 2026-02-26 11:25:34Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.h 113173 2026-02-26 11:58:51Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion declarations.
  */
@@ -83,6 +83,12 @@ public:
       * @{ */
         /** Confirms creation of the @a strPath for the machine to move in. */
         static bool confirmCreatingPath(const QString &strPath);
+
+        /** Confirms automatic @a strName collision resolve inside group with @a strGroupName. */
+        static bool confirmAutomaticCollisionResolve(const QString &strName, const QString &strGroupName);
+
+        /** Confirms machine item removal for @a strNames specified. */
+        static bool confirmMachineItemRemoval(const QString &strNames);
 
         /** Confirms removal for the snapshot with @a strName specified. */
         static bool confirmSnapshotRemoval(const QString &strName);
