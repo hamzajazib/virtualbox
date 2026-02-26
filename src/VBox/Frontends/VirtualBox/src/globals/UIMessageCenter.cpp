@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.cpp 113178 2026-02-26 13:48:56Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.cpp 113179 2026-02-26 13:51:29Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class implementation.
  */
@@ -969,28 +969,6 @@ int UIMessageCenter::confirmUnattendedFilesRemoval(QWidget *pParent /*= 0 */) co
                              AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
                              0,
                              tr("Delete"));
-}
-
-bool UIMessageCenter::confirmCloudProfileRemoval(const QString &strName, QWidget *pParent /* = 0 */) const
-{
-    return questionBinary(pParent, MessageType_Question,
-                          tr("<p>Do you want to remove the cloud profile <nobr><b>%1</b>?</nobr></p>")
-                             .arg(strName),
-                          0 /* auto-confirm id */,
-                          tr("Remove") /* ok button text */,
-                          QString() /* cancel button text */,
-                          false /* ok button by default? */);
-}
-
-bool UIMessageCenter::confirmCloudProfilesImport(QWidget *pParent /* = 0 */) const
-{
-    return questionBinary(pParent, MessageType_Question,
-                          tr("<p>Do you want to import cloud profiles from external files?</p>"
-                             "<p>VirtualBox cloud profiles will be overwritten and their data will be lost.</p>"),
-                          0 /* auto-confirm id */,
-                          tr("Import") /* ok button text */,
-                          QString() /* cancel button text */,
-                          false /* ok button by default? */);
 }
 
 bool UIMessageCenter::confirmCloudConsoleApplicationRemoval(const QString &strName, QWidget *pParent /* = 0 */) const

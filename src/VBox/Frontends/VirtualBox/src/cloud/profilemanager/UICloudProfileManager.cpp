@@ -1,4 +1,4 @@
-/* $Id: UICloudProfileManager.cpp 113178 2026-02-26 13:48:56Z sergey.dubov@oracle.com $ */
+/* $Id: UICloudProfileManager.cpp 113179 2026-02-26 13:51:29Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UICloudProfileManager class implementation.
  */
@@ -45,8 +45,8 @@
 #include "UICommon.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
-#include "UIMessageCenter.h"
 #include "UINotificationMessage.h"
+#include "UINotificationQuestion.h"
 #include "UIShortcutPool.h"
 #include "UITranslationEventListener.h"
 #include "UIVirtualBoxEventHandler.h"
@@ -352,7 +352,7 @@ void UICloudProfileManagerWidget::sltImportCloudProfiles()
 
     /* If there are profiles exist => confirm cloud profile import. */
     if (   pProviderItem->childCount() != 0
-        && !msgCenter().confirmCloudProfilesImport(this))
+        && !UINotificationQuestion::confirmCloudProfilesImport(this))
         return;
 
     /* Acquire provider short name: */
@@ -384,7 +384,7 @@ void UICloudProfileManagerWidget::sltRemoveCloudProfile()
     const QString strProfileName = pProfileItem->name();
 
     /* Confirm cloud profile removal: */
-    if (!msgCenter().confirmCloudProfileRemoval(strProfileName, this))
+    if (!UINotificationQuestion::confirmCloudProfileRemoval(strProfileName, this))
         return;
 
     /* Acquire provider short name: */

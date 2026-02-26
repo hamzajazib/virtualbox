@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.h 113177 2026-02-26 13:22:14Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.h 113179 2026-02-26 13:51:29Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion declarations.
  */
@@ -157,6 +157,14 @@ public:
         /** Confirms NAT network removal. */
         static bool confirmNATNetworkRemoval(const QString &strName,
                                              QWidget *pParent);
+    /** @} */
+
+    /** @name Cloud Profile Manager warnings.
+      * @{ */
+        /** Confirms cloud profile removal. */
+        static bool confirmCloudProfileRemoval(const QString &strName, QWidget *pParent);
+        /** Confirms cloud profiles import. */
+        static bool confirmCloudProfilesImport(QWidget *pParent);
     /** @} */
 
 protected:

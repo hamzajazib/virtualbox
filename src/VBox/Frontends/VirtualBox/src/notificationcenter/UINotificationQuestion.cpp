@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.cpp 113177 2026-02-26 13:22:14Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.cpp 113179 2026-02-26 13:51:29Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion implementations.
  */
@@ -450,6 +450,37 @@ bool UINotificationQuestion::confirmNATNetworkRemoval(const QString &strName, QW
                                            "type.</p>").arg(strName),
         QStringList() << QString() /* cancel button text */
                       << QApplication::translate("UIMessageCenter", "Remove", "network") /* ok button text */,
+        false /* ok button by default? */,
+        QString() /* internal name */,
+        QString() /* help keyword */,
+        pParent);
+}
+
+/* static */
+bool UINotificationQuestion::confirmCloudProfileRemoval(const QString &strName, QWidget *pParent)
+{
+    return createBlockingQuestion(
+        QApplication::translate("UIMessageCenter", "Remove cloud profile?"),
+        QApplication::translate("UIMessageCenter", "<p>Do you want to remove the cloud profile <nobr><b>%1</b>?</nobr></p>")
+                                                   .arg(strName),
+        QStringList() << QString() /* cancel button text */
+                      << QApplication::translate("UIMessageCenter", "Remove", "profile") /* ok button text */,
+        false /* ok button by default? */,
+        QString() /* internal name */,
+        QString() /* help keyword */,
+        pParent);
+}
+
+/* static */
+bool UINotificationQuestion::confirmCloudProfilesImport(QWidget *pParent)
+{
+    return createBlockingQuestion(
+        QApplication::translate("UIMessageCenter", "Import cloud profiles?"),
+        QApplication::translate("UIMessageCenter", "<p>Do you want to import cloud profiles from external files?</p>"
+                                                   "<p>VirtualBox cloud profiles will be overwritten and their data will be "
+                                                   "lost.</p>"),
+        QStringList() << QString() /* cancel button text */
+                      << QApplication::translate("UIMessageCenter", "Import", "profiles") /* ok button text */,
         false /* ok button by default? */,
         QString() /* internal name */,
         QString() /* help keyword */,
