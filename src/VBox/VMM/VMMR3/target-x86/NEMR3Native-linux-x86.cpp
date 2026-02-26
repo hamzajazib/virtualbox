@@ -1,4 +1,4 @@
-/* $Id: NEMR3Native-linux-x86.cpp 113140 2026-02-24 11:12:44Z alexander.eichner@oracle.com $ */
+/* $Id: NEMR3Native-linux-x86.cpp 113168 2026-02-26 08:53:43Z alexander.eichner@oracle.com $ */
 /** @file
  * NEM - Native execution manager, native ring-3 Linux backend.
  */
@@ -2641,6 +2641,26 @@ VMMR3_INT_DECL(int) NEMR3QueryHostHwvirtMsrs(PVM pVM, PSUPHWVIRTMSRS pMsrs)
 {
     int rcLnx = ioctl(pVM->nem.s.fdKvm, KVM_CHECK_EXTENSION, KVM_CAP_GET_MSR_FEATURES);
     if (rcLnx != 1)
+        return VERR_NOT_SUPPORTED;
+
+    /* Check that we can query the MSRs required. */
+    union
+    {
+        struct kvm_msr_list Core;
+        uint32_t padding[1 + 128];
+    } uMsrList;
+
+    uMsrList.Core.nmsrs = 128;
+    rcLnx = ioctl(pVM->nem.s.fdKvm, KVM_GET_MSR_FEATURE_INDEX_LIST, &uMsrList);
+    if (rcLnx != 0)
+        return VERR_NOT_SUPPORTED;
+
+    uint32_t i;
+    for (i = 0; i < uMsrList.Core.nmsrs; i++)
+        if (uMsrList.Core.indices[i] == MSR_IA32_FEATURE_CONTROL)
+            break;
+
+    if (i == uMsrList.Core.nmsrs) /* Probably not running on an Intel CPU. */
         return VERR_NOT_SUPPORTED;
 
     union
