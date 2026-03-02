@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.h 113209 2026-03-02 12:21:07Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.h 113210 2026-03-02 13:31:46Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class declaration.
  */
@@ -303,7 +303,6 @@ public:
 
     /** @name VirtualBox Manager / Media Manager warnings.
       * @{ */
-        bool confirmInaccesibleMediaClear(const QStringList &mediaNameList, UIMediumDeviceType enmType, QWidget *pParent = 0);
         bool confirmVisoDiscard(QWidget *pParent = 0) const;
         int  confirmUnattendedFilesRemoval(QWidget *pParent = 0) const;
     /** @} */

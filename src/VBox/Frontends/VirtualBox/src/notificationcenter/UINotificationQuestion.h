@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.h 113209 2026-03-02 12:21:07Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.h 113210 2026-03-02 13:31:46Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion declarations.
  */
@@ -36,6 +36,7 @@
 
 /* GUI includes: */
 #include "UILibraryDefs.h"
+#include "UIMediumDefs.h"
 #include "UINotificationObject.h"
 
 /* Forward declarations: */
@@ -151,12 +152,18 @@ public:
                                          bool fInduced,
                                          const QStringList &usage,
                                          QWidget *pParent);
+
         /** Confirms medium removal. */
         static bool confirmMediumRemoval(const UIMedium &guiMedium,
                                          QWidget *pParent);
         /** Confirms hard disk storage destruction. */
         static int confirmDeleteHardDiskStorage(const QString &strLocation,
                                                 QWidget *pParent);
+
+        /** Confirms clearing inaccessible media. */
+        static bool confirmInaccesibleMediaClear(const QStringList &media,
+                                                 UIMediumDeviceType enmType,
+                                                 QWidget *pParent);
     /** @} */
 
     /** @name Network Manager warnings.

@@ -1,4 +1,4 @@
-/* $Id: UIMediumManager.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIMediumManager.cpp 113210 2026-03-02 13:31:46Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMediumManager class implementation.
  */
@@ -56,7 +56,6 @@
 #include "UIMediumManager.h"
 #include "UIMediumSearchWidget.h"
 #include "UIMediumTools.h"
-#include "UIMessageCenter.h"
 #include "UINotificationCenter.h"
 #include "UIShortcutPool.h"
 #include "UITranslationEventListener.h"
@@ -549,7 +548,7 @@ void UIMediumManagerWidget::sltClear()
             nameList << pMediumItem->name();
         }
     }
-    if (!msgCenter().confirmInaccesibleMediaClear(nameList, currentMediumType(), this))
+    if (!UINotificationQuestion::confirmInaccesibleMediaClear(nameList, currentMediumType(), this))
         return;
 
     foreach (UIMediumItem *pMediumItem, mediumsToRemove)

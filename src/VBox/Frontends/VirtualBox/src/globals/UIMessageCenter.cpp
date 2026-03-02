@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.cpp 113209 2026-03-02 12:21:07Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.cpp 113210 2026-03-02 13:31:46Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class implementation.
  */
@@ -799,69 +799,6 @@ int UIMessageCenter::confirmSnapshotRestoring(const QString &strSnapshotName, bo
                    AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
                    0 /* 3rd button */,
                    tr("Restore"), tr("Cancel"), QString() /* 3rd button text */);
-}
-
-bool UIMessageCenter::confirmInaccesibleMediaClear(const QStringList &mediaNameList, UIMediumDeviceType enmType, QWidget *pParent /* = 0 */)
-{
-    if (mediaNameList.isEmpty())
-        return false;
-
-    if (enmType != UIMediumDeviceType_DVD && enmType != UIMediumDeviceType_Floppy)
-        return false;
-
-    QString strDetails("<!--EOM-->");
-    QString strDetailMessage;
-
-    if (enmType == UIMediumDeviceType_DVD)
-        strDetailMessage = tr("The list of inaccessible DVDs is as follows:");
-    else
-        strDetailMessage = tr("The list of inaccessible floppy disks is as follows:");
-
-
-    if (!strDetailMessage.isEmpty())
-        strDetails.prepend(QString("<p>%1.</p>").arg(UITranslator::emphasize(strDetailMessage)));
-
-    strDetails += QString("<table bgcolor=%1 border=0 cellspacing=5 cellpadding=0 width=100%>")
-                         .arg(QApplication::palette().color(QPalette::Active, QPalette::Window).name(QColor::HexRgb));
-    foreach (const QString &strDVD, mediaNameList)
-        strDetails += QString("<tr><td>%1</td></tr>").arg(strDVD);
-    strDetails += QString("</table>");
-
-    if (!strDetails.isEmpty())
-        strDetails = "<qt>" + strDetails + "</qt>";
-
-    if (enmType == UIMediumDeviceType_DVD)
-        return message(pParent,
-                       MessageType_Question,
-                       tr("<p>This will clear the optical disk list by releasing inaccessible DVDs"
-                          " from the virtual machines they are attached to"
-                          " and removing them from the list of registered media.<p>"
-                          "Are you sure?"),
-                       strDetails,
-                       0 /* auto-confirm id */,
-                       AlertButton_Ok,
-                       AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
-                       0 /* third button */,
-                       tr("Clear") /* ok button text */,
-                       QString() /* cancel button text */,
-                       QString() /* 3rd button text */,
-                       QString() /* help keyword */);
-    else
-        return message(pParent,
-                       MessageType_Question,
-                       tr("<p>This will clear the floppy disk list by releasing inaccessible disks"
-                          " from the virtual machines they are attached to"
-                          " and removing them from the list of registered media.<p>"
-                          "Are you sure?"),
-                       strDetails,
-                       0 /* auto-confirm id */,
-                       AlertButton_Ok,
-                       AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
-                       0 /* third button */,
-                       tr("Clear") /* ok button text */,
-                       QString() /* cancel button text */,
-                       QString() /* 3rd button text */,
-                       QString() /* help keyword */);
 }
 
 bool UIMessageCenter::confirmVisoDiscard(QWidget *pParent /* = 0*/) const

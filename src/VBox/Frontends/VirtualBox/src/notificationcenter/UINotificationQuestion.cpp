@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.cpp 113209 2026-03-02 12:21:07Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.cpp 113210 2026-03-02 13:31:46Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion implementations.
  */
@@ -32,6 +32,7 @@
 #include "UIMedium.h"
 #include "UINotificationCenter.h"
 #include "UINotificationQuestion.h"
+#include "UITranslator.h"
 
 /* COM includes: */
 #include "CMediumFormat.h"
@@ -509,6 +510,63 @@ int UINotificationQuestion::confirmDeleteHardDiskStorage(const QString &strLocat
         QString() /* internal name */,
         QString() /* help keyword */,
         pParent);
+}
+
+/* static */
+bool UINotificationQuestion::confirmInaccesibleMediaClear(const QStringList &media,
+                                                          UIMediumDeviceType enmType,
+                                                          QWidget *pParent)
+{
+    if (media.isEmpty())
+        return false;
+
+    if (enmType != UIMediumDeviceType_DVD && enmType != UIMediumDeviceType_Floppy)
+        return false;
+
+    QString strDetails("<!--EOM-->");
+    QString strDetailMessage;
+
+    if (enmType == UIMediumDeviceType_DVD)
+        strDetailMessage = QApplication::translate("UIMessageCenter", "The list of inaccessible DVDs is as follows:");
+    else
+        strDetailMessage = QApplication::translate("UIMessageCenter", "The list of inaccessible floppy disks is as follows:");
+
+    if (!strDetailMessage.isEmpty())
+        strDetails.prepend(QString("<p>%1</p>").arg(UITranslator::emphasize(strDetailMessage)));
+
+    strDetails += QString("<table bgcolor=%1 border=0 cellspacing=5 cellpadding=0 width=100%>")
+                         .arg(QApplication::palette().color(QPalette::Active, QPalette::Window).name(QColor::HexRgb));
+    foreach (const QString &strDVD, media)
+        strDetails += QString("<tr><td>%1</td></tr>").arg(strDVD);
+    strDetails += QString("</table>");
+
+    if (!strDetails.isEmpty())
+        strDetails = "<qt>" + strDetails + "</qt>";
+
+    if (enmType == UIMediumDeviceType_DVD)
+        return createBlockingQuestion(
+            QApplication::translate("UIMessageCenter", "Clear inaccessible media?"),
+            QApplication::translate("UIMessageCenter", "<p>This will clear the optical disk list by releasing inaccessible DVDs "
+                                                       "from the virtual machines they are attached to and removing them from "
+                                                       "the list of registered media.<p>Are you sure?") + strDetails,
+            QStringList() << QString() /* cancel button text */
+                          << QApplication::translate("UIMessageCenter", "Clear", "inaccessible media") /* ok button text */,
+            false /* ok button by default? */,
+            QString() /* internal name */,
+            QString() /* help keyword */,
+            pParent);
+    else
+        return createBlockingQuestion(
+            QApplication::translate("UIMessageCenter", "Clear inaccessible media?"),
+            QApplication::translate("UIMessageCenter", "<p>This will clear the floppy disk list by releasing inaccessible disks "
+                                                       "from the virtual machines they are attached to and removing them from "
+                                                       "the list of registered media.<p>Are you sure?") + strDetails,
+            QStringList() << QString() /* cancel button text */
+                          << QApplication::translate("UIMessageCenter", "Clear", "inaccessible media") /* ok button text */,
+            false /* ok button by default? */,
+            QString() /* internal name */,
+            QString() /* help keyword */,
+            pParent);
 }
 
 /* static */
