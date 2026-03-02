@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.cpp 113180 2026-02-26 16:01:36Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.cpp 113207 2026-03-02 11:33:36Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion implementations.
  */
@@ -509,6 +509,19 @@ bool UINotificationQuestion::confirmCloudConsoleProfileRemoval(const QString &st
         QStringList() << QString() /* cancel button text */
                       << QApplication::translate("UIMessageCenter", "Remove", "profile") /* ok button text */,
         false /* ok button by default? */);
+}
+
+/* static */
+bool UINotificationQuestion::warnAboutNetworkInterfaceNotFound(const QString &strMachineName, const QString &strIfNames)
+{
+    return createBlockingQuestion(
+        QApplication::translate("UIMessageCenter", "Open network configuration?"),
+        QApplication::translate("UIMessageCenter", "<p>Could not start the machine <b>%1</b> because the following physical "
+                                                   "network interfaces were not found:</p><p><b>%2</b></p><p>You can either "
+                                                   "change the machine's network settings or stop the machine.</p>")
+                                                   .arg(strMachineName, strIfNames),
+        QStringList() << QApplication::translate("UIMessageCenter", "Close VM") /* cancel button text */
+                      << QApplication::translate("UIMessageCenter", "Change Network Settings") /* ok button text */);
 }
 
 UINotificationQuestion::UINotificationQuestion(const QString &strName,

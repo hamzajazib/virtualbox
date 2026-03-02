@@ -1,4 +1,4 @@
-/* $Id: UISession.cpp 112975 2026-02-12 15:04:16Z sergey.dubov@oracle.com $ */
+/* $Id: UISession.cpp 113207 2026-03-02 11:33:36Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UISession class implementation.
  */
@@ -2816,7 +2816,7 @@ bool UISession::preprocessInitialization()
         /* Check if non-existent interfaces found: */
         if (!failedInterfaceNames.isEmpty())
         {
-            if (msgCenter().warnAboutNetworkInterfaceNotFound(machineName(), failedInterfaceNames.join(", ")))
+            if (UINotificationQuestion::warnAboutNetworkInterfaceNotFound(machineName(), failedInterfaceNames.join(", ")))
                 machineLogic()->openNetworkSettingsDialogTheModalWay();
             else
             {

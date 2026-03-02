@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.h 113180 2026-02-26 16:01:36Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.h 113207 2026-03-02 11:33:36Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion declarations.
  */
@@ -173,6 +173,12 @@ public:
         static bool confirmCloudConsoleApplicationRemoval(const QString &strName);
         /** Confirms cloud console profile removal. */
         static bool confirmCloudConsoleProfileRemoval(const QString &strName);
+    /** @} */
+
+    /** @name Runtime UI warnings.
+      * @{ */
+        /** Confirms network interface choice. */
+        static bool warnAboutNetworkInterfaceNotFound(const QString &strMachineName, const QString &strIfNames);
     /** @} */
 
 protected:

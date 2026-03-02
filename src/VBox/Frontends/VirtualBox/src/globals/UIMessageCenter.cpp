@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.cpp 113206 2026-03-02 11:30:45Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.cpp 113207 2026-03-02 11:33:36Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class implementation.
  */
@@ -1091,17 +1091,6 @@ bool UIMessageCenter::proposeDeleteOldExtentionPacks(const QStringList &strFiles
                           tr("Delete", "extension pack"));
 }
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-
-bool UIMessageCenter::warnAboutNetworkInterfaceNotFound(const QString &strMachineName, const QString &strIfNames) const
-{
-    return questionBinary(0, MessageType_Error,
-                          tr("<p>Could not start the machine <b>%1</b> because the following "
-                             "physical network interfaces were not found:</p><p><b>%2</b></p>"
-                             "<p>You can either change the machine's network settings or stop the machine.</p>")
-                             .arg(strMachineName, strIfNames),
-                          0 /* auto-confirm id */,
-                          tr("Change Network Settings"), tr("Close VM"));
-}
 
 bool UIMessageCenter::warnAboutGuruMeditation(const QString &strLogFolder)
 {

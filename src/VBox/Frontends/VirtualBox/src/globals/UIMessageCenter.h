@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.h 113206 2026-03-02 11:30:45Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.h 113207 2026-03-02 11:33:36Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class declaration.
  */
@@ -331,8 +331,6 @@ public:
 
     /** @name Runtime UI warnings.
       * @{ */
-        bool warnAboutNetworkInterfaceNotFound(const QString &strMachineName, const QString &strIfNames) const;
-
         bool warnAboutGuruMeditation(const QString &strLogFolder);
 
         bool confirmInputCapture(bool &fAutoConfirmed) const;
