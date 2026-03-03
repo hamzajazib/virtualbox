@@ -1,4 +1,4 @@
-/* $Id: UIKeyboardHandler.cpp 113062 2026-02-17 12:37:07Z sergey.dubov@oracle.com $ */
+/* $Id: UIKeyboardHandler.cpp 113227 2026-03-03 14:01:28Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIKeyboardHandler class implementation.
  */
@@ -58,9 +58,9 @@
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
 #include "UIMachineWindow.h"
-#include "UIMessageCenter.h"
 #include "UIMouseHandler.h"
 #include "UINotificationMessage.h"
+#include "UINotificationQuestion.h"
 #ifdef VBOX_WS_MAC
 # include "UICocoaApplication.h"
 # include "DarwinKeyboard.h"
@@ -1810,7 +1810,9 @@ void UIKeyboardHandler::keyEventHandleHostComboRelease(ulong uScreenId)
                      * defined by the dialog result itself: */
                     setAutoCaptureDisabled(true);
                     bool fIsAutoConfirmed = false;
-                    ok = msgCenter().confirmInputCapture(fIsAutoConfirmed);
+                    ok = UINotificationQuestion::confirmInputCapture(fIsAutoConfirmed);
+                    /* Brings focus back to machine-view: */
+                    m_views[uScreenId]->setFocus();
                     if (fIsAutoConfirmed)
                         setAutoCaptureDisabled(false);
                     /* Otherwise, the disable flag will be reset in the next
@@ -1832,13 +1834,6 @@ void UIKeyboardHandler::keyEventHandleHostComboRelease(ulong uScreenId)
                     else
                     {
                         captureKeyboard(uScreenId);
-#ifdef VBOX_WS_NIX
-                        /* Make sure that pending FocusOut events from the
-                         * previous message box are handled, otherwise the
-                         * mouse is immediately ungrabbed: */
-                        /// @todo Is that really needed?
-                        qApp->processEvents();
-#endif /* VBOX_WS_NIX */
                         finaliseCaptureKeyboard();
                         if (fCaptureMouse)
                         {

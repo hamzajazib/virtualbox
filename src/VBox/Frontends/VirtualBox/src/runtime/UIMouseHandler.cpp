@@ -1,4 +1,4 @@
-﻿/* $Id: UIMouseHandler.cpp 113062 2026-02-17 12:37:07Z sergey.dubov@oracle.com $ */
+﻿/* $Id: UIMouseHandler.cpp 113227 2026-03-03 14:01:28Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMouseHandler class implementation.
  */
@@ -43,9 +43,9 @@
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
 #include "UIMachineWindow.h"
-#include "UIMessageCenter.h"
 #include "UIMouseHandler.h"
 #include "UINotificationMessage.h"
+#include "UINotificationQuestion.h"
 #ifdef VBOX_WS_MAC
 # include "CocoaEventHelper.h"
 #endif
@@ -1159,18 +1159,15 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
                      * the capture state is to be defined by the dialog result itself: */
                     uimachine()->setAutoCaptureDisabled(true);
                     bool fIsAutoConfirmed = false;
-                    bool ok = msgCenter().confirmInputCapture(fIsAutoConfirmed);
+                    bool ok = UINotificationQuestion::confirmInputCapture(fIsAutoConfirmed);
+                    /* Brings focus back to machine-view: */
+                    m_views[uScreenId]->setFocus();
                     if (fIsAutoConfirmed)
                         uimachine()->setAutoCaptureDisabled(false);
                     /* Otherwise, the disable flag will be reset in the next console view's focus in event (since
                      * may happen asynchronously on some platforms, after we return from this code): */
                     if (ok)
                     {
-#ifdef VBOX_WS_NIX
-                        /* Make sure that pending FocusOut events from the previous message box are handled,
-                         * otherwise the mouse is immediately ungrabbed again: */
-                        qApp->processEvents();
-#endif /* VBOX_WS_NIX */
                         machineLogic()->keyboardHandler()->captureKeyboard(uScreenId);
                         const MouseCapturePolicy mcp = gEDataManager->mouseCapturePolicy(uiCommon().managedVMUuid());
                         if (mcp == MouseCapturePolicy_Default)

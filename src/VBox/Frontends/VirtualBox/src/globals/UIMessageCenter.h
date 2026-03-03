@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.h 113222 2026-03-03 12:39:40Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.h 113227 2026-03-03 14:01:28Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class declaration.
  */
@@ -311,7 +311,6 @@ public:
       * @{ */
         bool warnAboutGuruMeditation(const QString &strLogFolder);
 
-        bool confirmInputCapture(bool &fAutoConfirmed) const;
         bool confirmGoingFullscreen(const QString &strHotKey) const;
         bool confirmGoingSeamless(const QString &strHotKey) const;
         bool confirmGoingScale(const QString &strHotKey) const;

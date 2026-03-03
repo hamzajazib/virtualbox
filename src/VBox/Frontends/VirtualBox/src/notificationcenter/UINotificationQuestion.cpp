@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.cpp 113222 2026-03-03 12:39:40Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.cpp 113227 2026-03-03 14:01:28Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion implementations.
  */
@@ -29,6 +29,8 @@
 #include <QApplication>
 
 /* GUI includes: */
+#include "UIExtraDataManager.h"
+#include "UIHostComboEditor.h"
 #include "UIMedium.h"
 #include "UINotificationCenter.h"
 #include "UINotificationQuestion.h"
@@ -804,6 +806,36 @@ bool UINotificationQuestion::warnAboutNetworkInterfaceNotFound(const QString &st
                                                    .arg(strMachineName, strIfNames),
         QStringList() << QApplication::translate("UIMessageCenter", "Close VM") /* cancel button text */
                       << QApplication::translate("UIMessageCenter", "Change Network Settings") /* ok button text */);
+}
+
+/* static */
+bool UINotificationQuestion::confirmInputCapture(bool &fAutoConfirmed)
+{
+    /* Will the question be auto-confirmed? */
+    fAutoConfirmed = isSuppressed("confirmInputCapture");
+
+    /* Now the question itself: */
+    return createBlockingQuestion(
+        QApplication::translate("UIMessageCenter", "Capture input?"),
+        QApplication::translate("UIMessageCenter", "<p>You have <b>clicked the mouse</b> inside the Virtual Machine display or "
+                                                   "pressed the <b>host key combo</b>. This will cause the Virtual Machine to "
+                                                   "<b>capture</b> the host mouse pointer (only if the mouse pointer integration "
+                                                   "is not currently supported by the guest OS) and the keyboard, which will "
+                                                   "make them unavailable to other applications running on your host machine.</p>"
+                                                   "<p>You can press the <b>host key combo</b> at any time to <b>uncapture</b> "
+                                                   "the keyboard and mouse (if it is captured) and return them to normal "
+                                                   "operation. The currently assigned host key combo is shown on the status bar "
+                                                   "at the bottom of the Virtual Machine window, next to "
+                                                   "the&nbsp;<img src=:/hostkey_16px.png/>&nbsp;icon. This icon, together with "
+                                                   "the mouse icon placed nearby, indicate the current keyboard and mouse "
+                                                   "capture state.</p>") +
+        QApplication::translate("UIMessageCenter", "<p>The host key combo is currently defined as <b>%1</b>.</p>",
+                                "additional message box paragraph")
+                                .arg(UIHostCombo::toReadableString(gEDataManager->hostKeyCombination())),
+        QStringList() << QString() /* cancel button text */
+                      << QApplication::translate("UIMessageCenter", "Capture", "do input capture") /* ok button text */,
+        false /* ok button by default? */,
+        "confirmInputCapture" /* internal name */);
 }
 
 UINotificationQuestion::UINotificationQuestion(const QString &strName,
