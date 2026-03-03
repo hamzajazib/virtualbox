@@ -1,4 +1,4 @@
-/* $Id: UINotificationCenter.cpp 113131 2026-02-23 16:45:02Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationCenter.cpp 113221 2026-03-03 12:37:01Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINotificationCenter class implementation.
  */
@@ -1119,7 +1119,8 @@ void UINotificationCenter::adjustGeometry()
         /* In Extended mode we're taking into account cumulative items height: */
         int iItemsHeight = 0;
         foreach (UINotificationObjectItem *pItem, m_items.values())
-            iItemsHeight += pItem->minimumSizeHint().height() + iSpacing;
+            if (pItem->isVisible())
+                iItemsHeight += pItem->minimumSizeHint().height() + iSpacing;
         if (iItemsHeight > 0)
             iItemsHeight -= iSpacing;
         iMaximumHeight = iItemsHeight + iT + iB;
