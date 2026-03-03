@@ -1,4 +1,4 @@
-/* $Id: UIHelpBrowserDialog.cpp 113060 2026-02-17 12:01:37Z sergey.dubov@oracle.com $ */
+/* $Id: UIHelpBrowserDialog.cpp 113213 2026-03-03 07:36:58Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIHelpBrowserDialog class implementation.
  */
@@ -178,42 +178,9 @@ void UIHelpBrowserDialog::sltZoomPercentageChanged(int iPercentage)
 }
 
 /* static */
-void UIHelpBrowserDialog::findManualFileAndShow(const QString &strKeyword /*= QString() */)
+void UIHelpBrowserDialog::findManualFileAndShow(const QString &strKeyword /* = QString() */)
 {
-#ifndef VBOX_OSE
-    /* For non-OSE version we just open it: */
     showUserManual(uiCommon().helpFile(), strKeyword);
-#else /* #ifndef VBOX_OSE */
-    Q_UNUSED(strKeyword);
-#if 0
-    /* For OSE version we have to check if it present first: */
-    QString strUserManualFileName1 = uiCommon().helpFile();
-    QString strShortFileName = QFileInfo(strUserManualFileName1).fileName();
-    QString strUserManualFileName2 = QDir(gpGlobalSession->homeFolder()).absoluteFilePath(strShortFileName);
-    /* Show if user guide already present: */
-    if (QFile::exists(strUserManualFileName1))
-        showUserManual(strUserManualFileName1, strKeyword);
-    else if (QFile::exists(strUserManualFileName2))
-        showUserManual(strUserManualFileName2, strKeyword);
-# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    /* If downloader is running already: */
-    if (UINotificationDownloaderUserManual::exists())
-        gpNotificationCenter->invoke();
-    /* Else propose to download user guide: */
-    else if (confirmLookingForUserManual(strUserManualFileName1))
-    {
-        /* Download user guide: */
-        UINotificationDownloaderUserManual *pNotification = UINotificationDownloaderUserManual::instance(UICommon::helpFile());
-        /* After downloading finished => show User Guide: */
-        /// @todo
-        // connect(pNotification, &UINotificationDownloaderUserManual::sigUserManualDownloaded,
-        //         this, &UIMessageCenter::showUserManual);
-        /* Append and start notification: */
-        gpNotificationCenter->append(pNotification);
-    }
-# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-#endif // 0
-#endif /* #ifdef VBOX_OSE */
 }
 
 /* static */

@@ -1,4 +1,4 @@
-/* $Id: UINotificationMessage.h 113073 2026-02-18 15:54:09Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationMessage.h 113213 2026-03-03 07:36:58Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationMessage declarations.
  */
@@ -153,17 +153,6 @@ public:
           * @param  strTgt  Brings the GA target location. */
         static void cannotSaveGuestAdditions(const QString &strUrl,
                                              const QString &strTgt);
-
-        /** Notifies about inability to save user manual.
-          * @param  strUrl  Brings the User Manual URL.
-          * @param  strTgt  Brings the User Manual target location. */
-        static void cannotSaveUserManual(const QString &strURL,
-                                         const QString &strTgt);
-        /** Notifies about user manual downloded.
-          * @param  strUrl  Brings the User Manual URL.
-          * @param  strTgt  Brings the User Manual target location. */
-        static void warnAboutUserManualDownloaded(const QString &strUrl,
-                                                  const QString &strTgt);
 
         /** Notifies about inability to validate guest additions.
           * @param  strUrl  Brings the GA URL.

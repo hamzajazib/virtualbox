@@ -1,4 +1,4 @@
-/* $Id: UINotificationObjects.h 113060 2026-02-17 12:01:37Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationObjects.h 113213 2026-03-03 07:36:58Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationObjects declarations.
  */
@@ -2045,51 +2045,6 @@ private:
 
     /** Holds the singleton instance. */
     static UINotificationDownloaderGuestAdditions *s_pInstance;
-
-    /** Holds the name of file being dowloaded. */
-    QString  m_strFileName;
-};
-
-/** UINotificationDownloader extension for user manual downloading functionality. */
-class SHARED_LIBRARY_STUFF UINotificationDownloaderUserManual : public UINotificationDownloader
-{
-    Q_OBJECT;
-
-signals:
-
-    /** Notifies listeners about user manual downloaded.
-      * @param  strLocation  Brings the UM location. */
-    void sigUserManualDownloaded(const QString &strLocation);
-
-public:
-
-    /** Returns singleton instance, creates if necessary.
-      * @param  strFileName  Brings the file name. */
-    static UINotificationDownloaderUserManual *instance(const QString &strFileName);
-    /** Returns whether singleton instance already created. */
-    static bool exists();
-
-    /** Destructs user manual downloading notification-downloader.
-      * @note  Notification-center can destroy us at any time. */
-    virtual ~UINotificationDownloaderUserManual() RT_OVERRIDE RT_FINAL;
-
-protected:
-
-    /** Constructs user manual downloading notification-downloader.
-      * @param  strFileName  Brings the file name. */
-    UINotificationDownloaderUserManual(const QString &strFileName);
-
-    /** Returns object name. */
-    virtual QString name() const RT_OVERRIDE RT_FINAL;
-    /** Returns object details. */
-    virtual QString details() const RT_OVERRIDE RT_FINAL;
-    /** Creates and returns started downloader. */
-    virtual UIDownloader *createDownloader() RT_OVERRIDE RT_FINAL;
-
-private:
-
-    /** Holds the singleton instance. */
-    static UINotificationDownloaderUserManual *s_pInstance;
 
     /** Holds the name of file being dowloaded. */
     QString  m_strFileName;

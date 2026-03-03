@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.h 113210 2026-03-02 13:31:46Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.h 113213 2026-03-03 07:36:58Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class declaration.
  */
@@ -313,9 +313,6 @@ public:
         bool confirmLookingForGuestAdditions() const;
         bool confirmDownloadGuestAdditions(const QString &strUrl, qulonglong uSize) const;
         bool proposeMountGuestAdditions(const QString &strUrl, const QString &strSrc) const;
-
-        bool confirmLookingForUserManual(const QString &strMissedLocation) const;
-        bool confirmDownloadUserManual(const QString &strURL, qulonglong uSize) const;
 
         bool confirmLookingForExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion) const;
         bool confirmDownloadExtensionPack(const QString &strExtPackName, const QString &strURL, qulonglong uSize) const;

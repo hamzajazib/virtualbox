@@ -1,4 +1,4 @@
-# $Id: Makefile.kmk 113076 2026-02-18 16:44:32Z sergey.dubov@oracle.com $
+# $Id: Makefile.kmk 113213 2026-03-03 07:36:58Z sergey.dubov@oracle.com $
 ## @file
 # Makefile for the VirtualBox Qt GUI.
 #
@@ -962,7 +962,6 @@ ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  	src/networking/UIDownloader.h \
  	src/networking/UIDownloaderExtensionPack.h \
  	src/networking/UIDownloaderGuestAdditions.h \
- 	src/networking/UIDownloaderUserManual.h \
  	src/networking/UINetworkCustomer.h \
  	src/networking/UINetworkRequestManager.h \
  	src/networking/UINetworkRequest.h \
@@ -1561,7 +1560,6 @@ ifdef VBOX_GUI_WITH_NETWORK_MANAGER
  	src/networking/UIDownloader.cpp \
  	src/networking/UIDownloaderExtensionPack.cpp \
  	src/networking/UIDownloaderGuestAdditions.cpp \
- 	src/networking/UIDownloaderUserManual.cpp \
  	src/networking/UINetworkCustomer.cpp \
  	src/networking/UINetworkRequestManager.cpp \
  	src/networking/UINetworkRequest.cpp \

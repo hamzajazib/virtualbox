@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.cpp 113210 2026-03-02 13:31:46Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.cpp 113213 2026-03-03 07:36:58Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class implementation.
  */
@@ -855,26 +855,6 @@ bool UIMessageCenter::proposeMountGuestAdditions(const QString &strUrl, const QS
                              .arg(strUrl, strSrc),
                           0 /* auto-confirm id */,
                           tr("Continue", "agree with additions installation"));
-}
-
-bool UIMessageCenter::confirmLookingForUserManual(const QString &strMissedLocation) const
-{
-    return questionBinary(0, MessageType_Question,
-                          tr("<p>Could not find the <b>VirtualBox User Guide</b> <nobr><b>%1</b>.</nobr></p>"
-                             "<p>Do you wish to download this file from the Internet?</p>")
-                             .arg(strMissedLocation),
-                          0 /* auto-confirm id */,
-                          tr("Download"));
-}
-
-bool UIMessageCenter::confirmDownloadUserManual(const QString &strURL, qulonglong uSize) const
-{
-    return questionBinary(windowManager().mainWindowShown(), MessageType_Question,
-                          tr("<p>Are you sure you want to download the <b>VirtualBox User Guide</b> "
-                             "from <nobr><a href=\"%1\">%1</a></nobr> (size %2 bytes)?</p>")
-                             .arg(strURL, QLocale(UITranslator::languageId()).toString(uSize)),
-                          0 /* auto-confirm id */,
-                          tr("Download"));
 }
 
 bool UIMessageCenter::confirmLookingForExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion) const

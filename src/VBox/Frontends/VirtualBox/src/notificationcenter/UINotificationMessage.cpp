@@ -1,4 +1,4 @@
-/* $Id: UINotificationMessage.cpp 113133 2026-02-24 09:00:05Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationMessage.cpp 113213 2026-03-03 07:36:58Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationMessage implementations.
  */
@@ -218,29 +218,6 @@ void UINotificationMessage::cannotSaveGuestAdditions(const QString &strUrl,
                                                    "successfully downloaded from <nobr><a href=\"%1\">%1</a></nobr> but "
                                                    "can't be saved locally as <nobr><b>%2</b>.</nobr></p><p>Please choose "
                                                    "another location for that file.</p>").arg(strUrl, strTgt));
-}
-
-/* static */
-void UINotificationMessage::cannotSaveUserManual(const QString &strUrl,
-                                                 const QString &strTgt)
-{
-    createMessage(
-        QApplication::translate("UIMessageCenter", "Unable to save user manual file ..."),
-        QApplication::translate("UIMessageCenter", "<p>The VirtualBox User Guide has been successfully downloaded from "
-                                                   "<nobr><a href=\"%1\">%1</a></nobr> but can't be saved locally as "
-                                                   "<nobr><b>%2</b>.</nobr></p><p>Please choose another location for that "
-                                                   "file.</p>").arg(strUrl, strTgt));
-}
-
-/* static */
-void UINotificationMessage::warnAboutUserManualDownloaded(const QString &strUrl,
-                                                          const QString &strTgt)
-{
-    createMessage(
-        QApplication::translate("UIMessageCenter", "User guide downloaded ..."),
-        QApplication::translate("UIMessageCenter", "<p>The VirtualBox User Guide has been successfully downloaded from "
-                                                   "<nobr><a href=\"%1\">%1</a></nobr> and saved locally as "
-                                                   "<nobr><b>%2</b>.</nobr></p>").arg(strUrl, strTgt));
 }
 
 /* static */
