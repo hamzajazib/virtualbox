@@ -1,4 +1,4 @@
-/* $Id: DevE1000.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: DevE1000.cpp 113249 2026-03-04 12:55:54Z aleksey.ilyushin@oracle.com $ */
 /** @file
  * DevE1000 - Intel 82540EM Ethernet Controller Emulation.
  *
@@ -7743,7 +7743,8 @@ static DECLCALLBACK(void) e1kLog_PrintfV(PCDBGFINFOHLP pHlp, const char *pszForm
  */
 static void e1kDumpState(PPDMDEVINS pDevIns, PE1KSTATE pThis)
 {
-    RT_NOREF(pThis);
+    RT_NOREF(pDevIns, pThis);
+#ifdef LOG_ENABLED
     {
         DBGFINFOHLP DbgHlp;
 
@@ -7753,6 +7754,7 @@ static void e1kDumpState(PPDMDEVINS pDevIns, PE1KSTATE pThis)
 
         e1kR3Info(pDevIns, &DbgHlp, "");
     }
+#endif /* LOG_ENABLED */
 # ifdef E1K_INT_STATS
     LogRel(("%s: Interrupt attempts: %d\n", pThis->szPrf, pThis->uStatIntTry));
     LogRel(("%s: Interrupts raised : %d\n", pThis->szPrf, pThis->uStatInt));
