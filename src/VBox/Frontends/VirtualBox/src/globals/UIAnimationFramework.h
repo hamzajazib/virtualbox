@@ -1,4 +1,4 @@
-/* $Id: UIAnimationFramework.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIAnimationFramework.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIAnimationFramework class declaration.
  */
@@ -41,7 +41,6 @@
 class QPropertyAnimation;
 class QState;
 class QStateMachine;
-
 
 /** QObject subclass used as animation factory. */
 class SHARED_LIBRARY_STUFF UIAnimation : public QObject
@@ -124,7 +123,6 @@ private:
     QPropertyAnimation *m_pReverseAnimation;
 };
 
-
 /** QObject subclass used as animation loop factory. */
 class SHARED_LIBRARY_STUFF UIAnimationLoop : public QObject
 {
@@ -180,6 +178,4 @@ private:
     QPropertyAnimation *m_pAnimation;
 };
 
-
 #endif /* !FEQT_INCLUDED_SRC_globals_UIAnimationFramework_h */
-

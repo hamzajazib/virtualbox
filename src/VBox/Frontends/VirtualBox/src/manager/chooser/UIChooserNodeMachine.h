@@ -1,4 +1,4 @@
-/* $Id: UIChooserNodeMachine.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIChooserNodeMachine.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIChooserNodeMachine class declaration.
  */
@@ -39,7 +39,6 @@
 class UIVirtualMachineItem;
 class CCloudMachine;
 class CMachine;
-
 
 /** UIChooserNode subclass used as interface for invisible tree-view machine nodes. */
 class UIChooserNodeMachine : public UIChooserNode
@@ -138,6 +137,5 @@ private:
     /** Holds virtual machine cache instance. */
     UIVirtualMachineItem *m_pCache;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_manager_chooser_UIChooserNodeMachine_h */

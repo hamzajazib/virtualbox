@@ -1,4 +1,4 @@
-/* $Id: UINetworkManager.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UINetworkManager.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINetworkManager class declaration.
  */
@@ -62,7 +62,6 @@ class QIToolBar;
 struct UIDataCloudNetwork;
 struct UIDataHostNetwork;
 struct UIDataNATNetwork;
-
 
 /** QWidget extension providing GUI with the pane to control network related functionality. */
 class UINetworkManagerWidget : public QWidget
@@ -332,7 +331,6 @@ private:
     /** @} */
 };
 
-
 /** QIManagerDialogFactory extension used as a factory for Network Manager dialog. */
 class UINetworkManagerFactory : public QIManagerDialogFactory
 {
@@ -351,7 +349,6 @@ protected:
     /** Holds the action-pool reference. */
     UIActionPool *m_pActionPool;
 };
-
 
 /** QIManagerDialog extension providing GUI with the dialog to control network related functionality. */
 class UINetworkManager : public QIManagerDialog

@@ -1,4 +1,4 @@
-/* $Id: UILineTextEdit.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UILineTextEdit.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UILineTextEdit class declaration.
  */
@@ -49,6 +49,7 @@ class UITextEditor: public QIDialog
     Q_OBJECT;
 
 public:
+
     UITextEditor(QWidget *pParent = NULL);
 
     void setText(const QString& strText);
@@ -60,6 +61,7 @@ private slots:
     void open() RT_OVERRIDE;
 
 private:
+
     /* Private member vars */
     QITextEdit       *m_pTextEdit;
     QDialogButtonBox *m_pButtonBox;
@@ -79,6 +81,7 @@ signals:
     void sigFinished(QWidget *pThis);
 
 public:
+
     UILineTextEdit(QWidget *pParent = NULL);
 
     void setText(const QString& strText) { m_strText = strText; }
@@ -90,6 +93,7 @@ private slots:
     void edit();
 
 private:
+
     /* Private member vars */
     QString m_strText;
 };

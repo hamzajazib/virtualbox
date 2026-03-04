@@ -1,4 +1,4 @@
-/* $Id: UIVMActivityMonitor.cpp 112826 2026-02-04 16:58:35Z serkan.bayraktar@oracle.com $ */
+/* $Id: UIVMActivityMonitor.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIVMActivityMonitor class implementation.
  */
@@ -78,9 +78,9 @@ const quint64 uInvalidValueSentinel = ~0U;
 *   UIChart definition.                                                                                                          *
 *********************************************************************************************************************************/
 
+
 class UIChart : public QWidget
 {
-
     Q_OBJECT;
 
 signals:

@@ -1,4 +1,4 @@
-/* $Id: COMDefs.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: COMDefs.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various COM definitions and COM wrapper class declarations.
  *
@@ -169,6 +169,7 @@ public:
     QString calleeName() const { return mCalleeName; }
 
 private:
+
     void init(const CVirtualBoxErrorInfo &info);
     void copyFrom(const COMErrorInfo &x);
     void cleanup();
@@ -869,6 +870,7 @@ public:
     }
 
 private:
+
 #ifdef RT_STRICT
     bool          mDead;
 #endif

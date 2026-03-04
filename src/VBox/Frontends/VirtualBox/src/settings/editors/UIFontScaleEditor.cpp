@@ -1,4 +1,4 @@
-/* $Id: UIFontScaleEditor.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIFontScaleEditor.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIFontScaleEditor class implementation.
  */
@@ -42,9 +42,11 @@
 /* External includes: */
 #include <math.h>
 
+
 class UIFontScaleFactorSpinBox : public QSpinBox
 {
 public:
+
     UIFontScaleFactorSpinBox(QWidget *parent = 0);
 };
 

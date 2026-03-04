@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.h 113227 2026-03-03 14:01:28Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class declaration.
  */
@@ -48,7 +48,6 @@ struct StorageSlot;
 class CGuest;
 #endif
 
-
 /** Possible message types. */
 enum MessageType
 {
@@ -60,7 +59,6 @@ enum MessageType
     MessageType_GuruMeditation
 };
 Q_DECLARE_METATYPE(MessageType);
-
 
 /** Singleton QObject extension
   * providing GUI with corresponding messages. */
@@ -411,6 +409,5 @@ private:
 
 /** Singleton Message Center 'official' name. */
 inline UIMessageCenter &msgCenter() { return *UIMessageCenter::instance(); }
-
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIMessageCenter_h */

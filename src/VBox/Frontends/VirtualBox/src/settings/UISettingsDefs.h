@@ -1,4 +1,4 @@
-/* $Id: UISettingsDefs.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UISettingsDefs.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Header with definitions and functions related to settings configuration.
  */
@@ -308,6 +308,5 @@ private:
     /** Holds the children of group 2. */
     UISettingsCacheChildMap2 m_children2;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_settings_UISettingsDefs_h */

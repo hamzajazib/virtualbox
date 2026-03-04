@@ -1,4 +1,4 @@
-/* $Id: UICloudConsoleManager.cpp 113180 2026-02-26 16:01:36Z sergey.dubov@oracle.com $ */
+/* $Id: UICloudConsoleManager.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UICloudConsoleManager class implementation.
  */
@@ -100,6 +100,7 @@ public:
     QString argument() const { return m_strArgument; }
 };
 
+
 /** Cloud Console Manager profile's tree-widget item. */
 class UIItemCloudConsoleProfile : public QITreeWidgetItem, public UIDataCloudConsoleProfile
 {
@@ -122,6 +123,7 @@ public:
     /** Returns item argument. */
     QString argument() const { return m_strArgument; }
 };
+
 
 /** QDialog extension used to acquire newly created console application parameters. */
 class UIInputDialogCloudConsoleApplication : public QDialog
@@ -166,6 +168,7 @@ private:
     /** Holds the button-box instance. */
     QIDialogButtonBox *m_pButtonBox;
 };
+
 
 /** QDialog extension used to acquire newly created console profile parameters. */
 class UIInputDialogCloudConsoleProfile : public QDialog

@@ -1,4 +1,4 @@
-/* $Id: UIEmptyFilePathSelector.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIEmptyFilePathSelector.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIEmptyFilePathSelector class declaration.
  */
@@ -42,7 +42,6 @@ class QILineEdit;
 class QHBoxLayout;
 class QAction;
 class QToolButton;
-
 
 class UIEmptyFilePathSelector: public QWidget
 {
@@ -100,9 +99,11 @@ public:
     QString homeDir() const;
 
 signals:
+
     void pathChanged (QString);
 
 public slots:
+
     void setPath (const QString& aPath);
 
 private slots:
@@ -112,6 +113,7 @@ private slots:
     void textChanged (const QString& aPath);
 
 private:
+
     /* Private member vars */
     QHBoxLayout *mMainLayout;
     QWidget *mPathWgt;

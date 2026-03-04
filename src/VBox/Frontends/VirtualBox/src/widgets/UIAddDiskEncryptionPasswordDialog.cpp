@@ -1,4 +1,4 @@
-/* $Id: UIAddDiskEncryptionPasswordDialog.cpp 113060 2026-02-17 12:01:37Z sergey.dubov@oracle.com $ */
+/* $Id: UIAddDiskEncryptionPasswordDialog.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIAddDiskEncryptionPasswordDialog class implementation.
  */
@@ -67,6 +67,7 @@ static QStringList toStringList(const QList<T> &list)
         l << t.toString();
     return l;
 }
+
 
 /** QLineEdit extension used as
   * the embedded password editor for the UIEncryptionDataTable. */

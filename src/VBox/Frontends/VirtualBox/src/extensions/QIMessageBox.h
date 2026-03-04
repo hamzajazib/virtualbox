@@ -1,4 +1,4 @@
-/* $Id: QIMessageBox.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: QIMessageBox.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Qt extensions: QIMessageBox class declaration.
  */
@@ -46,7 +46,6 @@ class QIArrowSplitter;
 class QIDialogButtonBox;
 class QIRichTextLabel;
 
-
 /** Button types. */
 enum AlertButton
 {
@@ -60,7 +59,6 @@ enum AlertButton
     AlertButtonMask           = 0xFF   /* 00000000 11111111 */
 };
 
-
 /** Button options. */
 enum AlertButtonOption
 {
@@ -69,7 +67,6 @@ enum AlertButtonOption
     AlertButtonOptionMask     = 0x300  /* 00000011 00000000 */
 };
 
-
 /** Alert options. */
 enum AlertOption
 {
@@ -77,7 +74,6 @@ enum AlertOption
     AlertOption_CheckBox      = 0x800, /* 00001000 00000000 */
     AlertOptionMask           = 0xFC00 /* 11111100 00000000 */
 };
-
 
 /** Icon types. */
 enum AlertIconType
@@ -89,7 +85,6 @@ enum AlertIconType
     AlertIconType_Question       = QMessageBox::Question,
     AlertIconType_GuruMeditation
 };
-
 
 /** QIDialog extension representing GUI alerts. */
 class SHARED_LIBRARY_STUFF QIMessageBox : public QIDialog
@@ -216,6 +211,5 @@ private:
     /** Defines whether message was accepted. */
     bool m_fDone : 1;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_extensions_QIMessageBox_h */

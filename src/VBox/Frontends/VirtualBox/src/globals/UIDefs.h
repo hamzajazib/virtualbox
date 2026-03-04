@@ -1,4 +1,4 @@
-/* $Id: UIDefs.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIDefs.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Global definitions.
  */
@@ -40,7 +40,6 @@
 /* GUI includes: */
 #include "UILibraryDefs.h"
 
-
 /** Global namespace. */
 namespace UIDefs
 {
@@ -57,7 +56,6 @@ namespace UIDefs
     SHARED_LIBRARY_STUFF extern QStringList OVFFileExts;
 }
 using namespace UIDefs /* if header included */;
-
 
 #ifdef VBOX_WS_MAC
 /** Known macOS releases. */
@@ -84,7 +82,6 @@ enum MacOSXRelease
 };
 #endif /* VBOX_WS_MAC */
 
-
 #ifdef VBOX_WS_WIN
 enum WindowsRelease
 {
@@ -94,14 +91,12 @@ enum WindowsRelease
 Q_DECLARE_METATYPE(WindowsRelease);
 #endif /* VBOX_WS_WIN */
 
-
 /** UI types. */
 enum UIType
 {
     UIType_ManagerUI,
     UIType_RuntimeUI
 };
-
 
 /** VM launch modes. */
 enum UILaunchMode
@@ -111,6 +106,5 @@ enum UILaunchMode
     UILaunchMode_Headless,
     UILaunchMode_Separate
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIDefs_h */

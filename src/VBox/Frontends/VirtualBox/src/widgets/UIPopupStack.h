@@ -1,4 +1,4 @@
-/* $Id: UIPopupStack.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIPopupStack.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIPopupStack class declaration.
  */
@@ -141,4 +141,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIPopupStack_h */
-

@@ -1,4 +1,4 @@
-/* $Id: UIChooserDefs.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIChooserDefs.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIChooserDefs class declaration.
  */
@@ -37,7 +37,6 @@
 /* Other VBox includes: */
 #include <iprt/cdefs.h> // for RT_BIT stuff
 
-
 /** UIChooserNode types. */
 enum UIChooserNodeType
 {
@@ -45,7 +44,6 @@ enum UIChooserNodeType
     UIChooserNodeType_Group,
     UIChooserNodeType_Machine
 };
-
 
 /** UIChooserNodeGroup types. */
 enum UIChooserNodeGroupType
@@ -55,7 +53,6 @@ enum UIChooserNodeGroupType
     UIChooserNodeGroupType_Provider,
     UIChooserNodeGroupType_Profile
 };
-
 
 /** UIChooserNode extra-data prefix types. */
 enum UIChooserNodeDataPrefixType
@@ -67,13 +64,11 @@ enum UIChooserNodeDataPrefixType
     UIChooserNodeDataPrefixType_Profile
 };
 
-
 /** UIChooserNode extra-data option types. */
 enum UIChooserNodeDataOptionType
 {
     UIChooserNodeDataOptionType_GroupOpened
 };
-
 
 /** UIChooserItem search flags. */
 enum UIChooserItemSearchFlag
@@ -87,7 +82,6 @@ enum UIChooserItemSearchFlag
     UIChooserItemSearchFlag_FullName      = RT_BIT(6),
 };
 
-
 /** UIChooserItem drag token types. */
 enum UIChooserItemDragToken
 {
@@ -96,13 +90,11 @@ enum UIChooserItemDragToken
     UIChooserItemDragToken_Down
 };
 
-
 /** UIChooserItemMachine enumeration flags. */
 enum UIChooserItemMachineEnumerationFlag
 {
     UIChooserItemMachineEnumerationFlag_Unique       = RT_BIT(0),
     UIChooserItemMachineEnumerationFlag_Inaccessible = RT_BIT(1)
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_manager_chooser_UIChooserDefs_h */

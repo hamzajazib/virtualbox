@@ -1,4 +1,4 @@
-/* $Id: UIVMActivityMonitorContainer.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIVMActivityMonitorContainer.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIVMActivityMonitorPanel class declaration.
  */
@@ -50,7 +50,6 @@ class UIActionPool;
    for activity monitor settings. */
 class SHARED_LIBRARY_STUFF UIVMActivityMonitorPaneContainer : public UIPaneContainer
 {
-
     Q_OBJECT;
 
 signals:
@@ -70,6 +69,7 @@ private slots:
     void sltResetToDefaults();
 
 private:
+
     enum Tab
     {
         Tab_Preferences = 0
@@ -84,14 +84,12 @@ private:
     QPushButton *m_pResetButton;
 
     QColor m_color[2];
-
 };
 
 /** A QWidget extension to host a tab widget and UIVMActivityMonitorPaneContainer. The tab widget
  hosts possibly multiple pages of UIVMActivityMonitor. */
 class SHARED_LIBRARY_STUFF UIVMActivityMonitorContainer : public QWidget
 {
-
     Q_OBJECT;
 
 public:

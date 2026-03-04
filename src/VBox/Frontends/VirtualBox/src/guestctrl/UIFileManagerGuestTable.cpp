@@ -1,4 +1,4 @@
-/* $Id: UIFileManagerGuestTable.cpp 113058 2026-02-17 10:55:13Z sergey.dubov@oracle.com $ */
+/* $Id: UIFileManagerGuestTable.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIFileManagerGuestTable class implementation.
  */
@@ -325,6 +325,7 @@ void UIGuestSessionWidget::setLoginWidgetsEnabled(bool fEnabled)
 /*********************************************************************************************************************************
 *   UIGuestDirectoryDiskUsageComputer definition.                                                                                *
 *********************************************************************************************************************************/
+
 
 /** Open directories recursively and sum the disk usage. Don't block the GUI thread while doing this */
 class UIGuestDirectoryDiskUsageComputer : public UIDirectoryDiskUsageComputer

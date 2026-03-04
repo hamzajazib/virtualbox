@@ -1,4 +1,4 @@
-/* $Id: QIManagerDialog.h 112751 2026-01-29 16:30:52Z sergey.dubov@oracle.com $ */
+/* $Id: QIManagerDialog.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Qt extensions: QIManagerDialog class declaration.
  */
@@ -46,14 +46,12 @@ class QIManagerDialog;
 class QIToolBar;
 #endif
 
-
 /** Widget embedding type. */
 enum EmbedTo
 {
     EmbedTo_Dialog,
     EmbedTo_Stack
 };
-
 
 /** Dialog button types. */
 enum ButtonType
@@ -66,11 +64,9 @@ enum ButtonType
     ButtonType_Help    = RT_BIT(4),
 };
 
-
 /** Manager dialog factory insterface. */
 class SHARED_LIBRARY_STUFF QIManagerDialogFactory
 {
-
 public:
 
     /** Constructs Manager dialog factory. */
@@ -90,7 +86,6 @@ protected:
       * @param  pCenterWidget  Brings the widget reference to center according to. */
     virtual void create(QIManagerDialog *&pDialog, QWidget *pCenterWidget) = 0;
 };
-
 
 /** QIMainWindow sub-class used as various manager dialogs. */
 class SHARED_LIBRARY_STUFF QIManagerDialog : public QIMainWindow
@@ -226,6 +221,5 @@ private:
     /** Allow factory access to private/protected members: */
     friend class QIManagerDialogFactory;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_extensions_QIManagerDialog_h */

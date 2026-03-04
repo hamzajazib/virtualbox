@@ -1,4 +1,4 @@
-/* $Id: UIDesktopWidgetWatchdog.cpp 112466 2026-01-13 12:33:08Z sergey.dubov@oracle.com $ */
+/* $Id: UIDesktopWidgetWatchdog.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIDesktopWidgetWatchdog class implementation.
  */
@@ -123,6 +123,7 @@ static BOOL CALLBACK MonitorEnumProcF(HMONITOR hMonitor, HDC hdcMonitor, LPRECT 
 /* static */
 const QString
 UIDesktopWidgetWatchdog::s_strVBoxDesktopWatchdogPolicySynthTest = "VBOX_DESKTOPWATCHDOGPOLICY_SYNTHTEST";
+
 
 /** QWidget extension used as
   * an invisible window on the basis of which we

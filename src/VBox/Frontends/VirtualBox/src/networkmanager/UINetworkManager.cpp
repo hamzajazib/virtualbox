@@ -1,4 +1,4 @@
-/* $Id: UINetworkManager.cpp 113177 2026-02-26 13:22:14Z sergey.dubov@oracle.com $ */
+/* $Id: UINetworkManager.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINetworkManager class implementation.
  */
@@ -89,6 +89,7 @@ enum HostNetworkColumn
 };
 
 #else /* !VBOX_WS_MAC */
+
 
 /** Host network tree-widget column indexes. */
 enum HostNetworkColumn

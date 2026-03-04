@@ -1,4 +1,4 @@
-/* $Id: UIPopupCenter.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIPopupCenter.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIPopupCenter class declaration.
  */
@@ -51,7 +51,6 @@ class CNetworkAdapter;
 class CVirtualBox;
 class CVRDEServer;
 
-
 /** Popup-stack types. */
 enum UIPopupStackType
 {
@@ -65,7 +64,6 @@ enum UIPopupStackOrientation
     UIPopupStackOrientation_Top,
     UIPopupStackOrientation_Bottom
 };
-
 
 /** Singleton QObject extension
   * providing GUI with various popup messages. */
@@ -217,6 +215,4 @@ private:
 /** Singleton Popup Center 'official' name. */
 inline UIPopupCenter &popupCenter() { return *UIPopupCenter::instance(); }
 
-
 #endif /* !FEQT_INCLUDED_SRC_globals_UIPopupCenter_h */
-

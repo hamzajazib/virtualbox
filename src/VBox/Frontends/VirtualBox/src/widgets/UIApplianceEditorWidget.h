@@ -1,4 +1,4 @@
-/* $Id: UIApplianceEditorWidget.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIApplianceEditorWidget.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIApplianceEditorWidget class declaration.
  */
@@ -51,7 +51,6 @@ class QLabel;
 class QITextEdit;
 class QITreeView;
 class QVBoxLayout;
-
 
 /** Abstract VSD parameter kinds. */
 enum AbstractVSDParameterKind
@@ -140,7 +139,6 @@ struct AbstractVSDParameter
 typedef QList<AbstractVSDParameter> AbstractVSDParameterList;
 Q_DECLARE_METATYPE(AbstractVSDParameterList);
 
-
 /** Appliance tree-view section types. */
 enum ApplianceViewSection
 {
@@ -149,7 +147,6 @@ enum ApplianceViewSection
     ApplianceViewSection_ConfigValue
 };
 
-
 /** Appliance model item types. */
 enum ApplianceModelItemType
 {
@@ -157,7 +154,6 @@ enum ApplianceModelItemType
     ApplianceModelItemType_VirtualSystem,
     ApplianceModelItemType_VirtualHardware
 };
-
 
 /** QAbstractItemModel subclass used as Appliance model. */
 class UIApplianceModel : public QAbstractItemModel
@@ -223,7 +219,6 @@ private:
     UIApplianceModelItem *m_pRootItem;
 };
 
-
 /** QItemDelegate subclass used to create various Appliance model editors. */
 class UIApplianceDelegate : public QItemDelegate
 {
@@ -264,7 +259,6 @@ private:
     QAbstractProxyModel *m_pProxy;
 };
 
-
 /** QSortFilterProxyModel subclass used as the Appliance Sorting Proxy model. */
 class UIApplianceSortProxyModel : public QSortFilterProxyModel
 {
@@ -290,7 +284,6 @@ protected:
     /** Holds the filtered list of Virtual System Description types. */
     QList<KVirtualSystemDescriptionType> m_aFilteredList;
 };
-
 
 /** QWidget subclass used as the Appliance Editor widget. */
 class UIApplianceEditorWidget : public QWidget

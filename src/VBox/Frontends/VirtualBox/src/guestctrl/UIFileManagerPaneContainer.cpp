@@ -1,4 +1,4 @@
-/* $Id: UIFileManagerPaneContainer.cpp 112751 2026-01-29 16:30:52Z sergey.dubov@oracle.com $ */
+/* $Id: UIFileManagerPaneContainer.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIVMLogViewer class implementation.
  */
@@ -57,9 +57,9 @@
 *   UIFileOperationProgressWidget definition.                                                                                    *
 *********************************************************************************************************************************/
 
+
 class UIFileOperationProgressWidget : public QFrame
 {
-
     Q_OBJECT;
 
 signals:
@@ -89,6 +89,7 @@ private slots:
     void sltRetranslateUI();
 
 private:
+
     enum OperationStatus
     {
         OperationStatus_NotStarted,
@@ -324,9 +325,9 @@ void UIFileOperationProgressWidget::sltCancelProgress()
 *   UIFileManagerLogViewer definition.                                                                                   *
 *********************************************************************************************************************************/
 
+
 class UIFileManagerLogViewer : public QTextEdit
 {
-
     Q_OBJECT;
 
 public:

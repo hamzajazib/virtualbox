@@ -1,4 +1,4 @@
-/* $Id: UIVMLogViewerWidget.cpp 113058 2026-02-17 10:55:13Z sergey.dubov@oracle.com $ */
+/* $Id: UIVMLogViewerWidget.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIVMLogViewerWidget class implementation.
  */
@@ -72,6 +72,7 @@
 /** Limit the read string size to avoid bloated log viewer pages. */
 const ULONG uAllowedLogSize = _256M;
 
+
 class UILogTabCloseButton : public QIToolButton
 {
     Q_OBJECT;
@@ -100,16 +101,16 @@ protected:
 *   UILabelTab definition.                                                                                        *
 *********************************************************************************************************************************/
 
+
 class UILabelTab : public UIVMLogTab
 {
-
     Q_OBJECT;
 
 public:
 
     UILabelTab(QWidget *pParent, const QUuid &uMachineId, const QString &strMachineName);
-
 };
+
 
 /*********************************************************************************************************************************
 *   UITabBar definition.                                                                                        *
@@ -117,7 +118,6 @@ public:
 /** A QTabBar extention to be able to override paintEvent for custom tab coloring. */
 class UITabBar : public QTabBar
 {
-
     Q_OBJECT;
 
 public:
@@ -133,10 +133,10 @@ protected:
 *   UITabWidget definition.                                                                                        *
 *********************************************************************************************************************************/
 
+
 /** A QITabWidget used only for setTabBar since it is protected. */
 class UITabWidget : public QITabWidget
 {
-
     Q_OBJECT;
 
 public:

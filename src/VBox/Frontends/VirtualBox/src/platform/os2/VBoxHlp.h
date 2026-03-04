@@ -1,4 +1,4 @@
-/* $Id: VBoxHlp.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: VBoxHlp.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Declaration of OS/2-specific helpers that require to reside in a DLL.
  */
@@ -47,4 +47,3 @@ VBOXHLPDECL(bool) VBoxHlpUninstallKbdHook (HAB aHab, HWND aHwnd,
                                            unsigned long aMsg);
 
 #endif /* !FEQT_INCLUDED_SRC_platform_os2_VBoxHlp_h */
-

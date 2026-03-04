@@ -1,4 +1,4 @@
-/* $Id: XKeyboard.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: XKeyboard.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Declarations of Linux-specific keyboard functions.
  */
@@ -52,4 +52,3 @@ SHARED_LIBRARY_STUFF unsigned long wrapXkbKeycodeToKeysym(Display *pDisplay, uns
                                                           unsigned int cGroup, unsigned int cIndex);
 
 #endif /* !FEQT_INCLUDED_SRC_platform_nix_XKeyboard_h */
-

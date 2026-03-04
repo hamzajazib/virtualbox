@@ -1,4 +1,4 @@
-/* $Id: UIFileManagerHostTable.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIFileManagerHostTable.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIFileManagerHostTable class implementation.
  */
@@ -46,6 +46,7 @@
 /*********************************************************************************************************************************
 *   UIHostDirectoryDiskUsageComputer definition.                                                                                 *
 *********************************************************************************************************************************/
+
 
 /** Open directories recursively and sum the disk usage. Don't block the GUI thread while doing this */
 class UIHostDirectoryDiskUsageComputer : public UIDirectoryDiskUsageComputer

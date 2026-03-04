@@ -1,4 +1,4 @@
-/* $Id: UIVMActivityOverviewWidget.cpp 113058 2026-02-17 10:55:13Z sergey.dubov@oracle.com $ */
+/* $Id: UIVMActivityOverviewWidget.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIVMActivityOverviewWidget class implementation.
  */
@@ -83,9 +83,9 @@ struct ResourceColumn
 *   Class UIVMActivityOverviewDoughnutChart definition.                                                                          *
 *********************************************************************************************************************************/
 
+
 class UIVMActivityOverviewDoughnutChart : public QWidget
 {
-
     Q_OBJECT;
 
 public:
@@ -119,7 +119,6 @@ private:
 /** A container QWidget to layout host stats. related widgets. */
 class UIVMActivityOverviewHostStatsWidget : public QWidget
 {
-
     Q_OBJECT;
 
 public:
@@ -166,7 +165,6 @@ private:
 /** Each instance of UIVMActivityOverviewItem corresponds to a vm. they are owned my the model. */
 class UIVMActivityOverviewItem : public QObject
 {
-
     Q_OBJECT;
 
 public:
@@ -211,6 +209,7 @@ Q_DECLARE_METATYPE(UIVMActivityOverviewItem);
 class UIVMActivityOverviewItemLocal : public UIVMActivityOverviewItem
 {
     Q_OBJECT;
+
 public:
 
     UIVMActivityOverviewItemLocal(QObject *pParent, const QUuid &uid, const QString &strVMName);
@@ -247,6 +246,7 @@ private:
 class UIVMActivityOverviewItemCloud : public UIVMActivityOverviewItem
 {
     Q_OBJECT;
+
 public:
 
     UIVMActivityOverviewItemCloud(QObject *pParent, const QUuid &uid, const QString &strVMName, CCloudMachine &comCloudMachine);
@@ -267,6 +267,7 @@ private slots:
     void sltMetricNameListingComplete(QVector<QString> metricNameList);
     void sltMetricDataReceived(KMetricType enmMetricType,
                                const QVector<QString> &data, const QVector<QString> &timeStamps);
+
 private:
 
     void getMetricList();
@@ -285,7 +286,6 @@ private:
 /** A QItemDelegate child class to disable dashed lines drawn around selected cells in QTableViews */
 class UIVMActivityOverviewDelegate : public QItemDelegate
 {
-
     Q_OBJECT;
 
 public:

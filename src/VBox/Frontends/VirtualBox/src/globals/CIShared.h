@@ -1,4 +1,4 @@
-/* $Id: CIShared.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: CIShared.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Common VirtualBox classes: CIShared class declaration.
  */
@@ -74,6 +74,7 @@ class CIShared
     };
 
 public:
+
     CIShared( bool null = true ) : d( null ? Null.d->ref(), Null.d : new Data() ) {}
     CIShared( const CIShared &that ) : d( that.d ) { d->ref(); }
     CIShared &operator=( const CIShared &that ) {
@@ -106,6 +107,7 @@ public:
     bool operator!() const { return isNull(); }
 
 private:
+
     CIShared( Data *aData ) : d( aData ) {}
     Data *d;
 
@@ -418,4 +420,3 @@ template< class D > bool CIShared<D>::Data::deref() {
 #endif // VBOX_CHECK_STATE
 
 #endif /* !FEQT_INCLUDED_SRC_globals_CIShared_h */
-

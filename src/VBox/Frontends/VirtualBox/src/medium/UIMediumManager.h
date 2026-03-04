@@ -1,4 +1,4 @@
-/* $Id: UIMediumManager.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIMediumManager.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMediumManager class declaration.
  */
@@ -57,7 +57,6 @@ class UIMediumItem;
 class UIMediumSearchWidget;
 class QIToolBar;
 
-
 /** Functor interface allowing to check if passed UIMediumItem is suitable. */
 class CheckIfSuitableBy
 {
@@ -69,7 +68,6 @@ public:
     /** Determines whether passed @a pItem is suitable. */
     virtual bool isItSuitable(UIMediumItem *pItem) const = 0;
 };
-
 
 /** Medium manager progress-bar.
   * Reflects medium-enumeration progress, stays hidden otherwise. */
@@ -102,7 +100,6 @@ private:
     /** Progress-bar itself. */
     QProgressBar *m_pProgressBar;
 };
-
 
 /** QWidget extension providing GUI with the pane to control media related functionality. */
 class UIMediumManagerWidget : public QWidget
@@ -416,9 +413,7 @@ private:
         /** Holds the medium details-widget instance. */
         UIMediumSearchWidget *m_pSearchWidget;
     /** @} */
-
 };
-
 
 /** QIManagerDialogFactory extension used as a factory for Virtual Media Manager dialog. */
 class UIMediumManagerFactory : public QIManagerDialogFactory
@@ -438,7 +433,6 @@ protected:
     /** Holds the action-pool reference. */
     UIActionPool *m_pActionPool;
 };
-
 
 /** QIManagerDialog extension providing GUI with the dialog to control media related functionality. */
 class UIMediumManager : public QIManagerDialog

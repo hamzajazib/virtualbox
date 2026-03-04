@@ -1,4 +1,4 @@
-/* $Id: UIDesktopServices_nix.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIDesktopServices_nix.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Qt GUI - Utility Classes and Functions specific to X11..
  */
@@ -75,4 +75,3 @@ bool UIDesktopServices::openInFileManager(const QString &strFile)
     QFileInfo fi(strFile);
     return QDesktopServices::openUrl(QUrl("file://" + QDir::toNativeSeparators(fi.absolutePath()), QUrl::TolerantMode));
 }
-

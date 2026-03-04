@@ -1,4 +1,4 @@
-/* $Id: UICloudProfileManager.cpp 113179 2026-02-26 13:51:29Z sergey.dubov@oracle.com $ */
+/* $Id: UICloudProfileManager.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UICloudProfileManager class implementation.
  */
@@ -102,6 +102,7 @@ public:
     /** Returns definition composed on the basis of @a strShortName. */
     static QString definition(const QString &strShortName);
 };
+
 
 /** Cloud Profile Manager profile's tree-widget item. */
 class UIItemCloudProfile : public QITreeWidgetItem, public UIDataCloudProfile

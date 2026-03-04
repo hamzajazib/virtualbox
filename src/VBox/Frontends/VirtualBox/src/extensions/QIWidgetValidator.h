@@ -1,4 +1,4 @@
-/* $Id: QIWidgetValidator.h 113052 2026-02-17 09:56:11Z sergey.dubov@oracle.com $ */
+/* $Id: QIWidgetValidator.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Qt extensions: QIWidgetValidator class declaration.
  */
@@ -38,7 +38,6 @@
 /* GUI includes: */
 #include "UILibraryDefs.h"
 
-
 /** QObject sub-class,
   * providing passed QObject with validation routine. */
 class SHARED_LIBRARY_STUFF QIObjectValidator : public QObject
@@ -76,7 +75,6 @@ private:
     /** Holds the validation state. */
     QValidator::State m_enmState;
 };
-
 
 /** QObject sub-class,
   * which can group various QIObjectValidator instances to operate on. */
@@ -118,7 +116,6 @@ private:
     /** Holds validation result. */
     bool m_fResult;
 };
-
 
 /** QValidator extension,
   * for long number validations. */
@@ -165,6 +162,5 @@ private:
     /** Holds the top. */
     ulong m_uTop;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_extensions_QIWidgetValidator_h */

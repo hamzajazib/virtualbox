@@ -1,4 +1,4 @@
-/* $Id: UIMaximumGuestScreenSizeEditor.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIMaximumGuestScreenSizeEditor.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMaximumGuestScreenSizeEditor class declaration.
  */
@@ -63,7 +63,6 @@ struct SHARED_LIBRARY_STUFF UIMaximumGuestScreenSizeValue
 };
 Q_DECLARE_METATYPE(UIMaximumGuestScreenSizeValue);
 
-
 /** UIEditor sub-class used as a maximum guest screen size editor. */
 class SHARED_LIBRARY_STUFF UIMaximumGuestScreenSizeEditor : public UIEditor
 {
@@ -119,6 +118,5 @@ private:
         QSpinBox    *m_pSpinboxMaxHeight;
     /** @} */
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_settings_editors_UIMaximumGuestScreenSizeEditor_h */

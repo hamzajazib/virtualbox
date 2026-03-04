@@ -1,4 +1,4 @@
-/* $Id: UIMediumItem.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIMediumItem.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMediumItem class declaration.
  */
@@ -167,7 +167,6 @@ private:
     /** Holds the UIMedium wrapped by <i>this</i> item. */
     UIMedium m_guiMedium;
 };
-
 
 /** UIMediumItem extension representing hard-disk item. */
 class SHARED_LIBRARY_STUFF UIMediumItemHD : public UIMediumItem

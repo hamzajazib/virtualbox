@@ -1,4 +1,4 @@
-/* $Id: UIFileManagerTable.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIFileManagerTable.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIFileManagerTable class declaration.
  */
@@ -68,6 +68,7 @@ class QIToolBar;
 class UIDirectoryStatistics
 {
 public:
+
     UIDirectoryStatistics();
     ULONG64    m_totalSize;
     unsigned   m_uFileCount;
@@ -76,7 +77,6 @@ public:
 };
 
 Q_DECLARE_METATYPE(UIDirectoryStatistics);
-
 
 /** Examines the paths in @p strStartPath and collects some staticstics from them recursively (in case directories)
  *  Runs on a worker thread to avoid GUI freezes. UIGuestFileTable and UIHostFileTable uses specialized children
@@ -117,7 +117,6 @@ private:
 /** A QIDialog child to display properties of a file object */
 class UIPropertiesDialog : public QIDialog
 {
-
     Q_OBJECT;
 
 public:

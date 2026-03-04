@@ -1,4 +1,4 @@
-/* $Id: UIMiniToolBar.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIMiniToolBar.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMiniToolBar class declaration.
  */
@@ -47,7 +47,6 @@ enum GeometryType
     GeometryType_Available,
     GeometryType_Full
 };
-
 
 /** QWidget reimplementation
   * providing GUI with slideable mini-toolbar used in full-screen/seamless modes. */
@@ -216,4 +215,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIMiniToolBar_h */
-

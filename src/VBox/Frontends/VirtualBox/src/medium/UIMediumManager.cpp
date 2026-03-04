@@ -1,4 +1,4 @@
-/* $Id: UIMediumManager.cpp 113210 2026-03-02 13:31:46Z sergey.dubov@oracle.com $ */
+/* $Id: UIMediumManager.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMediumManager class implementation.
  */
@@ -73,29 +73,33 @@
 #endif /* VBOX_WS_MAC */
 
 
-
 /** Functor allowing to check if passed UIMediumItem is suitable by @a uID. */
 class CheckIfSuitableByID : public CheckIfSuitableBy
 {
 public:
+
     /** Constructor accepting @a uID to compare with. */
     CheckIfSuitableByID(const QUuid &uID) : m_uID(uID) {}
 
 private:
+
     /** Determines whether passed UIMediumItem is suitable by @a uID. */
     bool isItSuitable(UIMediumItem *pItem) const  RT_OVERRIDE RT_FINAL { return pItem->id() == m_uID; }
     /** Holds the @a uID to compare to. */
     QUuid m_uID;
 };
 
+
 /** Functor allowing to check if passed UIMediumItem is suitable by @a state. */
 class CheckIfSuitableByState : public CheckIfSuitableBy
 {
 public:
+
     /** Constructor accepting @a state to compare with. */
     CheckIfSuitableByState(KMediumState state) : m_state(state) {}
 
 private:
+
     /** Determines whether passed UIMediumItem is suitable by @a state. */
     bool isItSuitable(UIMediumItem *pItem) const  RT_OVERRIDE RT_FINAL { return pItem->state() == m_state; }
     /** Holds the @a state to compare to. */

@@ -1,4 +1,4 @@
-/* $Id: UIActionPool.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIActionPool.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIActionPool class declaration.
  */
@@ -47,7 +47,6 @@ class QString;
 class UIActionPool;
 class UIActionPoolRuntime;
 class UIActionPoolManager;
-
 
 /** Action types. */
 enum UIActionType
@@ -191,7 +190,6 @@ enum UIActionRestrictionLevel
     UIActionRestrictionLevel_Logic
 };
 
-
 /** QMenu extension. */
 class SHARED_LIBRARY_STUFF UIMenu : public QMenu
 {
@@ -234,7 +232,6 @@ private:
     bool m_fConsumed;
 #endif /* VBOX_WS_MAC */
 };
-
 
 /** Abstract QAction extension. */
 class SHARED_LIBRARY_STUFF UIAction : public QAction
@@ -344,7 +341,6 @@ protected:
     bool                 m_fShortcutHidden;
 };
 
-
 /** Abstract UIAction extension for 'Menu' action type. */
 class SHARED_LIBRARY_STUFF UIActionMenu : public UIAction
 {
@@ -385,7 +381,6 @@ private:
     UIMenu *m_pMenu;
 };
 
-
 /** Abstract UIAction extension for 'Simple' action type. */
 class SHARED_LIBRARY_STUFF UIActionSimple : public UIAction
 {
@@ -421,7 +416,6 @@ protected:
                    const QIcon &icon,
                    bool fMachineMenuAction = false);
 };
-
 
 /** Abstract UIAction extension for 'Toggle' action type. */
 class SHARED_LIBRARY_STUFF UIActionToggle : public UIAction
@@ -463,7 +457,6 @@ private:
     /** Prepares all. */
     void prepare();
 };
-
 
 /** Abstract QObject extension
   * representing action-pool interface and factory. */
@@ -675,6 +668,5 @@ private:
     /** Holds whether this action-pool is temporary. */
     const bool    m_fTemporary;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIActionPool_h */

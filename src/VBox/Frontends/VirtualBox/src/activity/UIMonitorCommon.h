@@ -1,4 +1,4 @@
-/* $Id: UIMonitorCommon.h 112710 2026-01-27 10:09:25Z serkan.bayraktar@oracle.com $ */
+/* $Id: UIMonitorCommon.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMonitorCommon class declaration.
  */
@@ -59,7 +59,6 @@ private:
     CStringArray m_metricNamesArray;
 };
 
-
 class SHARED_LIBRARY_STUFF UIProgressTaskReadCloudMachineMetricData : public UIProgressTask
 {
     Q_OBJECT;
@@ -100,10 +99,8 @@ struct UIDebuggerMetricData
     quint64 m_counter;
 };
 
-
 class SHARED_LIBRARY_STUFF UIMonitorCommon
 {
-
 public:
 
     /** @name Static utility methods that query and parse IMachineDebugger outputs for specific metrix types.
@@ -136,7 +133,6 @@ private:
 
     /** Parses the xml string we get from the IMachineDebugger and returns an array of UIDebuggerMetricData. */
     static QVector<UIDebuggerMetricData> getAndParseStatsFromDebugger(CMachineDebugger &debugger, const QString &strQuery);
-
 };
 
 #endif /* !FEQT_INCLUDED_SRC_activity_UIMonitorCommon_h */

@@ -1,4 +1,4 @@
-/* $Id: UIExtraDataDefs.h 112723 2026-01-28 12:17:37Z serkan.bayraktar@oracle.com $ */
+/* $Id: UIExtraDataDefs.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Extra-data related definitions.
  */
@@ -43,7 +43,6 @@
 /** Typedef for QPair of QStrings. */
 typedef QPair<QString, QString> QIStringPair;
 typedef QList<QIStringPair> QIStringPairList;
-
 
 /** Extra-data namespace. */
 namespace UIExtraDataDefs
@@ -497,7 +496,6 @@ namespace UIExtraDataDefs
     /** @} */
 }
 
-
 /** Extra-data meta definitions. */
 class SHARED_LIBRARY_STUFF UIExtraDataMetaDefs : public QObject
 {
@@ -845,7 +843,6 @@ public:
     Q_ENUM(DetailsElementOptionTypeDescription);
 };
 
-
 /** Common UI: GUI feature types. */
 enum GUIFeatureType
 {
@@ -859,7 +856,6 @@ enum GUIFeatureType
     GUIFeatureType_NoStatusBar    = RT_BIT(2),
     GUIFeatureType_All            = 0xFF
 };
-
 
 /** Common UI: Global settings page types. */
 enum GlobalSettingsPageType
@@ -880,7 +876,6 @@ enum GlobalSettingsPageType
 };
 Q_DECLARE_METATYPE(GlobalSettingsPageType);
 
-
 /** Common UI: Machine settings page types. */
 enum MachineSettingsPageType
 {
@@ -899,7 +894,6 @@ enum MachineSettingsPageType
 };
 Q_DECLARE_METATYPE(MachineSettingsPageType);
 
-
 /** Common UI: Shared Folder types. */
 enum UISharedFolderType
 {
@@ -907,7 +901,6 @@ enum UISharedFolderType
     UISharedFolderType_Machine,
     UISharedFolderType_Console
 };
-
 
 /** Remote mode types. */
 enum UIRemoteMode
@@ -917,7 +910,6 @@ enum UIRemoteMode
     UIRemoteMode_Off
 };
 Q_DECLARE_METATYPE(UIRemoteMode);
-
 
 /** Common UI: Wizard types. */
 enum WizardType
@@ -933,14 +925,12 @@ enum WizardType
     WizardType_CloneVD
 };
 
-
 /** Common UI: Wizard modes. */
 enum WizardMode
 {
     WizardMode_Basic,
     WizardMode_Expert
 };
-
 
 /** Common UI: Color Theme types. */
 enum UIColorThemeType
@@ -951,7 +941,6 @@ enum UIColorThemeType
 };
 Q_DECLARE_METATYPE(UIColorThemeType);
 
-
 /** Tool item classes. */
 enum UIToolClass
 {
@@ -960,7 +949,6 @@ enum UIToolClass
     UIToolClass_Global,
     UIToolClass_Machine
 };
-
 
 /** Tool item types. */
 enum UIToolType
@@ -987,7 +975,6 @@ enum UIToolType
 };
 Q_DECLARE_METATYPE(UIToolType);
 
-
 /** Contains stuff related to tools handling. */
 namespace UIToolStuff
 {
@@ -996,7 +983,6 @@ namespace UIToolStuff
     /** Returns whether passed @a enmType is of passed @a enmClass. */
     SHARED_LIBRARY_STUFF bool isTypeOfClass(UIToolType enmType, UIToolClass enmClass);
 }
-
 
 /** Selector UI: Details-element types. */
 enum DetailsElementType
@@ -1018,7 +1004,6 @@ enum DetailsElementType
 };
 Q_DECLARE_METATYPE(DetailsElementType);
 
-
 /** Selector UI: Preview update interval types. */
 enum PreviewUpdateIntervalType
 {
@@ -1031,7 +1016,6 @@ enum PreviewUpdateIntervalType
     PreviewUpdateIntervalType_Max
 };
 
-
 /** Selector UI: Disk encryption cipher types. */
 enum UIDiskEncryptionCipherType
 {
@@ -1041,7 +1025,6 @@ enum UIDiskEncryptionCipherType
     UIDiskEncryptionCipherType_Max
 };
 Q_DECLARE_METATYPE(UIDiskEncryptionCipherType);
-
 
 /** Runtime UI: Visual-state types. */
 enum UIVisualStateType
@@ -1054,7 +1037,6 @@ enum UIVisualStateType
     UIVisualStateType_All        = 0xFF
 };
 Q_DECLARE_METATYPE(UIVisualStateType);
-
 
 /** Runtime UI: Indicator types. */
 enum IndicatorType
@@ -1077,7 +1059,6 @@ enum IndicatorType
 };
 Q_DECLARE_METATYPE(IndicatorType);
 
-
 /** Runtime UI: Machine close actions. */
 enum MachineCloseAction
 {
@@ -1091,7 +1072,6 @@ enum MachineCloseAction
 };
 Q_DECLARE_METATYPE(MachineCloseAction);
 
-
 /** Runtime UI: Mouse capture policy types. */
 enum MouseCapturePolicy
 {
@@ -1099,7 +1079,6 @@ enum MouseCapturePolicy
     MouseCapturePolicy_HostComboOnly,
     MouseCapturePolicy_Disabled
 };
-
 
 /** Runtime UI: Guru Meditation handler types. */
 enum GuruMeditationHandlerType
@@ -1109,14 +1088,12 @@ enum GuruMeditationHandlerType
     GuruMeditationHandlerType_Ignore
 };
 
-
 /** Runtime UI: Scaling optimization types. */
 enum ScalingOptimizationType
 {
     ScalingOptimizationType_None,
     ScalingOptimizationType_Performance
 };
-
 
 #ifndef VBOX_WS_MAC
 /** Runtime UI: Mini-toolbar alignment. */
@@ -1127,7 +1104,6 @@ enum MiniToolbarAlignment
     MiniToolbarAlignment_Top
 };
 #endif /* !VBOX_WS_MAC */
-
 
 /** Runtime UI: Information-element types. */
 enum InformationElementType
@@ -1151,7 +1127,6 @@ enum InformationElementType
 };
 Q_DECLARE_METATYPE(InformationElementType);
 
-
 /** Runtime UI: Maximum guest-screen size policy types.
   * @note This policy determines which guest-screen sizes we wish to
   *       handle. We also accept anything smaller than the current size. */
@@ -1165,7 +1140,6 @@ enum MaximumGuestScreenSizePolicy
     MaximumGuestScreenSizePolicy_Automatic
 };
 Q_DECLARE_METATYPE(MaximumGuestScreenSizePolicy);
-
 
 /** Manager UI: VM Activity Overview Column types.
   * @note The first element must be 0 and the rest must be consecutive */

@@ -1,4 +1,4 @@
-/* $Id: UISettingsSerializer.h 112842 2026-02-05 14:06:53Z sergey.dubov@oracle.com $ */
+/* $Id: UISettingsSerializer.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UISettingsSerializer class declaration.
  */
@@ -60,7 +60,6 @@ class UISettingsPage;
 /* Type definitions: */
 typedef QList<UISettingsPage*> UISettingsPageList;
 typedef QMap<int, UISettingsPage*> UISettingsPageMap;
-
 
 /** QThread reimplementation used for
   * loading/saving settings in async mode. */
@@ -159,7 +158,6 @@ protected:
     QWaitCondition  m_condition;
 };
 
-
 /** QIDialog reimplementation used to
   * reflect the settings serialization operation. */
 class SHARED_LIBRARY_STUFF UISettingsSerializerProgress : public QIDialog
@@ -257,6 +255,5 @@ private:
     /** Holds the template for the sub-operation progress label. */
     static QString  s_strProgressDescriptionTemplate;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_settings_UISettingsSerializer_h */

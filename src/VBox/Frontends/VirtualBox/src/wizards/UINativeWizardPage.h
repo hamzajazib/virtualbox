@@ -1,4 +1,4 @@
-/* $Id: UINativeWizardPage.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UINativeWizardPage.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINativeWizardPage class declaration.
  */
@@ -93,6 +93,5 @@ protected:
     /** Holds the page title. */
     QString  m_strTitle;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_UINativeWizardPage_h */

@@ -1,4 +1,4 @@
-/* $Id: UIChooserNodeGroup.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIChooserNodeGroup.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIChooserNodeGroup class declaration.
  */
@@ -33,7 +33,6 @@
 
 /* GUI includes: */
 #include "UIChooserNode.h"
-
 
 /** UIChooserNode subclass used as interface for invisible tree-view group nodes. */
 class UIChooserNodeGroup : public UIChooserNode
@@ -146,6 +145,5 @@ private:
     /** Holds machine children. */
     QList<UIChooserNode*>  m_nodesMachine;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_manager_chooser_UIChooserNodeGroup_h */

@@ -1,4 +1,4 @@
-/* $Id: UIHostComboEditor.cpp 112785 2026-02-02 16:38:44Z sergey.dubov@oracle.com $ */
+/* $Id: UIHostComboEditor.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIHostComboEditor class implementation.
  */
@@ -110,6 +110,7 @@ private:
 /*********************************************************************************************************************************
 *   Namespace UINativeHotKey implementation.                                                                                     *
 *********************************************************************************************************************************/
+
 
 #ifdef VBOX_WS_NIX
 namespace UINativeHotKey
@@ -389,6 +390,7 @@ void UINativeHotKey::retranslateKeyNames()
 /*********************************************************************************************************************************
 *   Namespace UIHostCombo implementation.                                                                                        *
 *********************************************************************************************************************************/
+
 
 namespace UIHostCombo
 {

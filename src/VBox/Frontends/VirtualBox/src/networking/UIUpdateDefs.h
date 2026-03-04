@@ -1,4 +1,4 @@
-/* $Id: UIUpdateDefs.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIUpdateDefs.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Update routine related declarations.
  */
@@ -80,7 +80,6 @@ struct VBoxUpdateDay
     ULONG    length;
 };
 typedef QList<VBoxUpdateDay> VBoxUpdateDayList;
-
 
 /** Class used to encode/decode update data. */
 class SHARED_LIBRARY_STUFF VBoxUpdateData
@@ -170,6 +169,5 @@ private:
     /** Holds the supported update chennels. */
     QVector<KUpdateChannel>  m_supportedUpdateChannels;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_networking_UIUpdateDefs_h */

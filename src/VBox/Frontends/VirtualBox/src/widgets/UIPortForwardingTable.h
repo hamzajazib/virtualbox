@@ -1,4 +1,4 @@
-/* $Id: UIPortForwardingTable.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIPortForwardingTable.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIPortForwardingTable class declaration.
  */
@@ -61,7 +61,6 @@ public:
 };
 Q_DECLARE_METATYPE(NameData);
 
-
 /** QString subclass used to distinguish IP data from simple QString. */
 class IpData : public QString
 {
@@ -73,7 +72,6 @@ public:
     IpData(const QString &strIp) : QString(strIp) {}
 };
 Q_DECLARE_METATYPE(IpData);
-
 
 /** Wrapper for ushort used to distinguish port data from simple ushort. */
 class PortData
@@ -200,7 +198,6 @@ struct UIPortForwardingDataUnique
     IpData hostIp;
 };
 
-
 /** QWidget subclass representig Port Forwarding table. */
 class SHARED_LIBRARY_STUFF UIPortForwardingTable : public QWidget
 {
@@ -305,6 +302,5 @@ private:
     /** Holds the Remove action instance. */
     QAction *m_pActionRemove;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIPortForwardingTable_h */

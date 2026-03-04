@@ -1,4 +1,4 @@
-/* $Id: UIChooserItem.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIChooserItem.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIChooserItem class declaration.
  */
@@ -54,7 +54,6 @@ class UIChooserItemMachine;
 class UIChooserModel;
 class UIChooserNode;
 
-
 /** A simple QGraphicsEffect extension to mark disabled UIChooserItem.
   * @note Applies blur and gray scale filters. */
 class UIChooserDisabledItemEffect : public QGraphicsEffect
@@ -77,7 +76,6 @@ private:
     /** Holds the blur effect radius. */
     int m_iBlurRadius;
 };
-
 
 /** QIGraphicsWidget extension used as interface
   * for graphics chooser model/view architecture. */
@@ -348,7 +346,6 @@ private:
     /** @} */
 };
 
-
 /** QMimeData for graphics item interface. */
 class UIChooserItemMimeData : public QMimeData
 {
@@ -370,6 +367,5 @@ private:
     /** Holds the cached item. */
     UIChooserItem *m_pItem;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_manager_chooser_UIChooserItem_h */

@@ -1,4 +1,4 @@
-/* $Id: QITableView.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: QITableView.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Qt extensions: QITableView class declaration.
  */
@@ -42,7 +42,6 @@ class QITableViewCell;
 class QITableViewRow;
 class QITableView;
 
-
 /** OObject subclass used as cell for the QITableView. */
 class SHARED_LIBRARY_STUFF QITableViewCell : public QObject
 {
@@ -79,7 +78,6 @@ private:
     QString  m_strText;
 };
 
-
 /** OObject subclass used as row for the QITableView. */
 class SHARED_LIBRARY_STUFF QITableViewRow : public QObject
 {
@@ -110,7 +108,6 @@ private:
     /** Holds the parent table reference. */
     QITableView *m_pTable;
 };
-
 
 /** QTableView subclass extending standard functionality. */
 class SHARED_LIBRARY_STUFF QITableView : public QTableView
@@ -165,6 +162,5 @@ private:
     /** Holds the map of editors stored for passed indexes. */
     QMap<QModelIndex, QObject*> m_editors;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_extensions_QITableView_h */

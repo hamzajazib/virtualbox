@@ -1,4 +1,4 @@
-/* $Id: UIActionPoolRuntime.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIActionPoolRuntime.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIActionPoolRuntime class declaration.
  */
@@ -38,7 +38,6 @@
 #include "UIActionPool.h"
 #include "UIExtraDataDefs.h"
 #include "UILibraryDefs.h"
-
 
 /** VirtualBox Runtime action-pool index enum.
   * Naming convention is following:
@@ -146,7 +145,6 @@ enum UIActionIndexRT
     /* Maximum index: */
     UIActionIndexRT_Max
 };
-
 
 /** UIActionPool extension
   * representing action-pool singleton for Runtime UI. */
@@ -332,6 +330,5 @@ private:
     /** Enables factory in base-class. */
     friend class UIActionPool;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIActionPoolRuntime_h */

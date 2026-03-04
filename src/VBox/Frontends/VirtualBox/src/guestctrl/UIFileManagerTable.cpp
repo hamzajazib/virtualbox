@@ -1,4 +1,4 @@
-/* $Id: UIFileManagerTable.cpp 112751 2026-01-29 16:30:52Z sergey.dubov@oracle.com $ */
+/* $Id: UIFileManagerTable.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIFileManagerTable class implementation.
  */
@@ -64,12 +64,12 @@
 *   UIGuestControlFileView definition.                                                                                           *
 *********************************************************************************************************************************/
 
+
 /** Using QTableView causes the following problem when I click on the table items
     Qt WARNING: Cannot creat accessible child interface for object:  UIGuestControlFileView.....
     so for now subclass QTableView */
 class UIGuestControlFileView : public QTableView
 {
-
     Q_OBJECT;
 
 signals:
@@ -103,7 +103,6 @@ private:
 /** A QItemDelegate child class to disable dashed lines drawn around selected cells in QTableViews */
 class UIFileDelegate : public QItemDelegate
 {
-
     Q_OBJECT;
 
 public:
@@ -121,10 +120,10 @@ protected:
 *   UStringInputDialog definition.                                                                                               *
 *********************************************************************************************************************************/
 
+
 /** A QIDialog child including a line edit whose text exposed when the dialog is accepted */
 class UIStringInputDialog : public QIDialog
 {
-
     Q_OBJECT;
 
 public:
@@ -142,10 +141,10 @@ private:
 *   UIFileDeleteConfirmationDialog definition.                                                                                   *
 *********************************************************************************************************************************/
 
+
 /** A QIDialog child including a line edit whose text exposed when the dialog is accepted */
 class UIFileDeleteConfirmationDialog : public QIDialog
 {
-
     Q_OBJECT;
 
 public:

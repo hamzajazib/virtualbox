@@ -1,4 +1,4 @@
-/* $Id: UIActionPoolRuntime.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIActionPoolRuntime.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIActionPoolRuntime class implementation.
  */
@@ -88,6 +88,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Show Settings' action class. */
 class UIActionSimpleRuntimeShowSettings : public UIActionSimple
 {
@@ -137,6 +138,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Display the virtual machine settings window"));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Take Snapshot' action class. */
 class UIActionSimpleRuntimePerformTakeSnapshot : public UIActionSimple
@@ -188,6 +190,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Show Information Dialog' action class. */
 class UIActionSimpleRuntimeShowInformationDialog : public UIActionSimple
 {
@@ -238,6 +241,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Show File Manager Dialog' action class. */
 class UIActionSimpleRuntimeShowFileManagerDialog : public UIActionSimple
 {
@@ -281,6 +285,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Display the virtual machine file manager window"));
     }
 };
+
 
 /** Toggle action extension, used as 'Pause' action class. */
 class UIActionToggleRuntimePause : public UIActionToggle
@@ -335,6 +340,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Reset' action class. */
 class UIActionSimpleRuntimePerformReset : public UIActionSimple
 {
@@ -385,6 +391,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Detach' action class. */
 class UIActionSimpleRuntimePerformDetach : public UIActionSimple
 {
@@ -429,6 +436,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Save State' action class. */
 class UIActionSimpleRuntimePerformSaveState : public UIActionSimple
 {
@@ -472,6 +480,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Save the state of the virtual machine"));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Shutdown' action class. */
 class UIActionSimpleRuntimePerformShutdown : public UIActionSimple
@@ -527,6 +536,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform PowerOff' action class. */
 class UIActionSimpleRuntimePerformPowerOff : public UIActionSimple
 {
@@ -570,6 +580,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Power off the virtual machine"));
     }
 };
+
 
 /** Simple action extension, used as 'Show Logs' action class. */
 class UIActionSimpleRuntimeShowLogs : public UIActionSimple
@@ -615,6 +626,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'View' menu class. */
 class UIActionMenuRuntimeView : public UIActionMenu
 {
@@ -652,6 +664,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'View Popup' menu class. */
 class UIActionMenuRuntimeViewPopup : public UIActionMenu
 {
@@ -685,6 +698,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE {}
 };
+
 
 /** Toggle action extension, used as 'Full-screen Mode' action class. */
 class UIActionToggleRuntimeFullscreenMode : public UIActionToggle
@@ -739,6 +753,7 @@ protected:
     }
 };
 
+
 /** Toggle action extension, used as 'Seamless Mode' action class. */
 class UIActionToggleRuntimeSeamlessMode : public UIActionToggle
 {
@@ -791,6 +806,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Switch between normal and seamless desktop integration mode"));
     }
 };
+
 
 /** Toggle action extension, used as 'Scaled Mode' action class. */
 class UIActionToggleRuntimeScaledMode : public UIActionToggle
@@ -845,6 +861,7 @@ protected:
     }
 };
 
+
 #ifndef VBOX_WS_MAC
 /** Simple action extension, used as 'Perform Minimize Window' action class. */
 class UIActionSimpleRuntimePerformMinimizeWindow : public UIActionSimple
@@ -897,6 +914,7 @@ protected:
 };
 #endif /* !VBOX_WS_MAC */
 
+
 /** Simple action extension, used as 'Perform Window Adjust' action class. */
 class UIActionSimpleRuntimePerformWindowAdjust : public UIActionSimple
 {
@@ -947,6 +965,7 @@ protected:
     }
 };
 
+
 /** Toggle action extension, used as 'Guest Autoresize' action class. */
 class UIActionToggleRuntimeGuestAutoresize : public UIActionToggle
 {
@@ -993,6 +1012,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Automatically resize the guest display when the window is resized"));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Take Screenshot' action class. */
 class UIActionSimpleRuntimePerformTakeScreenshot : public UIActionSimple
@@ -1044,6 +1064,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'View' menu class. */
 class UIActionMenuRuntimeRecording : public UIActionMenu
 {
@@ -1080,6 +1101,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Recording"));
     }
 };
+
 
 /** Simple action extension, used as 'Show Recording Settings' action class. */
 class UIActionSimpleRuntimeShowRecordingSettings : public UIActionSimple
@@ -1124,6 +1146,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Display virtual machine settings window to configure video/audio recording"));
     }
 };
+
 
 /** Toggle action extension, used as 'Recording' action class. */
 class UIActionToggleRuntimeRecording : public UIActionToggle
@@ -1172,6 +1195,7 @@ protected:
     }
 };
 
+
 /** Toggle action extension, used as 'VRDE Server' action class. */
 class UIActionToggleRuntimeVRDEServer : public UIActionToggle
 {
@@ -1219,6 +1243,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'MenuBar' menu class. */
 class UIActionMenuRuntimeMenuBar : public UIActionMenu
 {
@@ -1255,6 +1280,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Menu Bar"));
     }
 };
+
 
 /** Simple action extension, used as 'Show MenuBar Settings Window' action class. */
 class UIActionSimpleRuntimeShowMenuBarSettings : public UIActionSimple
@@ -1299,6 +1325,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Display window to configure menu-bar"));
     }
 };
+
 
 #ifndef VBOX_WS_MAC
 /** Toggle action extension, used as 'MenuBar' action class. */
@@ -1349,6 +1376,7 @@ protected:
 };
 #endif /* !VBOX_WS_MAC */
 
+
 /** Menu action extension, used as 'StatusBar' menu class. */
 class UIActionMenuRuntimeStatusBar : public UIActionMenu
 {
@@ -1385,6 +1413,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Status Bar"));
     }
 };
+
 
 /** Simple action extension, used as 'Show StatusBar Settings Window' action class. */
 class UIActionSimpleRuntimeShowStatusBarSettings : public UIActionSimple
@@ -1429,6 +1458,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Display window to configure status-bar"));
     }
 };
+
 
 /** Toggle action extension, used as 'StatusBar' action class. */
 class UIActionToggleRuntimeStatusBar : public UIActionToggle
@@ -1477,6 +1507,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'Input' menu class. */
 class UIActionMenuRuntimeInput : public UIActionMenu
 {
@@ -1514,6 +1545,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'Keyboard' menu class. */
 class UIActionMenuRuntimeKeyboard : public UIActionMenu
 {
@@ -1550,6 +1582,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Keyboard"));
     }
 };
+
 
 /** Simple action extension, used as 'Show Keyboard Settings' action class. */
 class UIActionSimpleRuntimeShowKeyboardSettings : public UIActionSimple
@@ -1595,6 +1628,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Show Soft Keyboard' action class. */
 class UIActionSimpleRuntimeShowSoftKeyboard : public UIActionSimple
 {
@@ -1638,6 +1672,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Display soft keyboard"));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Type CAD' action class. */
 class UIActionSimpleRuntimePerformTypeCAD : public UIActionSimple
@@ -1688,6 +1723,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Ctrl-Alt-Del"));
     }
 };
+
 
 #ifdef VBOX_WS_NIX
 /** X11: Simple action extension, used as 'Perform Type CABS' action class. */
@@ -1741,6 +1777,7 @@ protected:
 };
 #endif /* VBOX_WS_NIX */
 
+
 /** Simple action extension, used as 'Perform Type Ctrl Break' action class. */
 class UIActionSimpleRuntimePerformTypeCtrlBreak : public UIActionSimple
 {
@@ -1784,6 +1821,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Ctrl-Break"));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Type Insert' action class. */
 class UIActionSimpleRuntimePerformTypeInsert : public UIActionSimple
@@ -1829,6 +1867,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Type PrintScreen' action class. */
 class UIActionSimpleRuntimePerformTypePrintScreen : public UIActionSimple
 {
@@ -1873,6 +1912,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Type Alt PrintScreen' action class. */
 class UIActionSimpleRuntimePerformTypeAltPrintScreen : public UIActionSimple
 {
@@ -1916,6 +1956,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Alt Print Screen"));
     }
 };
+
 
 /** Toggle action extension, used as 'Perform Host Key Combo Press/Release' action class. */
 class UIActionToggleRuntimePerformTypeHostKeyCombo : public UIActionToggle
@@ -1971,6 +2012,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'Mouse' menu class. */
 class UIActionMenuRuntimeMouse : public UIActionMenu
 {
@@ -2007,6 +2049,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Mouse"));
     }
 };
+
 
 /** Toggle action extension, used as 'Mouse Integration' action class. */
 class UIActionToggleRuntimeMouseIntegration : public UIActionToggle
@@ -2093,6 +2136,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'Hard Drives' menu class. */
 class UIActionMenuRuntimeHardDrives : public UIActionMenu
 {
@@ -2131,6 +2175,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Hard Disks"));
     }
 };
+
 
 /** Simple action extension, used as 'Show Hard Drives Settings' action class. */
 class UIActionSimpleRuntimeShowHardDrivesSettings : public UIActionSimple
@@ -2176,6 +2221,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'Optical Drives' menu class. */
 class UIActionMenuRuntimeOpticalDevices : public UIActionMenu
 {
@@ -2214,6 +2260,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Optical Drives"));
     }
 };
+
 
 /** Menu action extension, used as 'Floppy Drives' menu class. */
 class UIActionMenuRuntimeFloppyDevices : public UIActionMenu
@@ -2254,6 +2301,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'Audio' menu class. */
 class UIActionMenuRuntimeAudio : public UIActionMenu
 {
@@ -2290,6 +2338,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Audio"));
     }
 };
+
 
 /** Toggle action extension, used as 'Audio Output' action class. */
 class UIActionToggleRuntimeAudioOutput : public UIActionToggle
@@ -2338,6 +2387,7 @@ protected:
     }
 };
 
+
 /** Toggle action extension, used as 'Audio Input' action class. */
 class UIActionToggleRuntimeAudioInput : public UIActionToggle
 {
@@ -2385,6 +2435,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'Network Adapters' menu class. */
 class UIActionMenuRuntimeNetworkAdapters : public UIActionMenu
 {
@@ -2421,6 +2472,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Network"));
     }
 };
+
 
 /** Simple action extension, used as 'Show Network Settings' action class. */
 class UIActionSimpleRuntimeShowNetworkSettings : public UIActionSimple
@@ -2466,6 +2518,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'USB Devices' menu class. */
 class UIActionMenuRuntimeUSBDevices : public UIActionMenu
 {
@@ -2504,6 +2557,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&USB"));
     }
 };
+
 
 /** Simple action extension, used as 'Show USB Devices Settings' action class. */
 class UIActionSimpleRuntimeShowUSBDevicesSettings : public UIActionSimple
@@ -2549,6 +2603,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'Web Cams' menu class. */
 class UIActionMenuRuntimeWebCams : public UIActionMenu
 {
@@ -2588,6 +2643,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'Shared Clipboard' menu class. */
 class UIActionMenuRuntimeSharedClipboard : public UIActionMenu
 {
@@ -2624,6 +2680,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "Shared &Clipboard"));
     }
 };
+
 
 /** Menu action extension, used as 'Drag & Drop' menu class. */
 class UIActionMenuRuntimeDragAndDrop : public UIActionMenu
@@ -2662,6 +2719,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'Shared Folders' menu class. */
 class UIActionMenuRuntimeSharedFolders : public UIActionMenu
 {
@@ -2698,6 +2756,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Shared Folders"));
     }
 };
+
 
 /** Simple action extension, used as 'Show Shared Folders Settings' action class. */
 class UIActionSimpleRuntimeShowSharedFoldersSettings : public UIActionSimple
@@ -2743,6 +2802,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Insert Guest Additions Disk' action class. */
 class UIActionSimpleRuntimePerformInsertGuestAdditionsDisk : public UIActionSimple
 {
@@ -2786,6 +2846,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Insert the Guest Additions disk file into the virtual optical drive"));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Upgrade Guest Additions' action class. */
 class UIActionSimpleRuntimePerformUpgradeGuestAdditions : public UIActionSimple
@@ -2831,6 +2892,7 @@ protected:
     }
 };
 
+
 #ifdef VBOX_WITH_DEBUGGER_GUI
 /** Menu action extension, used as 'Debug' menu class. */
 class UIActionMenuRuntimeDebug : public UIActionMenu
@@ -2868,6 +2930,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "De&bug"));
     }
 };
+
 
 /** Simple action extension, used as 'Show Statistics' action class. */
 class UIActionSimpleRuntimeShowStatistics : public UIActionSimple
@@ -2912,6 +2975,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Show Command Line' action class. */
 class UIActionSimpleRuntimeShowCommandLine : public UIActionSimple
 {
@@ -2955,6 +3019,7 @@ protected:
     }
 };
 
+
 /** Toggle action extension, used as 'Logging' action class. */
 class UIActionToggleRuntimeLogging : public UIActionToggle
 {
@@ -2997,6 +3062,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Logging", "debug action"));
     }
 };
+
 
 /** Simple action extension, used as 'Guest Control Terminal' action class. */
 class UIActionSimpleRuntimeGuestControlConsole : public UIActionSimple
@@ -3042,6 +3108,7 @@ protected:
 };
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
+
 #ifdef VBOX_WS_MAC
 /** macOS: Menu action extension, used as 'Dock' menu class. */
 class UIActionMenuDock : public UIActionMenu
@@ -3060,6 +3127,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() RT_OVERRIDE {}
 };
+
 
 /** macOS: Menu action extension, used as 'Dock Settings' menu class. */
 class UIActionMenuDockSettings : public UIActionMenu
@@ -3081,6 +3149,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "Dock Icon"));
     }
 };
+
 
 /** macOS: Toggle action extension, used as 'Dock Preview Monitor' action class. */
 class UIActionToggleDockPreviewMonitor : public UIActionToggle
@@ -3109,6 +3178,7 @@ protected:
     }
 };
 
+
 /** macOS: Toggle action extension, used as 'Dock Disable Monitor' action class. */
 class UIActionToggleDockDisableMonitor : public UIActionToggle
 {
@@ -3135,6 +3205,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "Show Application Icon"));
     }
 };
+
 
 /** macOS: Toggle action extension, used as 'Dock Icon Disable Overlay' action class. */
 class UIActionToggleDockIconDisableOverlay : public UIActionToggle

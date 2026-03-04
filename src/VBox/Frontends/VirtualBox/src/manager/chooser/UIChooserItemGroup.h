@@ -1,4 +1,4 @@
-/* $Id: UIChooserItemGroup.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIChooserItemGroup.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIChooserItemGroup class declaration.
  */
@@ -45,7 +45,6 @@ class UIEditorGroupRename;
 class UIGraphicsButton;
 class UIGraphicsRotatorButton;
 class UIGraphicsScrollArea;
-
 
 /** UIChooserItem extension implementing group item. */
 class UIChooserItemGroup : public UIChooserItem
@@ -405,7 +404,6 @@ private:
     /** @} */
 };
 
-
 /** QWidget extension to use as group name editor. */
 class UIEditorGroupRename : public QWidget
 {
@@ -434,6 +432,5 @@ private:
     /** Holds the line-edit instance. */
     QLineEdit *m_pLineEdit;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_manager_chooser_UIChooserItemGroup_h */

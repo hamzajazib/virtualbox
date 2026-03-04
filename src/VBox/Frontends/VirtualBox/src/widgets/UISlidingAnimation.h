@@ -1,4 +1,4 @@
-/* $Id: UISlidingAnimation.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UISlidingAnimation.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UISlidingAnimation class declaration.
  */
@@ -39,7 +39,6 @@ class QLabel;
 class QRect;
 class QWidget;
 class UIAnimation;
-
 
 /** QWidget extension which renders a sliding animation
   * while transiting from one widget to another. */

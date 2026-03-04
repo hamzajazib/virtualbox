@@ -1,4 +1,4 @@
-/* $Id: UICloudConsoleManager.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UICloudConsoleManager.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UICloudConsoleManager class declaration.
  */
@@ -46,7 +46,6 @@ class UIItemCloudConsoleProfile;
 class QIToolBar;
 struct UIDataCloudConsoleApplication;
 struct UIDataCloudConsoleProfile;
-
 
 /** QWidget extension providing GUI with the pane to control cloud console related functionality. */
 class UICloudConsoleManagerWidget : public QWidget
@@ -210,7 +209,6 @@ private:
     /** @} */
 };
 
-
 /** QIManagerDialogFactory extension used as a factory for Cloud Console Manager dialog. */
 class UICloudConsoleManagerFactory : public QIManagerDialogFactory
 {
@@ -229,7 +227,6 @@ protected:
     /** Holds the action-pool reference. */
     UIActionPool *m_pActionPool;
 };
-
 
 /** QIManagerDialog extension providing GUI with the dialog to control cloud console related functionality. */
 class UICloudConsoleManager : public QIManagerDialog

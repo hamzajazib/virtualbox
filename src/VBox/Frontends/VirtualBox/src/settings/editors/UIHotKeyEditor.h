@@ -1,4 +1,4 @@
-/* $Id: UIHotKeyEditor.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIHotKeyEditor.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIHotKeyEditor class declaration.
  */
@@ -44,14 +44,12 @@ class QHBoxLayout;
 class QIToolButton;
 class UIHotKeyLineEdit;
 
-
 /** Hot key types. */
 enum UIHotKeyType
 {
     UIHotKeyType_Simple,
     UIHotKeyType_WithModifiers
 };
-
 
 /** A string pair wrapper for hot-key sequence. */
 class UIHotKey
@@ -104,7 +102,6 @@ private:
     QString m_strDefaultSequence;
 };
 Q_DECLARE_METATYPE(UIHotKey);
-
 
 /** QWidget subclass wrapping real hot-key editor. */
 class SHARED_LIBRARY_STUFF UIHotKeyEditor : public QWidget
@@ -197,6 +194,5 @@ private:
     /** Holds whether sequence is taken. */
     bool       m_fSequenceTaken;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_settings_editors_UIHotKeyEditor_h */

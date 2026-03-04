@@ -1,4 +1,4 @@
-/* $Id: UIProgressEventHandler.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIProgressEventHandler.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIProgressEventHandler class declaration.
  */
@@ -38,7 +38,6 @@
 # include "CEventListener.h"
 # include "CEventSource.h"
 # include "CProgress.h"
-
 
 /** Private QObject extension
   * providing UIExtraDataManager with the CVirtualBox event-source. */
@@ -91,6 +90,5 @@ private:
     /** Holds the COM event listener instance. */
     CEventListener                      m_comEventListener;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIProgressEventHandler_h */

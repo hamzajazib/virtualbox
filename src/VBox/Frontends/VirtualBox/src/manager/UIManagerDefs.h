@@ -1,4 +1,4 @@
-/* $Id: UIManagerDefs.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIManagerDefs.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIVirtualBoxManager definitions.
  */
@@ -31,7 +31,6 @@
 # pragma once
 #endif
 
-
 /** Home tasks. */
 enum HomeTask
 {
@@ -43,7 +42,6 @@ enum HomeTask
     HomeTask_Export,
 };
 
-
 /** Virtual machine item types. */
 enum UIVirtualMachineItemType
 {
@@ -53,7 +51,6 @@ enum UIVirtualMachineItemType
     UIVirtualMachineItemType_CloudReal
 };
 
-
 /** Fake cloud virtual machine item states. */
 enum UIFakeCloudVirtualMachineItemState
 {
@@ -61,6 +58,5 @@ enum UIFakeCloudVirtualMachineItemState
     UIFakeCloudVirtualMachineItemState_Loading,
     UIFakeCloudVirtualMachineItemState_Done
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_manager_UIManagerDefs_h */

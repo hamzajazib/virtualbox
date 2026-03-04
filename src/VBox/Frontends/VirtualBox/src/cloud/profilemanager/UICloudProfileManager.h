@@ -1,4 +1,4 @@
-/* $Id: UICloudProfileManager.h 113178 2026-02-26 13:48:56Z sergey.dubov@oracle.com $ */
+/* $Id: UICloudProfileManager.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UICloudProfileManager class declaration.
  */
@@ -47,7 +47,6 @@ struct UIDataCloudProfile;
 struct UIDataCloudProvider;
 class CCloudProfile;
 class CCloudProvider;
-
 
 /** QWidget extension providing GUI with the pane to control cloud profile related functionality. */
 class UICloudProfileManagerWidget : public QWidget
@@ -208,7 +207,6 @@ private:
     /** @} */
 };
 
-
 /** QIManagerDialogFactory extension used as a factory for Cloud Profile Manager dialog. */
 class UICloudProfileManagerFactory : public QIManagerDialogFactory
 {
@@ -227,7 +225,6 @@ protected:
     /** Holds the action-pool reference. */
     UIActionPool *m_pActionPool;
 };
-
 
 /** QIManagerDialog extension providing GUI with the dialog to control cloud profile related functionality. */
 class UICloudProfileManager : public QIManagerDialog

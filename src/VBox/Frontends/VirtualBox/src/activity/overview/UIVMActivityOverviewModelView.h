@@ -1,4 +1,4 @@
-/* $Id: UIVMActivityOverviewModelView.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIVMActivityOverviewModelView.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIVMActivityOverviewModelView class declaration.
  */
@@ -54,7 +54,6 @@ class UIVirtualMachineItemCloud;
 /** A simple container to store host related performance values. */
 class UIVMActivityOverviewHostStats
 {
-
 public:
 
     UIVMActivityOverviewHostStats();
@@ -66,7 +65,6 @@ public:
     quint64 m_iFSTotal;
     quint64 m_iFSFree;
 };
-
 
 class UIVMActivityOverviewTableView : public QITableView
 {
@@ -92,7 +90,6 @@ private:
 
 class UIVMActivityOverviewProxyModel : public QSortFilterProxyModel
 {
-
     Q_OBJECT;
 
 public:
@@ -173,6 +170,5 @@ private:
     /** @} */
     UIVMActivityOverviewHostStats m_hostStats;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_activity_overview_UIVMActivityOverviewModelView_h */

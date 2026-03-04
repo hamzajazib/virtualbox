@@ -1,4 +1,4 @@
-/* $Id: UIDetailsElements.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIDetailsElements.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIDetailsElement[Name] classes declaration.
  */
@@ -46,7 +46,6 @@
 /* Forward declarations: */
 class UIMachinePreview;
 class CNetworkAdapter;
-
 
 /** UITask extension used as update task for the details-element. */
 class UIDetailsUpdateTask : public UITask
@@ -120,7 +119,6 @@ private:
     UITask *m_pTask;
 };
 
-
 /** UIDetailsElementInterface extension for the details-element type 'Preview'. */
 class UIDetailsElementPreview : public UIDetailsElement
 {
@@ -158,7 +156,6 @@ private:
     /** Holds the instance of VM preview. */
     UIMachinePreview *m_pPreview;
 };
-
 
 /** UITask extension used as update task for the details-element type 'General'. */
 class UIDetailsUpdateTaskGeneral : public UIDetailsUpdateTask
@@ -218,7 +215,6 @@ private:
     virtual UITask *createUpdateTask() RT_OVERRIDE;
 };
 
-
 /** UITask extension used as update task for the details-element type 'System'. */
 class UIDetailsUpdateTaskSystem : public UIDetailsUpdateTask
 {
@@ -256,7 +252,6 @@ private:
     /** Creates update task for this element. */
     virtual UITask *createUpdateTask() RT_OVERRIDE;
 };
-
 
 /** UITask extension used as update task for the details-element type 'Display'. */
 class UIDetailsUpdateTaskDisplay : public UIDetailsUpdateTask
@@ -296,7 +291,6 @@ private:
     virtual UITask *createUpdateTask() RT_OVERRIDE;
 };
 
-
 /** UITask extension used as update task for the details-element type 'Storage'. */
 class UIDetailsUpdateTaskStorage : public UIDetailsUpdateTask
 {
@@ -334,7 +328,6 @@ private:
     /** Creates update task for this element. */
     virtual UITask *createUpdateTask() RT_OVERRIDE;
 };
-
 
 /** UITask extension used as update task for the details-element type 'Audio'. */
 class UIDetailsUpdateTaskAudio : public UIDetailsUpdateTask
@@ -374,7 +367,6 @@ private:
     virtual UITask *createUpdateTask() RT_OVERRIDE;
 };
 
-
 /** UITask extension used as update task for the details-element type 'Network'. */
 class UIDetailsUpdateTaskNetwork : public UIDetailsUpdateTask
 {
@@ -412,7 +404,6 @@ private:
     /** Creates update task for this element. */
     virtual UITask *createUpdateTask() RT_OVERRIDE;
 };
-
 
 /** UITask extension used as update task for the details-element type 'Serial'. */
 class UIDetailsUpdateTaskSerial : public UIDetailsUpdateTask
@@ -452,7 +443,6 @@ private:
     virtual UITask *createUpdateTask() RT_OVERRIDE;
 };
 
-
 /** UITask extension used as update task for the details-element type 'USB'. */
 class UIDetailsUpdateTaskUSB : public UIDetailsUpdateTask
 {
@@ -490,7 +480,6 @@ private:
     /** Creates update task for this element. */
     virtual UITask *createUpdateTask() RT_OVERRIDE;
 };
-
 
 /** UITask extension used as update task for the details-element type 'SF'. */
 class UIDetailsUpdateTaskSF : public UIDetailsUpdateTask
@@ -530,7 +519,6 @@ private:
     virtual UITask *createUpdateTask() RT_OVERRIDE;
 };
 
-
 /** UITask extension used as update task for the details-element type 'UI'. */
 class UIDetailsUpdateTaskUI : public UIDetailsUpdateTask
 {
@@ -568,7 +556,6 @@ private:
     /** Creates update task for this element. */
     virtual UITask *createUpdateTask() RT_OVERRIDE;
 };
-
 
 /** UITask extension used as update task for the details-element type 'Description'. */
 class UIDetailsUpdateTaskDescription : public UIDetailsUpdateTask

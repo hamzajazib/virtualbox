@@ -1,4 +1,4 @@
-/* $Id: UIHostComboEditor.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIHostComboEditor.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIHostComboEditor class declaration.
  */
@@ -52,7 +52,6 @@ class ComboEditorEventFilter;
 class WinAltGrMonitor;
 #endif
 
-
 /** Native hot-key namespace to unify
   * all the related hot-key processing stuff. */
 namespace UINativeHotKey
@@ -76,7 +75,6 @@ namespace UINativeHotKey
     SHARED_LIBRARY_STUFF void retranslateKeyNames();
 #endif
 }
-
 
 /** Host-combo namespace to unify
   * all the related hot-combo processing stuff. */
@@ -102,7 +100,6 @@ namespace UIHostCombo
     SHARED_LIBRARY_STUFF bool isValidKeyCombo(const QString &strKeyCombo);
 }
 
-
 /** Host-combo QString wrapper. */
 class SHARED_LIBRARY_STUFF UIHostComboWrapper
 {
@@ -122,7 +119,6 @@ private:
     QString m_strHostCombo;
 };
 Q_DECLARE_METATYPE(UIHostComboWrapper);
-
 
 /** Host-combo editor widget. */
 class SHARED_LIBRARY_STUFF UIHostComboEditor : public QWidget
@@ -163,7 +159,6 @@ private:
     /** <b>Clear</b> QIToolButton instance. */
     QIToolButton             *m_pButtonClear;
 };
-
 
 /** Host-combo editor widget private stuff. */
 class SHARED_LIBRARY_STUFF UIHostComboEditorPrivate : public QLineEdit
@@ -249,6 +244,5 @@ private:
     WinAltGrMonitor *m_pAltGrMonitor;
 #endif /* VBOX_WS_WIN */
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_settings_editors_UIHostComboEditor_h */

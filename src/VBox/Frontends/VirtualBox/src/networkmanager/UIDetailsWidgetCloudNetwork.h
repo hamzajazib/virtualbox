@@ -1,4 +1,4 @@
-/* $Id: UIDetailsWidgetCloudNetwork.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIDetailsWidgetCloudNetwork.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIDetailsWidgetCloudNetwork class declaration.
  */
@@ -57,7 +57,6 @@ class QITabWidget;
 class QIToolButton;
 class UIFormEditorWidget;
 class UINotificationCenter;
-
 
 /** QDialog subclass for subnet selection functionality. */
 class UISubnetSelectionDialog : public QDialog
@@ -172,7 +171,6 @@ struct UIDataCloudNetwork
     /** Holds network id. */
     QString  m_strId;
 };
-
 
 /** Network Manager: Cloud network details-widget. */
 class UIDetailsWidgetCloudNetwork : public QWidget
@@ -293,6 +291,5 @@ private:
         QStringList        m_busyNames;
     /** @} */
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_networkmanager_UIDetailsWidgetCloudNetwork_h */

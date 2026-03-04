@@ -1,4 +1,4 @@
-/* $Id: UIHostnameDomainNameEditor.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIHostnameDomainNameEditor.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIHostnameDomainNameEditor class implementation.
  */
@@ -51,14 +51,19 @@
 *   UIProductKeyLineEdit definition.                                                                                             *
 *********************************************************************************************************************************/
 
+
 class UIProductKeyLineEdit : public QILineEdit
 {
     Q_OBJECT;
+
 public:
+
     UIProductKeyLineEdit(QWidget *pParent = 0);
     QString productKey() const;
     bool isValid(bool fRequired) const;
+
 private:
+
     static const QString strInputMask;
 };
 

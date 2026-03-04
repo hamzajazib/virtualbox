@@ -1,4 +1,4 @@
-/* $Id: UIActionPoolManager.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIActionPoolManager.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIActionPoolManager class declaration.
  */
@@ -34,7 +34,6 @@
 /* GUI includes: */
 #include "UIActionPool.h"
 #include "UILibraryDefs.h"
-
 
 /** VirtualBox Manager action-pool index enum.
   * Naming convention is following:
@@ -218,7 +217,6 @@ enum UIActionIndexMN
     UIActionIndexMN_Max
 };
 
-
 /** UIActionPool extension
   * representing action-pool singleton for Manager UI. */
 class SHARED_LIBRARY_STUFF UIActionPoolManager : public UIActionPool
@@ -333,6 +331,5 @@ private:
     /** Enables factory in base-class. */
     friend class UIActionPool;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIActionPoolManager_h */

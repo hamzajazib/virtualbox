@@ -1,4 +1,4 @@
-/* $Id: UIHelpViewer.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIHelpViewer.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIHelpViewer class declaration.
  */
@@ -50,7 +50,6 @@ class UIFindInPageWidget;
   * QTextBrowser scales only fonts. */
 class UIHelpViewer : public QTextBrowser
 {
-
     Q_OBJECT;
 
 public:

@@ -1,4 +1,4 @@
-/* $Id: UISnapshotDetailsWidget.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UISnapshotDetailsWidget.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UISnapshotDetailsWidget class declaration.
  */
@@ -55,7 +55,6 @@ class QIDialogButtonBox;
 class QITextEdit;
 class UISnapshotDetailsElement;
 
-
 /** Snapshot pane: Snapshot data. */
 class UIDataSnapshot
 {
@@ -98,7 +97,6 @@ protected:
     /** Holds the description. */
     QString  m_strDescription;
 };
-
 
 /** QWidget extension providing GUI with snapshot details-widget. */
 class UISnapshotDetailsWidget : public QWidget

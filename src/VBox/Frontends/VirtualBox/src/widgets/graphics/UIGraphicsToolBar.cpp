@@ -1,4 +1,4 @@
-/* $Id: UIGraphicsToolBar.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIGraphicsToolBar.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIGraphicsToolBar class definition.
  */
@@ -116,4 +116,3 @@ QSizeF UIGraphicsToolBar::sizeHint(Qt::SizeHint which, const QSizeF &constraint 
     /* Else call to base-class: */
     return QIGraphicsWidget::sizeHint(which, constraint);
 }
-

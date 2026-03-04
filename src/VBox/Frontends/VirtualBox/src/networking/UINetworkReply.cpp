@@ -1,4 +1,4 @@
-/* $Id: UINetworkReply.cpp 112954 2026-02-11 14:42:55Z sergey.dubov@oracle.com $ */
+/* $Id: UINetworkReply.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINetworkReply stuff implementation.
  */
@@ -187,6 +187,7 @@ private:
 
 #ifdef VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS
 public:
+
     /** Starts the test routine. */
     static void testIt(RTTEST hTest);
 #endif /* VBOX_GUI_IN_TST_SSL_CERT_DOWNLOADS */

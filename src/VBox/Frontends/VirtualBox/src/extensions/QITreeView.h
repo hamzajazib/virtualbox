@@ -1,4 +1,4 @@
-/* $Id: QITreeView.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: QITreeView.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Qt extensions: QITreeView class declaration.
  */
@@ -40,7 +40,6 @@
 /* Forward declarations: */
 class QITreeViewItem;
 class QITreeView;
-
 
 /** OObject subclass used as item for the QITreeView. */
 class SHARED_LIBRARY_STUFF QITreeViewItem : public QObject
@@ -90,7 +89,6 @@ private:
     /** Holds the parent item reference. */
     QITreeViewItem *m_pParentItem;
 };
-
 
 /** QTreeView subclass extending standard functionality. */
 class SHARED_LIBRARY_STUFF QITreeView : public QTreeView
@@ -174,6 +172,5 @@ protected:
     /** Handles mouse drop @a pEvent. */
     virtual void dropEvent(QDropEvent *pEvent) RT_OVERRIDE;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_extensions_QITreeView_h */

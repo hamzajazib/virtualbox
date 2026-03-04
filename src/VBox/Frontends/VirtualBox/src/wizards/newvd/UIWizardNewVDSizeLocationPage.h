@@ -1,4 +1,4 @@
-/* $Id: UIWizardNewVDSizeLocationPage.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIWizardNewVDSizeLocationPage.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIWizardNewVDSizeLocationPage class declaration.
  */
@@ -67,6 +67,5 @@ private:
     qulonglong m_uMediumSizeMax;
     QSet<QString> m_userModifiedParameters;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDSizeLocationPage_h */

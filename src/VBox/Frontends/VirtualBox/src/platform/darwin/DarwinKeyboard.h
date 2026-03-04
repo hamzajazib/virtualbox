@@ -1,4 +1,4 @@
-/* $Id: DarwinKeyboard.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: DarwinKeyboard.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Declarations of utility functions for handling Darwin Keyboard specific tasks.
  */
@@ -88,6 +88,4 @@ SHARED_LIBRARY_STUFF void     DarwinHidDevicesBroadcastLeds(void *pState, bool f
 
 RT_C_DECLS_END
 
-
 #endif /* !FEQT_INCLUDED_SRC_platform_darwin_DarwinKeyboard_h */
-

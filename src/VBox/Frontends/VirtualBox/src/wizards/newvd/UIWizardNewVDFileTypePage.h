@@ -1,4 +1,4 @@
-/* $Id: UIWizardNewVDFileTypePage.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIWizardNewVDFileTypePage.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIWizardNewVDFileTypePage class declaration.
  */
@@ -67,6 +67,5 @@ private:
     QIRichTextLabel *m_pLabel;
     UIDiskFormatsGroupBox *m_pFormatButtonGroup;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvd_UIWizardNewVDFileTypePage_h */

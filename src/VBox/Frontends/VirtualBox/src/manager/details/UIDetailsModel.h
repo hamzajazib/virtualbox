@@ -1,4 +1,4 @@
-/* $Id: UIDetailsModel.h 112668 2026-01-22 14:54:40Z sergey.dubov@oracle.com $ */
+/* $Id: UIDetailsModel.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIDetailsModel class declaration.
  */
@@ -56,7 +56,6 @@ class UIDetailsElementAnimationCallback;
 class UIDetailsGroup;
 class UIDetailsItem;
 class UIDetailsView;
-
 
 /** QObject sub-class used as graphics details model. */
 class UIDetailsModel : public QObject
@@ -274,7 +273,6 @@ private:
     UIDetailsContextMenu *m_pContextMenu;
 };
 
-
 /** QObject sub-class used as details element animation callback. */
 class UIDetailsElementAnimationCallback : public QObject
 {
@@ -311,6 +309,5 @@ private:
     /** Holds whether elements being toggled to be closed or opened. */
     bool                      m_fToggled;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_manager_details_UIDetailsModel_h */

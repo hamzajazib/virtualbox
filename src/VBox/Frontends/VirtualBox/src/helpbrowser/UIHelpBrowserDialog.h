@@ -1,4 +1,4 @@
-/* $Id: UIHelpBrowserDialog.h 112752 2026-01-29 16:34:30Z sergey.dubov@oracle.com $ */
+/* $Id: UIHelpBrowserDialog.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIHelpBrowserDialog class declaration.
  */
@@ -92,6 +92,5 @@ private:
     QLabel *m_pZoomLabel;
     static QPointer<UIHelpBrowserDialog> m_pInstance;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_helpbrowser_UIHelpBrowserDialog_h */

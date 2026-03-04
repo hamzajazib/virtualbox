@@ -1,4 +1,4 @@
-/* $Id: UIVMLogViewerFilterWidget.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIVMLogViewerFilterWidget.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIVMLogViewer class declaration.
  */
@@ -48,7 +48,6 @@ class QVBoxLayout;
 class QIToolButton;
 class QRadioButton;
 class UIVMFilterLineEdit;
-
 
 /** QWidget extension
   * providing GUI for filter panel in VM Log Viewer. */

@@ -1,4 +1,4 @@
-/* $Id: UIVirtualBoxManager.cpp 113163 2026-02-25 16:29:50Z sergey.dubov@oracle.com $ */
+/* $Id: UIVirtualBoxManager.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIVirtualBoxManager class implementation.
  */
@@ -120,6 +120,7 @@
 #include <iprt/buildconfig.h>
 #include <VBox/version.h>
 
+
 /** QDialog extension used to ask for a public key for console connection needs. */
 class UIAcquirePublicKeyDialog : public QDialog
 {
@@ -174,6 +175,7 @@ private:
     /** Holds the button-box instance. */
     QIDialogButtonBox *m_pButtonBox;
 };
+
 
 /** QDialog extension used to ask for a cloud machine clone name. */
 class UIAcquireCloudMachineCloneNameDialog : public QDialog

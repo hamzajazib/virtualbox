@@ -1,4 +1,4 @@
-/* $Id: UIDesktopServices.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIDesktopServices.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Desktop Services..
  */
@@ -43,9 +43,9 @@ class QString;
 class UIDesktopServices
 {
 public:
+
     static bool createMachineShortcut(const QString &strSrcFile, const QString &strDstPath, const QString &strName, const QUuid &uUuid);
     static bool openInFileManager(const QString &strFile);
 };
 
 #endif /* !FEQT_INCLUDED_SRC_platform_UIDesktopServices_h */
-

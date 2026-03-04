@@ -1,4 +1,4 @@
-/* $Id: UIInformationRuntime.cpp 113252 2026-03-04 14:45:19Z sergey.dubov@oracle.com $ */
+/* $Id: UIInformationRuntime.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIInformationRuntime class implementation.
  */
@@ -49,6 +49,7 @@
 #include "CGraphicsAdapter.h"
 #include "CMachineDebugger.h"
 #include "CVRDEServerInfo.h"
+
 
 enum InfoRow
 {

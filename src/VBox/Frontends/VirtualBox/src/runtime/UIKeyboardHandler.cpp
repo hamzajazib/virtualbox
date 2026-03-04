@@ -1,4 +1,4 @@
-/* $Id: UIKeyboardHandler.cpp 113252 2026-03-04 14:45:19Z sergey.dubov@oracle.com $ */
+/* $Id: UIKeyboardHandler.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIKeyboardHandler class implementation.
  */
@@ -93,6 +93,7 @@
 # endif /* KeyPress */
 # include <xcb/xcb.h>
 #endif /* VBOX_WS_NIX */
+
 
 /* Enums representing different keyboard-states: */
 enum { KeyExtended = 0x01, KeyPressed = 0x02, KeyPause = 0x04, KeyPrint = 0x08 };

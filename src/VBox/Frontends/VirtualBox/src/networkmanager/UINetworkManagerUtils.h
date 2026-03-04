@@ -1,4 +1,4 @@
-/* $Id: UINetworkManagerUtils.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UINetworkManagerUtils.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINetworkManagerUtils namespace declaration.
  */
@@ -34,7 +34,6 @@
 /* Qt includes: */
 #include <QStringList>
 
-
 /** Network Manager: Host network utilities. */
 namespace UINetworkManagerUtils
 {
@@ -60,4 +59,3 @@ namespace UINetworkManagerUtils
 using namespace UINetworkManagerUtils;
 
 #endif /* !FEQT_INCLUDED_SRC_networkmanager_UINetworkManagerUtils_h */
-

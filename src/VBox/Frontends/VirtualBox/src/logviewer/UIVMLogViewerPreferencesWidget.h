@@ -1,4 +1,4 @@
-/* $Id: UIVMLogViewerPreferencesWidget.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIVMLogViewerPreferencesWidget.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIVMLogViewer class declaration.
  */
@@ -64,7 +64,6 @@ public:
 
 public slots:
 
-
 protected:
 
     virtual void prepareWidgets() RT_OVERRIDE RT_FINAL;
@@ -87,7 +86,6 @@ private:
 
     /** Default font size in points. */
     const int    m_iDefaultFontSize;
-
 };
 
 #endif /* !FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerPreferencesWidget_h */

@@ -1,4 +1,4 @@
-/* $Id: UIBootOrderEditor.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIBootOrderEditor.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIBootListWidget class declaration.
  */
@@ -71,7 +71,6 @@ struct UIBootItemData
 typedef QList<UIBootItemData> UIBootItemDataList;
 Q_DECLARE_METATYPE(UIBootItemDataList);
 
-
 /** Boot data tools namespace. */
 namespace UIBootDataTools
 {
@@ -89,7 +88,6 @@ namespace UIBootDataTools
     SHARED_LIBRARY_STUFF UIBootItemDataList bootItemsFromSerializedString(const QString &strBootItems);
 }
 using namespace UIBootDataTools;
-
 
 /** UIEditor sub-class used as boot order editor. */
 class SHARED_LIBRARY_STUFF UIBootOrderEditor : public UIEditor
@@ -145,6 +143,5 @@ private:
     /** Holds the move down action. */
     QAction          *m_pMoveDown;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_settings_editors_UIBootOrderEditor_h */

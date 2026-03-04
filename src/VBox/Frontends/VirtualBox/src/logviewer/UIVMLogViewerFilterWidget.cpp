@@ -1,4 +1,4 @@
-/* $Id: UIVMLogViewerFilterWidget.cpp 112785 2026-02-02 16:38:44Z sergey.dubov@oracle.com $ */
+/* $Id: UIVMLogViewerFilterWidget.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIVMLogViewer class implementation.
  */
@@ -55,6 +55,7 @@
 /*********************************************************************************************************************************
 *   UIVMFilterLineEdit definition.                                                                                               *
 *********************************************************************************************************************************/
+
 
 /** UIVMFilterLineEdit class is used to display and modify the list of filter terms.
  *  the terms are displayed as words with spaces in between and it is possible to

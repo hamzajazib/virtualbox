@@ -1,4 +1,4 @@
-/* $Id: UIUpdateManager.cpp 113222 2026-03-03 12:39:40Z sergey.dubov@oracle.com $ */
+/* $Id: UIUpdateManager.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIUpdateManager class implementation.
  */
@@ -66,7 +66,6 @@ private:
 
     /** Holds whether this customer has forced privelegies. */
     bool  m_fForcedCall;
-
 };
 
 

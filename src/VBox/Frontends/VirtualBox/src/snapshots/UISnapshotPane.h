@@ -1,4 +1,4 @@
-/* $Id: UISnapshotPane.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UISnapshotPane.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UISnapshotPane class declaration.
  */
@@ -57,7 +57,6 @@ class UISnapshotTree;
 class UIVirtualMachineItem;
 class CSnapshot;
 
-
 /** Snapshot age format. */
 enum SnapshotAgeFormat
 {
@@ -67,7 +66,6 @@ enum SnapshotAgeFormat
     SnapshotAgeFormat_InDays,
     SnapshotAgeFormat_Max
 };
-
 
 /** QWidget extension providing GUI with the pane to control snapshot related functionality. */
 class UISnapshotPane : public QWidget

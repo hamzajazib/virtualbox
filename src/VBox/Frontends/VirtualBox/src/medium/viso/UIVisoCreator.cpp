@@ -1,4 +1,4 @@
-/* $Id: UIVisoCreator.cpp 112901 2026-02-09 14:34:18Z sergey.dubov@oracle.com $ */
+/* $Id: UIVisoCreator.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIVisoCreator classes implementation.
  */
@@ -66,6 +66,7 @@
 /*********************************************************************************************************************************
 *   UIVisoSettingWidget definition.                                                                                          *
 *********************************************************************************************************************************/
+
 
 class SHARED_LIBRARY_STUFF UIVisoSettingWidget : public UIPaneContainer
 {

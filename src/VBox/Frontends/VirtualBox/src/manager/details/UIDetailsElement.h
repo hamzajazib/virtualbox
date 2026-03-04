@@ -1,4 +1,4 @@
-/* $Id: UIDetailsElement.h 112700 2026-01-26 15:25:49Z sergey.dubov@oracle.com $ */
+/* $Id: UIDetailsElement.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIDetailsElement class declaration.
  */
@@ -48,7 +48,6 @@ class UIGraphicsRotatorButton;
 class UIGraphicsTextPane;
 class CCloudMachine;
 class CMachine;
-
 
 /** UIDetailsItem extension implementing element item. */
 class UIDetailsElement : public UIDetailsItem

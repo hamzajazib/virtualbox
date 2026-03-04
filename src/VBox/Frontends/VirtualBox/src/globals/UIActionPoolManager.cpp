@@ -1,4 +1,4 @@
-/* $Id: UIActionPoolManager.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIActionPoolManager.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIActionPoolManager class implementation.
  */
@@ -74,6 +74,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Show Import Appliance Wizard' action class. */
 class UIActionSimpleManagerFileShowImportApplianceWizard : public UIActionSimple
 {
@@ -111,6 +112,7 @@ protected:
         setToolTip(simplifyText(text()) + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Show Export Appliance Wizard' action class. */
 class UIActionSimpleManagerFileShowExportApplianceWizard : public UIActionSimple
@@ -150,6 +152,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'Global Tools' menu class. */
 class UIActionMenuManagerToolsGlobal : public UIActionMenu
 {
@@ -170,6 +173,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "Tools"));
     }
 };
+
 
 /** Simple action extension, used as 'Show Home Screen' action class. */
 class UIActionToggleManagerToolsGlobalShowHomeScreen : public UIActionToggle
@@ -204,6 +208,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Machine Manager' action class. */
 class UIActionToggleManagerToolsGlobalShowMachineManager : public UIActionToggle
 {
@@ -235,6 +240,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Open the Machine Manager"));
     }
 };
+
 
 /** Simple action extension, used as 'Show Extension Pack Manager' action class. */
 class UIActionToggleManagerToolsGlobalShowExtensionPackManager : public UIActionToggle
@@ -275,6 +281,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Show Virtual Media Manager' action class. */
 class UIActionToggleManagerToolsGlobalShowVirtualMediaManager : public UIActionToggle
 {
@@ -313,6 +320,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Open the Virtual Media Manager"));
     }
 };
+
 
 /** Simple action extension, used as 'Show Network Manager' action class. */
 class UIActionToggleManagerToolsGlobalShowNetworkManager : public UIActionToggle
@@ -353,6 +361,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Show Cloud Profile Manager' action class. */
 class UIActionToggleManagerToolsGlobalShowCloudProfileManager : public UIActionToggle
 {
@@ -392,6 +401,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Show VM Activity Overview' action class. */
 class UIActionToggleManagerToolsGlobalShowVMActivityOverview : public UIActionToggle
 {
@@ -424,6 +434,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Open the VM Activity Overview"));
     }
 };
+
 
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 /** Simple action extension, used as 'Show Extra-data Manager' action class. */
@@ -460,6 +471,7 @@ protected:
     }
 };
 #endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
+
 
 /** Simple action extension, used as 'Perform Exit' action class. */
 class UIActionSimpleManagerFilePerformExit : public UIActionSimple
@@ -519,6 +531,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Create Machine' action class. */
 class UIActionSimpleManagerGroupPerformCreateMachine : public UIActionSimple
 {
@@ -557,6 +570,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Create Cloud Machine' action class. */
 class UIActionSimpleManagerGroupPerformCreateCloudMachine : public UIActionSimple
 {
@@ -588,6 +602,7 @@ protected:
         setToolTip(simplifyText(text()) + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Add Machine' action class. */
 class UIActionSimpleManagerGroupPerformAddMachine : public UIActionSimple
@@ -627,6 +642,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Add Cloud Machine' action class. */
 class UIActionSimpleManagerGroupPerformAddCloudMachine : public UIActionSimple
 {
@@ -659,6 +675,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Rename Group' action class. */
 class UIActionSimpleManagerGroupPerformRename : public UIActionSimple
 {
@@ -687,6 +704,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Remove Group' action class. */
 class UIActionSimpleManagerGroupPerformRemove : public UIActionSimple
 {
@@ -714,6 +732,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Ungroup items of selected virtual machine group"));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Sort Group' action class. */
 class UIActionSimpleManagerGroupPerformSort : public UIActionSimple
@@ -765,6 +784,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Create Machine' action class. */
 class UIActionSimpleManagerMachinePerformCreate : public UIActionSimple
 {
@@ -802,6 +822,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Create Cloud Machine' action class. */
 class UIActionSimpleManagerMachinePerformCreateCloud : public UIActionSimple
 {
@@ -833,6 +854,7 @@ protected:
         setToolTip(simplifyText(text()) + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Add Machine' action class. */
 class UIActionSimpleManagerMachinePerformAdd : public UIActionSimple
@@ -871,6 +893,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Add Cloud Machine' action class. */
 class UIActionSimpleManagerMachinePerformAddCloud : public UIActionSimple
 {
@@ -903,6 +926,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Move to Group => New' action class. */
 class UIActionSimpleManagerMachineMoveToGroupNew : public UIActionSimple
 {
@@ -930,6 +954,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Create new group based on selected virtual machines"));
     }
 };
+
 
 /** Simple action extension, used as 'Show Machine Settings' action class. */
 class UIActionSimpleManagerMachineShowSettings : public UIActionSimple
@@ -968,6 +993,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Clone Machine' action class. */
 class UIActionSimpleManagerMachinePerformClone : public UIActionSimple
 {
@@ -1002,6 +1028,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Move Machine' action class. */
 class UIActionSimpleManagerMachinePerformMove : public UIActionSimple
 {
@@ -1029,6 +1056,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Move selected virtual machine"));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Export Machine locally' action class. */
 class UIActionSimpleManagerMachinePerformExportLocally : public UIActionSimple
@@ -1058,6 +1086,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Export Machine to OCI' action class. */
 class UIActionSimpleManagerMachinePerformExportToOCI : public UIActionSimple
 {
@@ -1085,6 +1114,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Export selected virtual machine to OCI"));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Remove Machine' action class. */
 class UIActionSimpleManagerMachinePerformRemove : public UIActionSimple
@@ -1115,6 +1145,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Remove selected virtual machines"));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Sort Parent' action class. */
 class UIActionSimpleManagerMachinePerformSortParent : public UIActionSimple
@@ -1166,6 +1197,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'Start' menu class. */
 class UIActionMenuManagerCommonStart : public UIActionMenu
 {
@@ -1191,6 +1223,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'Show' menu class. */
 class UIActionSimpleManagerCommonShow : public UIActionSimple
 {
@@ -1215,6 +1248,7 @@ protected:
         setToolTip(simplifyText(text()) + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Normal Start' action class. */
 class UIActionSimpleManagerCommonPerformStartNormal : public UIActionSimple
@@ -1244,6 +1278,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Headless Start' action class. */
 class UIActionSimpleManagerCommonPerformStartHeadless : public UIActionSimple
 {
@@ -1272,6 +1307,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Detachable Start' action class. */
 class UIActionSimpleManagerCommonPerformStartDetachable : public UIActionSimple
 {
@@ -1299,6 +1335,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Start selected virtual machines with option of continuing in the background"));
     }
 };
+
 
 /** Toggle action extension, used as 'Pause and Resume' action class. */
 class UIActionToggleManagerCommonPauseAndResume : public UIActionToggle
@@ -1330,6 +1367,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Reset' action class. */
 class UIActionSimpleManagerCommonPerformReset : public UIActionSimple
 {
@@ -1358,6 +1396,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Detach' action class. */
 class UIActionSimpleManagerCommonPerformDetach : public UIActionSimple
 {
@@ -1385,6 +1424,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Detach the GUI from headless VM"));
     }
 };
+
 
 /** Simple menu action extension, used as 'Perform Discard' action class. */
 class UIActionSimpleManagerCommonPerformDiscard : public UIActionSimple
@@ -1418,6 +1458,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Refresh' action class. */
 class UIActionSimpleManagerCommonPerformRefresh : public UIActionSimple
 {
@@ -1447,6 +1488,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Refresh accessibility state of selected virtual machines"));
     }
 };
+
 
 /** Simple action extension, used as 'Show in File Manager' action class. */
 class UIActionSimpleManagerCommonShowInFileManager : public UIActionSimple
@@ -1484,6 +1526,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Create Shortcut' action class. */
 class UIActionSimpleManagerCommonPerformCreateShortcut : public UIActionSimple
 {
@@ -1516,6 +1559,7 @@ protected:
 #endif
     }
 };
+
 
 /** Toggle action extension, used as 'Search' action class. */
 class UIActionToggleManagerCommonToggleSearch : public UIActionToggle
@@ -1575,6 +1619,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Create Console Connection' action class. */
 class UIActionSimpleManagerConsolePerformCreateConnection : public UIActionSimple
 {
@@ -1605,6 +1650,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Delete Console Connection' action class. */
 class UIActionSimpleManagerConsolePerformDeleteConnection : public UIActionSimple
 {
@@ -1634,6 +1680,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Delete console connection to disconnect ssh/vnc clients"));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Configure Applications' action class. */
 class UIActionSimpleManagerConsolePerformConfigureApplications : public UIActionSimple
@@ -1666,6 +1713,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Open configuration dialog to edit console application settings"));
     }
 };
+
 
 /** Simple action extension, used as 'Copy Command' action class. */
 class UIActionSimpleManagerConsolePerformCopyCommand : public UIActionSimple
@@ -1727,6 +1775,7 @@ private:
     bool  m_fUnix;
 };
 
+
 /** Simple action extension, used as 'Show Log' action class. */
 class UIActionSimpleManagerConsolePerformShowLog : public UIActionSimple
 {
@@ -1779,6 +1828,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Save' action class. */
 class UIActionSimpleManagerStopPerformSave : public UIActionSimple
 {
@@ -1806,6 +1856,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Save state of selected virtual machines"));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Terminate' action class. */
 class UIActionSimpleManagerStopPerformTerminate : public UIActionSimple
@@ -1837,6 +1888,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Shutdown' action class. */
 class UIActionSimpleManagerStopPerformShutdown : public UIActionSimple
 {
@@ -1864,6 +1916,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Send ACPI shutdown signal to selected virtual machines"));
     }
 };
+
 
 /** Simple action extension, used as 'Perform PowerOff' action class. */
 class UIActionSimpleManagerStopPerformPowerOff : public UIActionSimple
@@ -1915,6 +1968,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Show Machine Details' action class. */
 class UIActionToggleManagerToolsMachineShowDetails : public UIActionToggle
 {
@@ -1948,6 +2002,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Show Machine Snapshots' action class. */
 class UIActionToggleManagerToolsMachineShowSnapshots : public UIActionToggle
 {
@@ -1980,6 +2035,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Open the machine snapshots pane"));
     }
 };
+
 
 /** Simple action extension, used as 'Show Machine Logs' action class. */
 class UIActionToggleManagerToolsMachineShowLogs : public UIActionToggle
@@ -2020,6 +2076,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Show VM Activity Tool' action class. */
 class UIActionToggleManagerToolsMachineShowActivity : public UIActionToggle
 {
@@ -2052,6 +2109,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Open the machine activity monitor pane"));
     }
 };
+
 
 /** Simple action extension, used as 'Show File Manager' action class. */
 class UIActionToggleManagerToolsMachineShowFileManager : public UIActionToggle
@@ -2108,6 +2166,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Take' action class. */
 class UIActionMenuManagerSnapshotPerformTake : public UIActionSimple
 {
@@ -2148,6 +2207,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Delete' action class. */
 class UIActionMenuManagerSnapshotPerformDelete : public UIActionSimple
@@ -2190,6 +2250,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Restore' action class. */
 class UIActionMenuManagerSnapshotPerformRestore : public UIActionSimple
 {
@@ -2230,6 +2291,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Toggle action extension, used as 'Toggle Snapshot Properties' action class. */
 class UIActionMenuManagerSnapshotToggleProperties : public UIActionToggle
@@ -2272,6 +2334,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Clone' action class. */
 class UIActionMenuManagerSnapshotPerformClone : public UIActionSimple
@@ -2336,6 +2399,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Install' action class. */
 class UIActionSimpleManagerExtensionPerformInstall : public UIActionSimple
 {
@@ -2376,6 +2440,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Uninstall' action class. */
 class UIActionSimpleManagerExtensionPerformUninstall : public UIActionSimple
@@ -2440,6 +2505,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Add' action class. */
 class UIActionMenuManagerMediumPerformAdd : public UIActionSimple
 {
@@ -2484,6 +2550,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Create' action class. */
 class UIActionMenuManagerMediumPerformCreate : public UIActionSimple
@@ -2530,6 +2597,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Copy' action class. */
 class UIActionMenuManagerMediumPerformCopy : public UIActionSimple
 {
@@ -2574,6 +2642,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Move' action class. */
 class UIActionMenuManagerMediumPerformMove : public UIActionSimple
@@ -2620,6 +2689,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Remove' action class. */
 class UIActionMenuManagerMediumPerformRemove : public UIActionSimple
 {
@@ -2665,6 +2735,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Release' action class. */
 class UIActionMenuManagerMediumPerformRelease : public UIActionSimple
 {
@@ -2709,6 +2780,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Toggle action extension, used as 'Toggle Medium Properties' action class. */
 class UIActionMenuManagerMediumToggleProperties : public UIActionToggle
@@ -2756,6 +2828,7 @@ protected:
     }
 };
 
+
 /** Toggle action extension, used as 'Toggle Search Pane' action class. */
 class UIActionMenuManagerMediumToggleSearch : public UIActionToggle
 {
@@ -2801,6 +2874,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Refresh' action class. */
 class UIActionMenuManagerMediumPerformRefresh : public UIActionSimple
@@ -2849,6 +2923,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Clear' action class. */
 class UIActionMenuManagerMediumPerformClear : public UIActionSimple
 {
@@ -2886,6 +2961,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Edit' action class. */
 class UIActionMenuManagerMediumPerformEdit : public UIActionSimple
 {
@@ -2922,6 +2998,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'Network' menu class. */
 class UIActionMenuManagerNetwork : public UIActionMenu
 {
@@ -2942,6 +3019,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Network"));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Create' action class. */
 class UIActionMenuManagerNetworkPerformCreate : public UIActionSimple
@@ -2984,6 +3062,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Remove' action class. */
 class UIActionMenuManagerNetworkPerformRemove : public UIActionSimple
 {
@@ -3024,6 +3103,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Toggle action extension, used as 'Toggle Network Properties' action class. */
 class UIActionMenuManagerNetworkToggleProperties : public UIActionToggle
@@ -3066,6 +3146,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Refresh' action class. */
 class UIActionMenuManagerNetworkPerformRefresh : public UIActionSimple
@@ -3136,6 +3217,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Add' action class. */
 class UIActionMenuManagerCloudPerformAdd : public UIActionSimple
 {
@@ -3177,6 +3259,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Import' action class. */
 class UIActionMenuManagerCloudPerformImport : public UIActionSimple
@@ -3220,6 +3303,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Remove' action class. */
 class UIActionMenuManagerCloudPerformRemove : public UIActionSimple
 {
@@ -3261,6 +3345,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Toggle action extension, used as 'Toggle Properties' action class. */
 class UIActionMenuManagerCloudToggleProperties : public UIActionToggle
@@ -3305,6 +3390,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Try Page' action class. */
 class UIActionMenuManagerCloudShowTryPage : public UIActionSimple
 {
@@ -3346,6 +3432,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Show Help' action class. */
 class UIActionMenuManagerCloudShowHelp : public UIActionSimple
@@ -3411,6 +3498,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Console Application Add' action class. */
 class UIActionMenuManagerCloudConsolePerformApplicationAdd : public UIActionSimple
 {
@@ -3445,6 +3533,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Console Application Remove' action class. */
 class UIActionMenuManagerCloudConsolePerformApplicationRemove : public UIActionSimple
@@ -3481,6 +3570,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Console Profile Add' action class. */
 class UIActionMenuManagerCloudConsolePerformProfileAdd : public UIActionSimple
 {
@@ -3516,6 +3606,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Console Profile Remove' action class. */
 class UIActionMenuManagerCloudConsolePerformProfileRemove : public UIActionSimple
 {
@@ -3550,6 +3641,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Toggle action extension, used as 'Toggle Cloud Console Properties' action class. */
 class UIActionMenuManagerCloudConsoleToggleProperties : public UIActionToggle
@@ -3616,6 +3708,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'Columns' menu class. */
 class UIActionMenuManagerVMActivityOverviewColumns : public UIActionMenu
 {
@@ -3644,6 +3737,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Switch to Machine Activity' action class. */
 class UIActionMenuManagerVMActivityOverviewSwitchToMachineActivity : public UIActionSimple

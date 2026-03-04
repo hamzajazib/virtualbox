@@ -1,4 +1,4 @@
-/* $Id: UIActionPool.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIActionPool.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIActionPool class implementation.
  */
@@ -53,6 +53,7 @@ enum UIEventTypeActionPool
 {
     UIEventTypeActionPool_ActivateAction = QEvent::User + 101,
 };
+
 
 /** QEvent extension
   * representing action-activation event. */
@@ -459,6 +460,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Close' action class. */
 class UIActionSimplePerformClose : public UIActionSimple
 {
@@ -516,6 +518,7 @@ protected:
     }
 };
 
+
 #ifdef VBOX_WS_MAC
 /** Menu action extension, used as 'Window' menu class. */
 class UIActionMenuWindow : public UIActionMenu
@@ -553,6 +556,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Window"));
     }
 };
+
 
 /** Simple action extension, used as 'Minimize' action class. */
 class UIActionSimpleMinimize : public UIActionSimple
@@ -599,6 +603,7 @@ protected:
 };
 #endif /* VBOX_WS_MAC */
 
+
 /** Menu action extension, used as 'Help' menu class. */
 class UIActionMenuHelp : public UIActionMenu
 {
@@ -637,6 +642,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Help"));
     }
 };
+
 
 /** Simple action extension, used as 'Contents' action class. */
 class UIActionSimpleContents : public UIActionSimple
@@ -695,6 +701,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Online Documentation' action class. */
 class UIActionSimpleOnlineDocumentation : public UIActionSimple
 {
@@ -740,6 +747,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Open the browser and go to the VirtualBox user guide"));
     }
 };
+
 
 /** Simple action extension, used as 'Web Site' action class. */
 class UIActionSimpleWebSite : public UIActionSimple
@@ -787,6 +795,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Bug Tracker' action class. */
 class UIActionSimpleBugTracker : public UIActionSimple
 {
@@ -832,6 +841,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Open the browser and go to the VirtualBox product bug tracker"));
     }
 };
+
 
 /** Simple action extension, used as 'Forums' action class. */
 class UIActionSimpleForums : public UIActionSimple
@@ -879,6 +889,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Oracle' action class. */
 class UIActionSimpleOracle : public UIActionSimple
 {
@@ -924,6 +935,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Open the browser and go to the Oracle web site"));
     }
 };
+
 
 /** Simple action extension, used as 'Reset Warnings' action class. */
 class UIActionSimpleResetWarnings : public UIActionSimple
@@ -971,6 +983,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Go back to showing all suppressed warnings and messages"));
     }
 };
+
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 /** Simple action extension, used as 'Check for Updates' action class. */
@@ -1020,6 +1033,7 @@ protected:
     }
 };
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+
 
 /** Simple action extension, used as 'About' action class. */
 class UIActionSimpleAbout : public UIActionSimple
@@ -1079,6 +1093,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Display a window with product information"));
     }
 };
+
 
 /** Simple action extension, used as 'Preferences' action class. */
 class UIActionSimplePreferences : public UIActionSimple
@@ -1143,6 +1158,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'Log' menu class. */
 class UIActionMenuSelectorLog : public UIActionMenu
 {
@@ -1163,6 +1179,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Log"));
     }
 };
+
 
 /** Simple action extension, used as 'Toggle Pane Find' action class. */
 class UIActionMenuSelectorLogTogglePaneFind : public UIActionToggle
@@ -1205,6 +1222,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Toggle Pane Filter' action class. */
 class UIActionMenuSelectorLogTogglePaneFilter : public UIActionToggle
 {
@@ -1245,6 +1263,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Toggle Pane Bookmark' action class. */
 class UIActionMenuSelectorLogTogglePaneBookmark : public UIActionToggle
@@ -1287,6 +1306,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Toggle Pane Preferences' action class. */
 class UIActionMenuSelectorLogTogglePanePreferences : public UIActionToggle
 {
@@ -1327,6 +1347,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Refresh' action class. */
 class UIActionMenuSelectorLogPerformRefresh : public UIActionSimple
@@ -1375,6 +1396,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Reload' action class. */
 class UIActionMenuSelectorLogPerformReload : public UIActionSimple
 {
@@ -1409,6 +1431,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Save' action class. */
 class UIActionMenuSelectorLogPerformSave : public UIActionSimple
@@ -1451,6 +1474,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'File Manager' menu class. */
 class UIActionMenuFileManager : public UIActionMenu
 {
@@ -1472,6 +1496,7 @@ protected:
     }
 };
 
+
 class UIActionMenuFileManagerHostSubmenu : public UIActionMenu
 {
     Q_OBJECT;
@@ -1492,6 +1517,7 @@ protected:
     }
 };
 
+
 class UIActionMenuFileManagerGuestSubmenu : public UIActionMenu
 {
     Q_OBJECT;
@@ -1511,6 +1537,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "Guest"));
     }
 };
+
 
 /** Simple action extension, used as 'Copy to Guest' in file manager action class. */
 class UIActionMenuFileManagerCopyToGuest : public UIActionSimple
@@ -1544,6 +1571,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Copy to Host' in file manager action class. */
 class UIActionMenuFileManagerCopyToHost : public UIActionSimple
 {
@@ -1575,6 +1603,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Toggle action extension, used to toggle 'File Manager Preferences' panel in file manager. */
 class UIActionMenuFileManagerPreferences : public UIActionToggle
@@ -1611,6 +1640,7 @@ protected:
     }
 };
 
+
 /** Toggle action extension, used to toggle 'File Manager Log' panel in file manager. */
 class UIActionMenuFileManagerLog : public UIActionToggle
 {
@@ -1645,6 +1675,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Toggle action extension, used to toggle 'File Manager Operations' panel in file manager. */
 class UIActionMenuFileManagerOperations : public UIActionToggle
@@ -1681,6 +1712,7 @@ protected:
     }
 };
 
+
 /** Toggle action extension, used to toggle 'File Manager Guest Session' panel in file manager. */
 class UIActionMenuFileManagerGuestSession : public UIActionToggle
 {
@@ -1716,6 +1748,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform GoUp' in file manager action class. */
 class UIActionMenuFileManagerGoUp : public UIActionSimple
 {
@@ -1748,6 +1781,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Perform GoHome' in file manager action class. */
 class UIActionMenuFileManagerGoHome : public UIActionSimple
@@ -1782,6 +1816,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform GoForward' in file manager action class. */
 class UIActionMenuFileManagerGoForward : public UIActionSimple
 {
@@ -1814,6 +1849,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Perform GoBackward' in file manager action class. */
 class UIActionMenuFileManagerGoBackward : public UIActionSimple
@@ -1848,6 +1884,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Delete' in file manager action class. */
 class UIActionMenuFileManagerDelete : public UIActionSimple
 {
@@ -1880,6 +1917,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Refresh' in file manager action class. */
 class UIActionMenuFileManagerRefresh : public UIActionSimple
@@ -1914,6 +1952,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Rename' in file manager action class. */
 class UIActionMenuFileManagerRename : public UIActionSimple
 {
@@ -1945,6 +1984,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Rename' in file manager action class. */
 class UIActionMenuFileManagerCreateNewDirectory : public UIActionSimple
@@ -1978,6 +2018,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Copy' in file manager action class. */
 class UIActionMenuFileManagerCopy : public UIActionSimple
 {
@@ -2009,6 +2050,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Cut' in file manager action class. */
 class UIActionMenuFileManagerCut : public UIActionSimple
@@ -2042,6 +2084,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform Paste' in file manager action class. */
 class UIActionMenuFileManagerPaste : public UIActionSimple
 {
@@ -2073,6 +2116,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Select All' in file manager action class. */
 class UIActionMenuFileManagerSelectAll : public UIActionSimple
@@ -2106,6 +2150,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Invert Selection' in file manager action class. */
 class UIActionMenuFileManagerInvertSelection : public UIActionSimple
 {
@@ -2137,6 +2182,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Show Properties' in file manager action class. */
 class UIActionMenuFileManagerShowProperties : public UIActionSimple
@@ -2170,6 +2216,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'VISO Creator' menu class. */
 class UIActionMenuVISOCreator : public UIActionMenu
 {
@@ -2190,6 +2237,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "VISO Creator"));
     }
 };
+
 
 /** Toggle action extension, used to toggle 'VISO Creator Preferences' pane in VISO Creator. */
 class UIActionToggleVISOCreatorPreferences : public UIActionToggle
@@ -2228,6 +2276,7 @@ protected:
     }
 };
 
+
 class UIActionSimpleVISOCreatorAdd : public UIActionSimple
 {
     Q_OBJECT;
@@ -2263,6 +2312,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 class UIActionSimpleVISOCreatorRemove : public UIActionSimple
 {
@@ -2300,6 +2350,7 @@ protected:
     }
 };
 
+
 class UIActionSimpleVISOCreatorRestore : public UIActionSimple
 {
     Q_OBJECT;
@@ -2335,6 +2386,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 class UIActionSimpleVISOCreatorCreateNewDirectory : public UIActionSimple
 {
@@ -2372,6 +2424,7 @@ protected:
     }
 };
 
+
 class UIActionSimpleVISOCreatorRename : public UIActionSimple
 {
     Q_OBJECT;
@@ -2408,6 +2461,7 @@ protected:
     }
 };
 
+
 class UIActionSimpleVISOCreatorReset : public UIActionSimple
 {
     Q_OBJECT;
@@ -2440,6 +2494,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 class UIActionSimpleVISOCreatorOpen : public UIActionSimple
 {
@@ -2474,6 +2529,7 @@ protected:
     }
 };
 
+
 class UIActionSimpleVISOCreatorSaveAs : public UIActionSimple
 {
     Q_OBJECT;
@@ -2506,6 +2562,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 class UIActionSimpleVISOCreatorImportISO : public UIActionSimple
 {
@@ -2540,6 +2597,7 @@ protected:
     }
 };
 
+
 class UIActionSimpleVISOCreatorRemoveISO : public UIActionSimple
 {
     Q_OBJECT;
@@ -2572,6 +2630,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Perform GoUp' in VISO creator action class. */
 class UIActionSimpleVISOCreatorGoUp : public UIActionSimple
@@ -2606,6 +2665,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform GoHome' in VISO creator action class. */
 class UIActionSimpleVISOCreatorGoHome : public UIActionSimple
 {
@@ -2638,6 +2698,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Perform GoForward' in VISO creator action class. */
 class UIActionSimpleVISOCreatorGoForward : public UIActionSimple
@@ -2672,6 +2733,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Perform GoBackward' in VISO creator action class. */
 class UIActionSimpleVISOCreatorGoBackward : public UIActionSimple
 {
@@ -2705,6 +2767,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'Menu Selector' menu class. */
 class UIActionMenuMediumSelector : public UIActionMenu
 {
@@ -2725,6 +2788,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Medium Selector"));
     }
 };
+
 
 /** Simple action extension, used as 'Add' action class. */
 class UIActionMenuMediumSelectorAddHD  : public UIActionSimple
@@ -2760,6 +2824,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Add' action class. */
 class UIActionMenuMediumSelectorAddCD  : public UIActionSimple
 {
@@ -2793,6 +2858,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'EditCD' action class. */
 class UIActionMenuMediumSelectorEditCD  : public UIActionSimple
@@ -2828,6 +2894,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Add' action class. */
 class UIActionMenuMediumSelectorAddFD  : public UIActionSimple
 {
@@ -2861,6 +2928,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Create' action class. */
 class UIActionMenuMediumSelectorCreateHD  : public UIActionSimple
@@ -2896,6 +2964,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Create' action class. */
 class UIActionMenuMediumSelectorCreateCD  : public UIActionSimple
 {
@@ -2929,6 +2998,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Create' action class. */
 class UIActionMenuMediumSelectorCreateFD  : public UIActionSimple
@@ -2964,6 +3034,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'Create' action class. */
 class UIActionMenuMediumSelectorRefresh  : public UIActionSimple
 {
@@ -2998,6 +3069,7 @@ protected:
     }
 };
 
+
 /** Menu action extension, used as 'Activity' menu class. */
 class UIActionMenuSelectorActivity : public UIActionMenu
 {
@@ -3018,6 +3090,7 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Resource Use"));
     }
 };
+
 
 /** Simple action extension, used as 'Perform Export' action class. */
 class UIActionMenuSelectorActivityPerformExport : public UIActionSimple
@@ -3054,6 +3127,7 @@ protected:
     }
 };
 
+
 /** Simple action extension, used as 'To VM Activity Overview' action class. */
 class UIActionMenuSelectorActivityToVMActivityOverview : public UIActionSimple
 {
@@ -3088,6 +3162,7 @@ protected:
                    + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
+
 
 /** Simple action extension, used as 'Toggle Pane Preferences' action class. */
 class UIActionMenuActivityPreferences : public UIActionToggle

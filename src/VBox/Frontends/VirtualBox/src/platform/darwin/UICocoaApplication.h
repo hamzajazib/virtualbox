@@ -1,4 +1,4 @@
-/* $Id: UICocoaApplication.h 112808 2026-02-03 14:21:20Z sergey.dubov@oracle.com $ */
+/* $Id: UICocoaApplication.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UICocoaApplication class declaration.
  */
@@ -59,7 +59,6 @@ typedef void (*PfnNativeNotificationCallbackForQObject)(QObject *pObject, const 
 typedef void (*PfnNativeNotificationCallbackForQWidget)(const QString &strNativeNotificationName, QWidget *pWidget);
 /** Standard window button callback type for QWidget. */
 typedef void (*PfnStandardWindowButtonCallbackForQWidget)(StandardWindowButtonType emnButtonType, bool fWithOptionKey, QWidget *pWidget);
-
 
 /** Singleton prototype for our private NSApplication object. */
 class SHARED_LIBRARY_STUFF UICocoaApplication
@@ -144,4 +143,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_platform_darwin_UICocoaApplication_h */
-

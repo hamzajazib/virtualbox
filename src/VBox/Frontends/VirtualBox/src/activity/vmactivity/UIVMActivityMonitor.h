@@ -1,4 +1,4 @@
-/* $Id: UIVMActivityMonitor.h 112710 2026-01-27 10:09:25Z serkan.bayraktar@oracle.com $ */
+/* $Id: UIVMActivityMonitor.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIVMActivityMonitor class declaration.
  */
@@ -85,7 +85,6 @@ enum Metric_Type
 /** UIMetric represents a performance metric and is used to store data related to the corresponding metric. */
 class UIMetric
 {
-
 public:
 
     UIMetric(const QString &strUnit, int iMaximumQueueSize);
@@ -126,6 +125,7 @@ public:
     bool autoUpdateMaximum() const;
 
 private:
+
     void updateMax();
 
     QString m_strUnit;
@@ -154,7 +154,6 @@ private:
   * special casing etc.*/
 class  SHARED_LIBRARY_STUFF UIVMActivityMonitor : public QWidget
 {
-
     Q_OBJECT;
 
 public:
@@ -231,6 +230,7 @@ protected:
     int m_iMaximumQueueSize;
     QColor m_dataSeriesColor[DATA_SERIES_SIZE];
     UIActionPool *m_pActionPool;
+
 private slots:
 
     /** Reads the metric values for several sources and calls corresponding update functions. */
@@ -248,7 +248,6 @@ private:
 
 class  SHARED_LIBRARY_STUFF UIVMActivityMonitorLocal : public UIVMActivityMonitor
 {
-
     Q_OBJECT;
 
 public:
@@ -323,7 +322,6 @@ private:
 
 class  SHARED_LIBRARY_STUFF UIVMActivityMonitorCloud : public UIVMActivityMonitor
 {
-
     Q_OBJECT;
 
 public:
@@ -346,6 +344,7 @@ private slots:
     void sltMachineStateUpdateTimeout();
 
 private:
+
     void setMachine(const CCloudMachine &comMachine);
     virtual void obtainDataAndUpdate() RT_OVERRIDE;
 
@@ -386,4 +385,5 @@ private:
     QString m_strNetworkInInfoLabelTitle;
     QString m_strNetworkOutInfoLabelTitle;
 };
+
 #endif /* !FEQT_INCLUDED_SRC_activity_vmactivity_UIVMActivityMonitor_h */

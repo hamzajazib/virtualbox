@@ -1,4 +1,4 @@
-/* $Id: UIMenuToolBar.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIMenuToolBar.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMenuToolBar class declaration.
  */
@@ -36,7 +36,6 @@
 
 /* Forward declarations: */
 class UIMenuToolBarPrivate;
-
 
 /** QWidget wrapper for QIToolBar extension
   * holding single drop-down menu of actions. */
@@ -83,4 +82,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIMenuToolBar_h */
-

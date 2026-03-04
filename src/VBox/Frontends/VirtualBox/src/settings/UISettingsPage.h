@@ -1,4 +1,4 @@
-/* $Id: UISettingsPage.h 112838 2026-02-05 13:05:37Z sergey.dubov@oracle.com $ */
+/* $Id: UISettingsPage.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UISettingsPage class declaration.
  */
@@ -88,7 +88,6 @@ Q_DECLARE_METATYPE(UISettingsDataMachine);
 
 /** Validation message. */
 typedef QPair<QString, QStringList> UIValidationMessage;
-
 
 /** UIEditor sub-class used as settings page interface. */
 class UISettingsPage : public UIEditor
@@ -215,7 +214,6 @@ private:
     bool  m_fFailed : 1;
 };
 
-
 /** UISettingsPage extension used as Global Preferences page interface. */
 class UISettingsPageGlobal : public UISettingsPage
 {
@@ -249,7 +247,6 @@ protected:
     CSystemProperties  m_properties;
 };
 
-
 /** UISettingsPage extension used as Machine Settings page interface. */
 class UISettingsPageMachine : public UISettingsPage
 {
@@ -279,7 +276,6 @@ protected:
     /** Holds the source of console settings. */
     CConsole  m_console;
 };
-
 
 /** UIEditor sub-class, used as settings page frame. */
 class UISettingsPageFrame : public UIEditor
@@ -323,6 +319,5 @@ private:
     /** Holds the contents layout instance. */
     QLayout *m_pLayout;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_settings_UISettingsPage_h */

@@ -1,4 +1,4 @@
-/* $Id: UIChooserNode.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIChooserNode.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIChooserNode class declaration.
  */
@@ -44,7 +44,6 @@
 class UIChooserAbstractModel;
 class UIChooserNodeGroup;
 class UIChooserNodeMachine;
-
 
 /** QObject subclass used as interface for invisible tree-view nodes.
   * These nodes can be of three types (group, global and machine node).
@@ -147,6 +146,5 @@ protected:
     /** Holds the flag to indicate whether the node is disabled or not. */
     bool  m_fDisabled;
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_manager_chooser_UIChooserNode_h */

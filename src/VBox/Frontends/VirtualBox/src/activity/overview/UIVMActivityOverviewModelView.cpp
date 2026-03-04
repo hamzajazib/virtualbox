@@ -1,4 +1,4 @@
-/* $Id: UIVMActivityOverviewModelView.cpp 112723 2026-01-28 12:17:37Z serkan.bayraktar@oracle.com $ */
+/* $Id: UIVMActivityOverviewModelView.cpp 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIVMActivityOverviewModelView class implementation.
  */
@@ -60,7 +60,6 @@
 /** QITableViewRow extension used as Activity Overview table-view row. */
 class UIVMActivityOverviewRow : public QITableViewRow
 {
-
     Q_OBJECT;
 
 public:
@@ -102,7 +101,6 @@ private:
 /** A UIVMActivityOverviewItem derivation to show local vms in the table view. */
 class UIVMActivityOverviewRowLocal : public UIVMActivityOverviewRow
 {
-
     Q_OBJECT;
 
 public:

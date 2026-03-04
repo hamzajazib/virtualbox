@@ -1,4 +1,4 @@
-/* $Id: UIDetailsWidgetNATNetwork.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIDetailsWidgetNATNetwork.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIDetailsWidgetNATNetwork class declaration.
  */
@@ -103,7 +103,6 @@ struct UIDataNATNetwork
     /** Holds IPv6 port forwarding rules. */
     UIPortForwardingDataList  m_rules6;
 };
-
 
 /** Network Manager: NAT network details-widget. */
 class UIDetailsWidgetNATNetwork : public QWidget
@@ -254,6 +253,5 @@ private:
         bool                   m_fHoldPosition;
     /** @} */
 };
-
 
 #endif /* !FEQT_INCLUDED_SRC_networkmanager_UIDetailsWidgetNATNetwork_h */

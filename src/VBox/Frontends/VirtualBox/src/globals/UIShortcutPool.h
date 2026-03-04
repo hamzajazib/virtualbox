@@ -1,4 +1,4 @@
-/* $Id: UIShortcutPool.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIShortcutPool.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIShortcutPool class declaration.
  */
@@ -45,7 +45,6 @@ class QKeySequence;
 class QString;
 class UIActionPool;
 class UIAction;
-
 
 /** Shortcut descriptor prototype. */
 class SHARED_LIBRARY_STUFF UIShortcut
@@ -121,7 +120,6 @@ private:
     /** Holds the standard shortcut sequence. */
     QKeySequence         m_standardSequence;
 };
-
 
 /** QObject extension used as shortcut pool singleton. */
 class SHARED_LIBRARY_STUFF UIShortcutPool : public QObject
@@ -214,6 +212,5 @@ private:
 
 /** Singleton Shortcut Pool 'official' name. */
 #define gShortcutPool UIShortcutPool::instance()
-
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIShortcutPool_h */
