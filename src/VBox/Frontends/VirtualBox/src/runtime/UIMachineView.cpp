@@ -1,4 +1,4 @@
-/* $Id: UIMachineView.cpp 113062 2026-02-17 12:37:07Z sergey.dubov@oracle.com $ */
+/* $Id: UIMachineView.cpp 113253 2026-03-04 14:49:18Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMachineView class implementation.
  */
@@ -2036,8 +2036,8 @@ void UIMachineView::keyReleaseEvent(QKeyEvent *pEvent)
     QAbstractScrollArea::keyReleaseEvent(pEvent);
 }
 #endif
-#ifdef VBOX_WITH_DRAG_AND_DROP
 
+#ifdef VBOX_WITH_DRAG_AND_DROP
 bool UIMachineView::dragAndDropCanAccept() const
 {
     bool fAccept = m_pDnDHandler;
@@ -2158,7 +2158,6 @@ void UIMachineView::dropEvent(QDropEvent *pEvent)
 
     DNDDEBUG(("DnD: dropEvent ended with rc=%Rrc\n", rc));
 }
-
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 
 QSize UIMachineView::scaledForward(QSize size) const
