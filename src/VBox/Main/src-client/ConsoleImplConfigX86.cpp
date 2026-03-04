@@ -1,4 +1,4 @@
-/* $Id: ConsoleImplConfigX86.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: ConsoleImplConfigX86.cpp 113258 2026-03-04 18:20:38Z klaus.espenlaub@oracle.com $ */
 /** @file
  * VBox Console COM Class implementation - VM Configuration Bits.
  *
@@ -627,7 +627,11 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
     }
 
     ComPtr<IPlatformProperties> platformProperties;
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+    systemProperties->COMGETTER(Platform)(platformProperties.asOutParam());
+#else
     virtualBox->GetPlatformProperties(PlatformArchitecture_x86, platformProperties.asOutParam());
+#endif
 
     /*
      * Get root node first.
