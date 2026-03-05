@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.h 113269 2026-03-05 13:44:15Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.h 113270 2026-03-05 13:48:24Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion declarations.
  */
@@ -223,6 +223,9 @@ public:
 
     /** @name Wizard warnings.
       * @{ */
+        /** Confirms exporting machine in saved-state. */
+        static bool confirmExportMachinesInSaveState(const QStringList &machineNames, QWidget *pParent);
+
         /** Confirms overriding file. */
         static bool confirmOverridingFile(const QString &strPath, QWidget *pParent = 0);
         /** Confirms overriding files. */

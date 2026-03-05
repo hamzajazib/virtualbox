@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.cpp 113269 2026-03-05 13:44:15Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.cpp 113270 2026-03-05 13:48:24Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion implementations.
  */
@@ -794,6 +794,27 @@ bool UINotificationQuestion::confirmDeletingOldExtentionPackFiles(const QStringL
                       << QApplication::translate("UIMessageCenter", "Delete", "extension pack") /* ok button text */);
 }
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+
+/* static */
+bool UINotificationQuestion::confirmExportMachinesInSaveState(const QStringList &machineNames,
+                                                              QWidget *pParent)
+{
+    return createBlockingQuestion(
+        QApplication::translate("UIMessageCenter", "Export VM in saved-state?"),
+        QApplication::translate("UIMessageCenter", "<p>The %n following virtual machine(s) are currently in a saved state: "
+                                                   "<b>%1</b></p><p>If you continue the runtime state of the exported "
+                                                   "machine(s) will be discarded. The other machine(s) will not be changed.</p>",
+                                                   "This text is never used with n == 0. Feel free to drop the %n where "
+                                                   "possible, we only included it because of problems with Qt Linguist (but the "
+                                                   "user can see how many machines are in the list and doesn't need to be "
+                                                   "told).", machineNames.size()).arg(machineNames.join(", ")),
+        QStringList() << QString() /* cancel button text */
+                      << QApplication::translate("UIMessageCenter", "Continue") /* ok button text */,
+        true /* ok button by default? */,
+        QString() /* internal name */,
+        QString() /* help keyword */,
+        pParent);
+}
 
 /* static */
 bool UINotificationQuestion::confirmOverridingFile(const QString &strPath, QWidget *pParent /* = 0 */)

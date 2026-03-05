@@ -1,4 +1,4 @@
-/* $Id: UIWizardExportAppPageExpert.cpp 113062 2026-02-17 12:37:07Z sergey.dubov@oracle.com $ */
+/* $Id: UIWizardExportAppPageExpert.cpp 113270 2026-03-05 13:48:24Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIWizardExportAppPageExpert class implementation.
  */
@@ -49,8 +49,8 @@
 #include "UIEmptyFilePathSelector.h"
 #include "UIFormEditorWidget.h"
 #include "UIIconPool.h"
-#include "UIMessageCenter.h"
 #include "UINotificationMessage.h"
+#include "UINotificationQuestion.h"
 #include "UIToolBox.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIVirtualBoxManager.h"
@@ -682,7 +682,7 @@ bool UIWizardExportAppPageExpert::validatePage()
         QStringList savedMachines;
         refreshSavedMachines(savedMachines, m_pVMSelector);
         if (!savedMachines.isEmpty())
-            fResult = msgCenter().confirmExportMachinesInSaveState(savedMachines, this);
+            fResult = UINotificationQuestion::confirmExportMachinesInSaveState(savedMachines, this);
 
         /* Prepare export: */
         if (fResult)

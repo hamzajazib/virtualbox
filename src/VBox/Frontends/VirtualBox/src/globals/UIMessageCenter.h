@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.h 113269 2026-03-05 13:44:15Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.h 113270 2026-03-05 13:48:24Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class declaration.
  */
@@ -308,12 +308,6 @@ public:
     /** @name Runtime UI warnings.
       * @{ */
         bool warnAboutGuruMeditation(const QString &strLogFolder);
-    /** @} */
-
-    /** @name VirtualBox Manager / Wizard warnings.
-      * @{ */
-        /// @todo move to notification-center after wizards get theirs.. :)
-        bool confirmExportMachinesInSaveState(const QStringList &machineNames, QWidget *pParent = 0) const;
     /** @} */
 
     /** @name VirtualBox Manager / FD Creation Dialog warnings.

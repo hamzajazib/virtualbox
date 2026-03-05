@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.cpp 113269 2026-03-05 13:44:15Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.cpp 113270 2026-03-05 13:48:24Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class implementation.
  */
@@ -849,20 +849,6 @@ bool UIMessageCenter::warnAboutGuruMeditation(const QString &strLogFolder)
                           0 /* auto-confirm id */,
                           QIMessageBox::tr("OK"),
                           tr("Ignore"));
-}
-
-bool UIMessageCenter::confirmExportMachinesInSaveState(const QStringList &machineNames, QWidget *pParent /* = 0*/) const
-{
-    return questionBinary(pParent, MessageType_Warning,
-                          tr("<p>The %n following virtual machine(s) are currently in a saved state: <b>%1</b></p>"
-                             "<p>If you continue the runtime state of the exported machine(s) will be discarded. "
-                             "The other machine(s) will not be changed.</p>",
-                             "This text is never used with n == 0. Feel free to drop the %n where possible, "
-                             "we only included it because of problems with Qt Linguist (but the user can see "
-                             "how many machines are in the list and doesn't need to be told).", machineNames.size())
-                             .arg(machineNames.join(", ")),
-                          0 /* auto-confirm id */,
-                          tr("Continue", "agree to export VMs without saved-state"));
 }
 
 void UIMessageCenter::cannotCreateMediumStorage(const CVirtualBox &comVBox, const QString &strLocation, QWidget *pParent /* = 0 */) const

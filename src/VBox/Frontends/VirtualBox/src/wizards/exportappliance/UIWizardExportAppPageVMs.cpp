@@ -1,4 +1,4 @@
-/* $Id: UIWizardExportAppPageVMs.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIWizardExportAppPageVMs.cpp 113270 2026-03-05 13:48:24Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIWizardExportAppPageVMs class implementation.
  */
@@ -35,7 +35,7 @@
 #include "UICommon.h"
 #include "UIGlobalSession.h"
 #include "UIIconPool.h"
-#include "UIMessageCenter.h"
+#include "UINotificationQuestion.h"
 #include "UIWizardExportApp.h"
 #include "UIWizardExportAppPageVMs.h"
 
@@ -252,7 +252,7 @@ bool UIWizardExportAppPageVMs::validatePage()
     QStringList savedMachines;
     refreshSavedMachines(savedMachines, m_pVMSelector);
     if (!savedMachines.isEmpty())
-        fResult = msgCenter().confirmExportMachinesInSaveState(savedMachines, this);
+        fResult = UINotificationQuestion::confirmExportMachinesInSaveState(savedMachines, this);
 
     /* Return result: */
     return fResult;
