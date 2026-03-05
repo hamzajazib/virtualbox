@@ -24,11 +24,12 @@ autoinstall:
     - linux-headers-generic
     - perl
     - make
+    - dkms
 @@VBOX_COND_END@@
   identity:
     hostname: '@@VBOX_INSERT_HOSTNAME_WITHOUT_DOMAIN@@'
     username: '@@VBOX_INSERT_USER_LOGIN@@'
-    realname: '@@VBOX_INSERT_USER_LOGIN@@'
+    realname: '@@VBOX_INSERT_FULL_NAME@@'
     password: '@@VBOX_INSERT_USER_PASSWORD_SHACRYPT512@@'
 # todo. maybe we need to handle group stuff as late command, as well. to be tested
 # @@VBOX_COND_IS_INSTALLING_ADDITIONS@@
