@@ -1,4 +1,4 @@
-/* $Id: IEMAllThrdRecompiler.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: IEMAllThrdRecompiler.cpp 113263 2026-03-05 00:11:00Z knut.osmundsen@oracle.com $ */
 /** @file
  * IEM - Instruction Decoding and Threaded Recompilation.
  *
@@ -3656,16 +3656,16 @@ static IEM_DECL_MSC_GUARD_IGNORE VBOXSTRICTRC iemTbExec(PVMCPUCC pVCpu, PIEMTB p
 #endif
         PCIEMTHRDEDCALLENTRY pCallEntry = pTb->Thrd.paCalls;
         uint32_t             cCallsLeft = pTb->Thrd.cCalls;
-        while (cCallsLeft-- > 0)
+        while (cCallsLeft > 0)
         {
 #ifdef LOG_ENABLED
             if (pVCpu->cpum.GstCtx.rip != uRipPrev)
             {
                 uRipPrev = pVCpu->cpum.GstCtx.rip;
-                iemThreadedLogCurInstr(pVCpu, "EXt", pTb->Thrd.cCalls - cCallsLeft - 1);
+                iemThreadedLogCurInstr(pVCpu, "EXt", pTb->Thrd.cCalls - cCallsLeft);
             }
             Log9(("%04x:%08RX64: #%d/%d - %d %s\n", pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
-                  pTb->Thrd.cCalls - cCallsLeft - 1, pCallEntry->idxInstr, pCallEntry->enmFunction,
+                  pTb->Thrd.cCalls - cCallsLeft, pCallEntry->idxInstr, pCallEntry->enmFunction,
                   g_apszIemThreadedFunctions[pCallEntry->enmFunction]));
 #endif
 #ifdef VBOX_WITH_STATISTICS
@@ -3678,11 +3678,14 @@ static IEM_DECL_MSC_GUARD_IGNORE VBOXSTRICTRC iemTbExec(PVMCPUCC pVCpu, PIEMTB p
                                                                                               pCallEntry->auParams[2]);
             if (RT_LIKELY(   rcStrict == VINF_SUCCESS
                           && ICORE(pVCpu).rcPassUp == VINF_SUCCESS /** @todo this isn't great. */))
+            {
                 pCallEntry++;
+                cCallsLeft--;
+            }
             else if (rcStrict == VINF_IEM_REEXEC_JUMP)
             {
                 Assert(ICORE(pVCpu).rcPassUp == VINF_SUCCESS);
-                Assert(cCallsLeft == 0);
+                Assert(cCallsLeft == 1);
                 uint32_t const idxTarget = (uint32_t)pCallEntry->auParams[0];
                 cCallsLeft = pTb->Thrd.cCalls;
                 AssertBreak(idxTarget < cCallsLeft - 1);
