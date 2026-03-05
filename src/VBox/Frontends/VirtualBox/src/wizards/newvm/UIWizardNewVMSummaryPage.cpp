@@ -1,4 +1,4 @@
-/* $Id: UIWizardNewVMSummaryPage.cpp 113062 2026-02-17 12:37:07Z sergey.dubov@oracle.com $ */
+/* $Id: UIWizardNewVMSummaryPage.cpp 113268 2026-03-05 13:37:28Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIWizardNewVMSummaryPage class implementation.
  */
@@ -36,7 +36,6 @@
 #include "UIGlobalSession.h"
 #include "UIGuestOSType.h"
 #include "UIIconPool.h"
-#include "UIMessageCenter.h"
 #include "UINotificationMessage.h"
 #include "UITranslator.h"
 #include "UIWizardDiskEditors.h"
@@ -178,9 +177,9 @@ bool UIWizardNewVMSummaryPage::validatePage()
     /* Make sure user really intents to create a vm with no hard drive: */
     if (pWizard->diskSource() == SelectedDiskSource_Empty)
     {
-        /* Ask user about disk-less machine unless that's the recommendation: */
-        fResult =    pWizard->emptyDiskRecommended()
-                  || msgCenter().confirmHardDisklessMachine(this);
+        /* This case should NOT be possible, since in Basic wizard mode
+         * we always creating VM which has some HD by default: */
+        fResult = true;
     }
     else if (pWizard->diskSource() == SelectedDiskSource_New)
     {

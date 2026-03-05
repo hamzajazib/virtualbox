@@ -1,4 +1,4 @@
-/* $Id: UIWizardNewVMHardwarePage.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIWizardNewVMHardwarePage.cpp 113268 2026-03-05 13:37:28Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIWizardNewVMHardwarePage class implementation.
  */
@@ -167,15 +167,9 @@ void UIWizardNewVMHardwarePage::initializeVirtualHardDiskParameters()
     {
         iRecommendedSize = gpGlobalSession->guestOSTypeManager().getRecommendedHDD(pWizard->guestOSTypeId());
         if (iRecommendedSize != 0)
-        {
             pWizard->setDiskSource(SelectedDiskSource_New);
-            pWizard->setEmptyDiskRecommended(false);
-        }
         else
-        {
             pWizard->setDiskSource(SelectedDiskSource_Empty);
-            pWizard->setEmptyDiskRecommended(true);
-        }
     }
 
     if (!m_fVDIFormatFound)

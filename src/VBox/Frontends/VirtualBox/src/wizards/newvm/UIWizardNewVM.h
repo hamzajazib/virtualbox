@@ -1,4 +1,4 @@
-/* $Id: UIWizardNewVM.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIWizardNewVM.h 113268 2026-03-05 13:37:28Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIWizardNewVM class declaration.
  */
@@ -157,9 +157,6 @@ public:
         SelectedDiskSource diskSource() const;
         void setDiskSource(SelectedDiskSource enmDiskSource);
 
-        bool emptyDiskRecommended() const;
-        void setEmptyDiskRecommended(bool fEmptyDiskRecommended);
-
         void setDetectedWindowsImageNamesAndIndices(const QVector<QString> &names, const QVector<ulong> &ids);
         const QVector<QString> &detectedWindowsImageNames() const;
         const QVector<ulong> &detectedWindowsImageIndices() const;
@@ -236,7 +233,6 @@ private:
        QString m_strMediumPath;
        qulonglong m_uMediumSize;
        SelectedDiskSource m_enmDiskSource;
-       bool m_fEmptyDiskRecommended;
        QVector<KMediumVariant> m_mediumVariants;
        UIActionPool *m_pActionPool;
        CUnattended m_comUnattended;

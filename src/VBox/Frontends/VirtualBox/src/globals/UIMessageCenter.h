@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.h 113265 2026-03-05 08:50:41Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.h 113268 2026-03-05 13:37:28Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class declaration.
  */
@@ -313,7 +313,6 @@ public:
     /** @name VirtualBox Manager / Wizard warnings.
       * @{ */
         /// @todo move to notification-center after wizards get theirs.. :)
-        bool confirmHardDisklessMachine(QWidget *pParent = 0) const;
         bool confirmExportMachinesInSaveState(const QStringList &machineNames, QWidget *pParent = 0) const;
         bool confirmOverridingFile(const QString &strPath, QWidget *pParent = 0) const;
         bool confirmOverridingFiles(const QVector<QString> &strPaths, QWidget *pParent = 0) const;

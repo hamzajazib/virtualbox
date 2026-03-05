@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.cpp 113265 2026-03-05 08:50:41Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.cpp 113268 2026-03-05 13:37:28Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class implementation.
  */
@@ -849,18 +849,6 @@ bool UIMessageCenter::warnAboutGuruMeditation(const QString &strLogFolder)
                           0 /* auto-confirm id */,
                           QIMessageBox::tr("OK"),
                           tr("Ignore"));
-}
-
-bool UIMessageCenter::confirmHardDisklessMachine(QWidget *pParent /* = 0*/) const
-{
-    return questionBinary(pParent, MessageType_Warning,
-                          tr("You are about to create a new virtual machine without a hard disk. "
-                             "You will not be able to install an operating system on the machine "
-                             "until you add one. In the mean time you will only be able to start the "
-                             "machine using a virtual optical disk or from the network."),
-                          0 /* auto-confirm id */,
-                          tr("Continue", "agree to create VM with no hard disk attached"),
-                          tr("Go Back", "reject to create VM with no hard disk attached"));
 }
 
 bool UIMessageCenter::confirmExportMachinesInSaveState(const QStringList &machineNames, QWidget *pParent /* = 0*/) const

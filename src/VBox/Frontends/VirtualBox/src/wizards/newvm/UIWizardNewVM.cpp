@@ -1,4 +1,4 @@
-/* $Id: UIWizardNewVM.cpp 113267 2026-03-05 10:14:03Z sergey.dubov@oracle.com $ */
+/* $Id: UIWizardNewVM.cpp 113268 2026-03-05 13:37:28Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIWizardNewVM class implementation.
  */
@@ -82,7 +82,6 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent,
     , m_uMediumVariant(0)
     , m_uMediumSize(0)
     , m_enmDiskSource(SelectedDiskSource_New)
-    , m_fEmptyDiskRecommended(false)
     , m_pActionPool(pActionPool)
     , m_fStartHeadless(false)
     , m_strInitialISOFilePath(strISOFilePath)
@@ -754,16 +753,6 @@ SelectedDiskSource UIWizardNewVM::diskSource() const
 void UIWizardNewVM::setDiskSource(SelectedDiskSource enmDiskSource)
 {
     m_enmDiskSource = enmDiskSource;
-}
-
-bool UIWizardNewVM::emptyDiskRecommended() const
-{
-    return m_fEmptyDiskRecommended;
-}
-
-void UIWizardNewVM::setEmptyDiskRecommended(bool fEmptyDiskRecommended)
-{
-    m_fEmptyDiskRecommended = fEmptyDiskRecommended;
 }
 
 void UIWizardNewVM::setDetectedWindowsImageNamesAndIndices(const QVector<QString> &names, const QVector<ulong> &ids)
