@@ -1,4 +1,4 @@
-# $Id: Config.kmk 113108 2026-02-20 17:00:40Z aleksey.ilyushin@oracle.com $
+# $Id: Config.kmk 113281 2026-03-08 01:52:43Z knut.osmundsen@oracle.com $
 ## @file
 # OpenSSL kBuild Configuration file.
 #
@@ -451,3 +451,14 @@ else
  endef
 endif
 
+
+##
+# This is for ensuring nasm is in the PATH when generating the yasm/nasm code,
+# as the generator scripts checks the version to determin support for AVX and such.
+VBOX_CRYPTO_GEN_NASM_SETUP =
+if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
+ include $(PATH_KBUILD)/tools/NASM.kmk
+ ifdef PATH_TOOL_NASM
+  VBOX_CRYPTO_GEN_NASM_SETUP = kmk_redirect -D 'PATH=$(PATH_TOOL_NASM)$(HOST_PATH_SEP)' --
+ endif
+endif

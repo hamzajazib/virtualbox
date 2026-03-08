@@ -1,4 +1,4 @@
-# $Id: Makefile.kmk 113020 2026-02-13 16:51:42Z alexander.rudnev@oracle.com $
+# $Id: Makefile.kmk 113281 2026-03-08 01:52:43Z knut.osmundsen@oracle.com $
 ## @file
 # OpenSSL Sub-Makefile.
 #
@@ -60,20 +60,12 @@ endif
 $(evalcall VBOX_OPENSSL_X86,crypto_aes)
 
 
-recreate-aes-asm: $(VBOX_PATH_CRYPTO)/perlasm/x86asm.pl \
-		$(VBOX_PATH_CRYPTO_AES)/asm/aes-586.pl \
-		$(VBOX_PATH_CRYPTO_AES)/asm/vpaes-x86.pl \
-		$(VBOX_PATH_CRYPTO_AES)/asm/aesni-x86.pl \
-		$(VBOX_PATH_CRYPTO_AES)/asm/aes-x86_64.pl \
-		$(VBOX_PATH_CRYPTO_AES)/asm/vpaes-x86_64.pl \
-		$(VBOX_PATH_CRYPTO_AES)/asm/bsaes-x86_64.pl \
-		$(VBOX_PATH_CRYPTO_AES)/asm/aesni-x86_64.pl \
-		$(VBOX_PATH_CRYPTO_AES)/asm/aesni-mb-x86_64.pl \
-		$(VBOX_PATH_CRYPTO_AES)/asm/aesni-sha1-x86_64.pl \
-		$(VBOX_PATH_CRYPTO_AES)/asm/aesni-sha256-x86_64.pl
+# One-time code generation.
+recreate-openssl-elf-x86::
 	perl $(VBOX_PATH_CRYPTO_AES)/asm/aes-586.pl elf -fPIC $(VBOX_PATH_CRYPTO)/genasm-elf/aes-586.S
 	perl $(VBOX_PATH_CRYPTO_AES)/asm/vpaes-x86.pl elf -fPIC $(VBOX_PATH_CRYPTO)/genasm-elf/vpaes-x86.S
 	perl $(VBOX_PATH_CRYPTO_AES)/asm/aesni-x86.pl elf -fPIC $(VBOX_PATH_CRYPTO)/genasm-elf/aesni-x86.S
+recreate-openssl-elf-amd64::
 	perl $(VBOX_PATH_CRYPTO_AES)/asm/aes-x86_64.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/aes-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_AES)/asm/vpaes-x86_64.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/vpaes-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_AES)/asm/bsaes-x86_64.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/bsaes-x86_64.S
@@ -81,9 +73,11 @@ recreate-aes-asm: $(VBOX_PATH_CRYPTO)/perlasm/x86asm.pl \
 	perl $(VBOX_PATH_CRYPTO_AES)/asm/aesni-mb-x86_64.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/aesni-mb-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_AES)/asm/aesni-sha1-x86_64.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/aesni-sha1-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_AES)/asm/aesni-sha256-x86_64.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/aesni-sha256-x86_64.S
+recreate-openssl-darwin-x86::
 	perl $(VBOX_PATH_CRYPTO_AES)/asm/aes-586.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/aes-586.S
 	perl $(VBOX_PATH_CRYPTO_AES)/asm/vpaes-x86.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/vpaes-x86.S
 	perl $(VBOX_PATH_CRYPTO_AES)/asm/aesni-x86.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/aesni-x86.S
+recreate-openssl-darwin-amd64::
 	perl $(VBOX_PATH_CRYPTO_AES)/asm/aes-x86_64.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/aes-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_AES)/asm/vpaes-x86_64.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/vpaes-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_AES)/asm/bsaes-x86_64.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/bsaes-x86_64.S
@@ -91,15 +85,17 @@ recreate-aes-asm: $(VBOX_PATH_CRYPTO)/perlasm/x86asm.pl \
 	perl $(VBOX_PATH_CRYPTO_AES)/asm/aesni-mb-x86_64.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/aesni-mb-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_AES)/asm/aesni-sha1-x86_64.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/aesni-sha1-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_AES)/asm/aesni-sha256-x86_64.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/aesni-sha256-x86_64.S
-	perl $(VBOX_PATH_CRYPTO_AES)/asm/aes-586.pl win32n $(VBOX_PATH_CRYPTO)/genasm-nasm/aes-586.S
-	perl $(VBOX_PATH_CRYPTO_AES)/asm/vpaes-x86.pl win32n $(VBOX_PATH_CRYPTO)/genasm-nasm/vpaes-x86.S
-	perl $(VBOX_PATH_CRYPTO_AES)/asm/aesni-x86.pl win32n $(VBOX_PATH_CRYPTO)/genasm-nasm/aesni-x86.S
-	perl $(VBOX_PATH_CRYPTO_AES)/asm/aes-x86_64.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/aes-x86_64.S
-	perl $(VBOX_PATH_CRYPTO_AES)/asm/vpaes-x86_64.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/vpaes-x86_64.S
-	perl $(VBOX_PATH_CRYPTO_AES)/asm/bsaes-x86_64.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/bsaes-x86_64.S
-	perl $(VBOX_PATH_CRYPTO_AES)/asm/aesni-x86_64.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/aesni-x86_64.S
-	perl $(VBOX_PATH_CRYPTO_AES)/asm/aesni-mb-x86_64.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/aesni-mb-x86_64.S
-	perl $(VBOX_PATH_CRYPTO_AES)/asm/aesni-sha1-x86_64.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/aesni-sha1-x86_64.S
-	perl $(VBOX_PATH_CRYPTO_AES)/asm/aesni-sha256-x86_64.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/aesni-sha256-x86_64.S
+recreate-openssl-win-x86::
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO_AES)/asm/aes-586.pl   win32n $(VBOX_PATH_CRYPTO)/genasm-nasm/aes-586.S
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO_AES)/asm/vpaes-x86.pl win32n $(VBOX_PATH_CRYPTO)/genasm-nasm/vpaes-x86.S
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO_AES)/asm/aesni-x86.pl win32n $(VBOX_PATH_CRYPTO)/genasm-nasm/aesni-x86.S
+recreate-openssl-win-amd64::
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO_AES)/asm/aes-x86_64.pl          nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/aes-x86_64.S
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO_AES)/asm/vpaes-x86_64.pl        nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/vpaes-x86_64.S
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO_AES)/asm/bsaes-x86_64.pl        nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/bsaes-x86_64.S
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO_AES)/asm/aesni-x86_64.pl        nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/aesni-x86_64.S
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO_AES)/asm/aesni-mb-x86_64.pl     nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/aesni-mb-x86_64.S
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO_AES)/asm/aesni-sha1-x86_64.pl   nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/aesni-sha1-x86_64.S
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO_AES)/asm/aesni-sha256-x86_64.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/aesni-sha256-x86_64.S
 
 include $(FILE_KBUILD_SUB_FOOTER)

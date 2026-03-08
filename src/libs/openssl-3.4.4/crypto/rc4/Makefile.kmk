@@ -1,4 +1,4 @@
-# $Id: Makefile.kmk 113020 2026-02-13 16:51:42Z alexander.rudnev@oracle.com $
+# $Id: Makefile.kmk 113281 2026-03-08 01:52:43Z knut.osmundsen@oracle.com $
 ## @file
 # OpenSSL Sub-Makefile.
 #
@@ -44,19 +44,21 @@ else
 endif
 $(evalcall VBOX_OPENSSL_X86,crypto_rc4)
 
-
-recreate-rc4-asm: $(VBOX_PATH_CRYPTO)/perlasm/x86asm.pl \
-		$(VBOX_PATH_CRYPTO_RC4)/asm/rc4-586.pl \
-		$(VBOX_PATH_CRYPTO_RC4)/asm/rc4-x86_64.pl \
-		$(VBOX_PATH_CRYPTO_RC4)/asm/rc4-md5-x86_64.pl
+# One time code generation.
+recreate-openssl-elf-x86::
 	perl $(VBOX_PATH_CRYPTO_RC4)/asm/rc4-586.pl elf -fPIC $(VBOX_PATH_CRYPTO)/genasm-elf/rc4-586.S
+recreate-openssl-elf-amd64::
 	perl $(VBOX_PATH_CRYPTO_RC4)/asm/rc4-x86_64.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/rc4-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_RC4)/asm/rc4-md5-x86_64.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/rc4-md5-x86_64.S
+recreate-openssl-darwin-x86::
 	perl $(VBOX_PATH_CRYPTO_RC4)/asm/rc4-586.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/rc4-586.S
+recreate-openssl-darwin-amd64::
 	perl $(VBOX_PATH_CRYPTO_RC4)/asm/rc4-x86_64.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/rc4-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_RC4)/asm/rc4-md5-x86_64.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/rc4-md5-x86_64.S
-	perl $(VBOX_PATH_CRYPTO_RC4)/asm/rc4-586.pl win32n $(VBOX_PATH_CRYPTO)/genasm-nasm/rc4-586.S
-	perl $(VBOX_PATH_CRYPTO_RC4)/asm/rc4-x86_64.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/rc4-x86_64.S
-	perl $(VBOX_PATH_CRYPTO_RC4)/asm/rc4-md5-x86_64.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/rc4-md5-x86_64.S
+recreate-openssl-win-x86::
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO_RC4)/asm/rc4-586.pl win32n $(VBOX_PATH_CRYPTO)/genasm-nasm/rc4-586.S
+recreate-openssl-win-amd64::
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO_RC4)/asm/rc4-x86_64.pl     nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/rc4-x86_64.S
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO_RC4)/asm/rc4-md5-x86_64.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/rc4-md5-x86_64.S
 
 include $(FILE_KBUILD_SUB_FOOTER)

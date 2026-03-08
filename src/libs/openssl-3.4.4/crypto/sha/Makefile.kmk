@@ -1,4 +1,4 @@
-# $Id: Makefile.kmk 113020 2026-02-13 16:51:42Z alexander.rudnev@oracle.com $
+# $Id: Makefile.kmk 113281 2026-03-08 01:52:43Z knut.osmundsen@oracle.com $
 ## @file
 # OpenSSL Sub-Makefile.
 #
@@ -56,42 +56,39 @@ else
 endif
 $(evalcall VBOX_OPENSSL_X86,crypto_sha)
 
-
-recreate-sha-asm: $(VBOX_PATH_CRYPTO)/perlasm/x86asm.pl \
-		$(VBOX_PATH_CRYPTO_SHA)/asm/sha1-586.pl \
-		$(VBOX_PATH_CRYPTO_SHA)/asm/sha256-586.pl \
-		$(VBOX_PATH_CRYPTO_SHA)/asm/sha512-586.pl \
-		$(VBOX_PATH_CRYPTO_SHA)/asm/keccak1600-x86_64.pl \
-		$(VBOX_PATH_CRYPTO_SHA)/asm/sha1-x86_64.pl \
-		$(VBOX_PATH_CRYPTO_SHA)/asm/sha1-mb-x86_64.pl \
-		$(VBOX_PATH_CRYPTO_SHA)/asm/sha512-x86_64.pl \
-		$(VBOX_PATH_CRYPTO_SHA)/asm/sha256-mb-x86_64.pl
+# One-time code generation.
+recreate-openssl-elf-x86::
 	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha1-586.pl elf -fPIC $(VBOX_PATH_CRYPTO)/genasm-elf/sha1-586.S
 	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha256-586.pl elf -fPIC $(VBOX_PATH_CRYPTO)/genasm-elf/sha256-586.S
 	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha512-586.pl elf -fPIC $(VBOX_PATH_CRYPTO)/genasm-elf/sha512-586.S
+recreate-openssl-elf-amd64::
 	perl $(VBOX_PATH_CRYPTO_SHA)/asm/keccak1600-x86_64.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/keccak1600-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha1-x86_64.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/sha1-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha1-mb-x86_64.pl elf $(VBOX_PATH_CRYPTO)//genasm-elf/sha1-mb-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha512-x86_64.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/sha256-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha256-mb-x86_64.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/sha256-mb-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha512-x86_64.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/sha512-x86_64.S
+recreate-openssl-darwin-x86::
 	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha1-586.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/sha1-586.S
 	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha256-586.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/sha256-586.S
 	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha512-586.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/sha512-586.S
+recreate-openssl-darwin-amd64::
 	perl $(VBOX_PATH_CRYPTO_SHA)/asm/keccak1600-x86_64.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/keccak1600-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha1-x86_64.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/sha1-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha1-mb-x86_64.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/sha1-mb-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha512-x86_64.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/sha256-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha256-mb-x86_64.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/sha256-mb-x86_64.S
 	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha512-x86_64.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/sha512-x86_64.S
-	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha1-586.pl win32n $(VBOX_PATH_CRYPTO)/genasm-nasm/sha1-586.S
-	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha256-586.pl win32n $(VBOX_PATH_CRYPTO)/genasm-nasm/sha256-586.S
-	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha512-586.pl win32n $(VBOX_PATH_CRYPTO)/genasm-nasm/sha512-586.S
-	perl $(VBOX_PATH_CRYPTO_SHA)/asm/keccak1600-x86_64.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/keccak1600-x86_64.S
-	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha1-x86_64.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/sha1-x86_64.S
-	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha1-mb-x86_64.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/sha1-mb-x86_64.S
-	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha512-x86_64.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/sha256-x86_64.S
-	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha256-mb-x86_64.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/sha256-mb-x86_64.S
-	perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha512-x86_64.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/sha512-x86_64.S
+recreate-openssl-win-x86::
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha1-586.pl   win32n $(VBOX_PATH_CRYPTO)/genasm-nasm/sha1-586.S
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha256-586.pl win32n $(VBOX_PATH_CRYPTO)/genasm-nasm/sha256-586.S
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha512-586.pl win32n $(VBOX_PATH_CRYPTO)/genasm-nasm/sha512-586.S
+recreate-openssl-win-amd64::
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO_SHA)/asm/keccak1600-x86_64.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/keccak1600-x86_64.S
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha1-x86_64.pl       nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/sha1-x86_64.S
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha1-mb-x86_64.pl    nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/sha1-mb-x86_64.S
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha512-x86_64.pl     nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/sha256-x86_64.S
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha256-mb-x86_64.pl  nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/sha256-mb-x86_64.S
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO_SHA)/asm/sha512-x86_64.pl     nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/sha512-x86_64.S
 
 include $(FILE_KBUILD_SUB_FOOTER)

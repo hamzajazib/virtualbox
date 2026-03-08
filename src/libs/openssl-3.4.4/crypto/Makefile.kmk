@@ -1,4 +1,4 @@
-# $Id: Makefile.kmk 113047 2026-02-16 16:23:11Z alexander.rudnev@oracle.com $
+# $Id: Makefile.kmk 113281 2026-03-08 01:52:43Z knut.osmundsen@oracle.com $
 ## @file
 # Sub-Makefile for OpenSSL crypto.
 #
@@ -198,26 +198,33 @@ endif # VBOX_WITH_BLD_RTSIGNTOOL_SIGNING
 
 
 #
-# ...
+# One-time code generation (i.e. output is checked in).
 #
-recreate-openssl-asm: $(VBOX_PATH_CRYPTO)/perlasm/x86asm.pl \
-		$(VBOX_PATH_CRYPTO)/x86cpuid.pl \
-		$(VBOX_PATH_CRYPTO)/x86_64cpuid.pl \
-		recreate-aes-asm \
-		recreate-bn-asm \
-		recreate-chacha-asm \
-		recreate-ec-asm \
-		recreate-md5-asm \
-		recreate-modes-asm \
-		recreate-poly1305-asm \
-		recreate-rc4-asm \
-		recreate-sha-asm
+recreate-openssl-asm: \
+		recreate-openssl-elf-x86 \
+		recreate-openssl-elf-amd64 \
+		recreate-openssl-darwin-x86 \
+		recreate-openssl-darwin-amd64 \
+		recreate-openssl-win-x86 \
+		recreate-openssl-win-amd64
+
+recreate-openssl-elf-x86::
 	perl $(VBOX_PATH_CRYPTO)/x86cpuid.pl elf -fPIC $(VBOX_PATH_CRYPTO)/genasm-elf/x86cpuid.S
+
+recreate-openssl-elf-amd64::
 	perl $(VBOX_PATH_CRYPTO)/x86_64cpuid.pl elf $(VBOX_PATH_CRYPTO)/genasm-elf/x86_64cpuid.S
+
+recreate-openssl-darwin-x86::
 	perl $(VBOX_PATH_CRYPTO)/x86cpuid.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/x86cpuid.S
+
+recreate-openssl-darwin-amd64::
 	perl $(VBOX_PATH_CRYPTO)/x86_64cpuid.pl macosx $(VBOX_PATH_CRYPTO)/genasm-macosx/x86_64cpuid.S
-	perl $(VBOX_PATH_CRYPTO)/x86cpuid.pl win32n $(VBOX_PATH_CRYPTO)/genasm-nasm/x86cpuid.S
-	perl $(VBOX_PATH_CRYPTO)/x86_64cpuid.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/x86_64cpuid.S
+
+recreate-openssl-win-x86::
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO)/x86cpuid.pl win32n $(VBOX_PATH_CRYPTO)/genasm-nasm/x86cpuid.S
+
+recreate-openssl-win-amd64::
+	$(VBOX_CRYPTO_GEN_NASM_SETUP) perl $(VBOX_PATH_CRYPTO)/x86_64cpuid.pl nasm $(VBOX_PATH_CRYPTO)/genasm-nasm/x86_64cpuid.S
 
 recreate-crypto-sources: $(VBOX_PATH_OPENSSL)/util/dofile.pl
 	perl -I$(VBOX_PATH_OPENSSL) \
