@@ -1,4 +1,4 @@
-/* $Id: UINotificationObjectItem.cpp 113287 2026-03-09 09:15:00Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationObjectItem.cpp 113288 2026-03-09 09:20:25Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINotificationObjectItem class implementation.
  */
@@ -65,7 +65,6 @@ UINotificationObjectItem::UINotificationObjectItem(QWidget *pParent,
     , m_pButtonHelp(0)
     , m_pButtonClose(0)
     , m_pLabelDetails(0)
-    , m_pButtonForget(0)
     , m_fHovered(false)
     , m_fToggled(isCritical())
 {
@@ -129,10 +128,9 @@ int UINotificationObjectItem::detailsWidthHint() const
 
 void UINotificationObjectItem::sltRetranslateUI()
 {
+    /* Translate close-button: */
     if (m_pButtonClose)
         m_pButtonClose->setToolTip(QApplication::translate("UIMessageCenter", "Close"));
-    if (m_pButtonForget)
-        m_pButtonForget->setText(QApplication::translate("UIMessageCenter", "Don't show again"));
 }
 
 void UINotificationObjectItem::prepareWidgets()
@@ -197,25 +195,6 @@ void UINotificationObjectItem::prepareWidgets()
 
             m_pLayoutMain->addWidget(m_pLabelDetails);
         }
-
-        /* Prepare forget button: */
-        if (!m_pObject->internalName().isEmpty())
-        {
-            m_pButtonForget = new QPushButton(this);
-            if (m_pButtonForget)
-            {
-                QFont myFont = m_pButtonForget->font();
-                myFont.setPointSize(myFont.pointSize() - 2);
-                m_pButtonForget->setFont(myFont);
-                m_pButtonForget->setIcon(UIIconPool::iconSet(":/close_popup_16px.png"));
-                m_pButtonForget->setIconSize(QSize(10, 10));
-                connect(m_pButtonForget, &QIToolButton::clicked,
-                        m_pObject, &UINotificationObject::dismiss,
-                        Qt::QueuedConnection);
-
-                m_pLayoutMain->addWidget(m_pButtonForget);
-            }
-        }
     }
 
     /* Calculate minimum width hint: */
@@ -225,8 +204,7 @@ void UINotificationObjectItem::prepareWidgets()
         m_iMinimumWidthHint += m_pLayoutUpper->spacing() + m_pButtonHelp->minimumSizeHint().width();
     if (m_pButtonClose)
         m_iMinimumWidthHint += m_pLayoutUpper->spacing() + m_pButtonClose->minimumSizeHint().width();
-    if (m_pButtonForget)
-        m_iMinimumWidthHint = qMax(m_iMinimumWidthHint, m_pButtonForget->minimumSizeHint().width());
+    m_iMinimumWidthHint = qMax(m_iMinimumWidthHint, widthHintForgetControl());
 }
 
 void UINotificationObjectItem::prepareConnections()
@@ -336,7 +314,52 @@ void UINotificationObjectItem::sltHandleHelpRequest()
 UINotificationMessageItem::UINotificationMessageItem(QWidget *pParent,
                                                      UINotificationObject *pObject)
     : UINotificationObjectItem(pParent, pObject)
+    , m_pButtonForget(0)
 {
+}
+
+void UINotificationMessageItem::sltRetranslateUI()
+{
+    /* Call to base-class: */
+    UINotificationObjectItem::sltRetranslateUI();
+
+    /* Translate forget-button: */
+    if (m_pButtonForget)
+        m_pButtonForget->setText(QApplication::translate("UIMessageCenter", "Don't show again"));
+}
+
+void UINotificationMessageItem::prepareWidgets()
+{
+    /* Call to base-class: */
+    UINotificationObjectItem::prepareWidgets();
+
+    /* Main layout was prepared in base-class: */
+    if (m_pLayoutMain)
+    {
+        /* Prepare forget button: */
+        if (!message()->internalName().isEmpty())
+        {
+            m_pButtonForget = new QPushButton(this);
+            if (m_pButtonForget)
+            {
+                QFont myFont = m_pButtonForget->font();
+                myFont.setPointSize(myFont.pointSize() - 2);
+                m_pButtonForget->setFont(myFont);
+                m_pButtonForget->setIcon(UIIconPool::iconSet(":/close_popup_16px.png"));
+                m_pButtonForget->setIconSize(QSize(10, 10));
+                connect(m_pButtonForget, &QIToolButton::clicked,
+                        m_pObject, &UINotificationObject::dismiss,
+                        Qt::QueuedConnection);
+
+                m_pLayoutMain->addWidget(m_pButtonForget);
+            }
+        }
+    }
+}
+
+int UINotificationMessageItem::widthHintForgetControl() const
+{
+    return m_pButtonForget ? m_pButtonForget->minimumSizeHint().width() : 0;
 }
 
 UINotificationMessage *UINotificationMessageItem::message() const

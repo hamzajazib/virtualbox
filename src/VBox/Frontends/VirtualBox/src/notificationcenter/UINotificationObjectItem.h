@@ -1,4 +1,4 @@
-/* $Id: UINotificationObjectItem.h 113287 2026-03-09 09:15:00Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationObjectItem.h 113288 2026-03-09 09:20:25Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINotificationObjectItem class declaration.
  */
@@ -98,6 +98,9 @@ protected:
     /** Handles paint @a pEvent. */
     virtual void paintEvent(QPaintEvent *pEvent) RT_OVERRIDE;
 
+    /** Returns forget-control width-hint. */
+    virtual int widthHintForgetControl() const { return 0; }
+
     /** Holds the notification-object this item created for. */
     UINotificationObject *m_pObject;
 
@@ -118,8 +121,6 @@ protected:
     QIToolButton    *m_pButtonClose;
     /** Holds the details label instance. */
     QIRichTextLabel *m_pLabelDetails;
-    /** Holds the forget button instance. */
-    QPushButton     *m_pButtonForget;
 
     /** Holds whether item is hovered. */
     bool  m_fHovered;
@@ -144,10 +145,26 @@ public:
     UINotificationMessageItem(QWidget *pParent,
                               UINotificationObject *pObject);
 
+protected slots:
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
+
+protected:
+
+    /** Prepares widgets. */
+    virtual void prepareWidgets() RT_OVERRIDE RT_FINAL;
+
+    /** Returns forget-control width-hint. */
+    virtual int widthHintForgetControl() const RT_OVERRIDE RT_FINAL;
+
 private:
 
     /** Holds the notification-message this item created for. */
     UINotificationMessage *message() const;
+
+    /** Holds the forget button instance. */
+    QPushButton *m_pButtonForget;
 };
 
 /** UINotificationObjectItem extension for notification-question. */
