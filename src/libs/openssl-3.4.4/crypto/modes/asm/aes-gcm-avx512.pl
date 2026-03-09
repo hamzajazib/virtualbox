@@ -72,6 +72,8 @@ if (!$avx512vaes && `$ENV{CC} -v 2>&1`
     }
 }
 
+$avx512vaes = 0 if ($flavour =~ /nasm/ || $ENV{ASM} =~ /nasm/); # VBox: yasm doesn't support AVX512
+
 open OUT, "| \"$^X\" \"$xlate\" $flavour \"$output\""
   or die "can't call $xlate: $!";
 *STDOUT = *OUT;
@@ -85,6 +87,8 @@ $code .= <<___;
 .type   ossl_vaes_vpclmulqdq_capable,\@abi-omnipotent
 .align 32
 ossl_vaes_vpclmulqdq_capable:
+.cfi_startproc
+.cfi_endprolog
     mov OPENSSL_ia32cap_P+8(%rip), %rcx
     # avx512vpclmulqdq + avx512vaes + avx512vl + avx512bw + avx512dq + avx512f
     mov \$`1<<42|1<<41|1<<31|1<<30|1<<17|1<<16`,%rdx
@@ -93,6 +97,7 @@ ossl_vaes_vpclmulqdq_capable:
     cmp %rdx,%rcx
     cmove %rcx,%rax
     ret
+.cfi_endproc
 .size   ossl_vaes_vpclmulqdq_capable, .-ossl_vaes_vpclmulqdq_capable
 ___
 
@@ -384,9 +389,11 @@ ___
     # ; xmm6:xmm15 need to be preserved on Windows
     foreach my $reg_idx (6 .. 15) {
       my $xmm_reg_offset = ($reg_idx - 6) * 16;
+      my $xmm_cfa_offset = 8 + 8*8 + $XMM_STORAGE+8;
       $code .= <<___;
         vmovdqu           %xmm${reg_idx},$xmm_reg_offset(%rsp)
 .L${func_name}_seh_save_xmm${reg_idx}:
+.cfi_offset %xmm${reg_idx},$xmm_cfa_offset
 ___
     }
   }
@@ -394,6 +401,7 @@ ___
   $code .= <<___;
 # Prolog ends here. Next stack allocation is treated as "dynamic".
 .L${func_name}_seh_prolog_end:
+.cfi_endprolog
 ___
 
   if ($DYNAMIC_STACK_ALLOC_SIZE) {
@@ -4317,6 +4325,7 @@ $code .= ".text\n";
 ossl_aes_gcm_init_avx512:
 .cfi_startproc
         endbranch
+.cfi_endprolog
 ___
   if ($CHECK_FUNCTION_ARGUMENTS) {
     $code .= <<___;
@@ -4660,6 +4669,7 @@ $code .= <<___;
 ossl_aes_gcm_finalize_avx512:
 .cfi_startproc
         endbranch
+.cfi_endprolog
 ___
 if ($CHECK_FUNCTION_ARGUMENTS) {
   $code .= <<___;
@@ -4692,6 +4702,7 @@ $code .= <<___;
 ossl_gcm_gmult_avx512:
 .cfi_startproc
         endbranch
+.cfi_endprolog
 ___
 if ($CHECK_FUNCTION_ARGUMENTS) {
   $code .= <<___;
@@ -4947,8 +4958,11 @@ $code .= <<___;
 .globl  ossl_vaes_vpclmulqdq_capable
 .type   ossl_vaes_vpclmulqdq_capable,\@abi-omnipotent
 ossl_vaes_vpclmulqdq_capable:
+.cfi_startproc
+.cfi_endprolog
     xor     %eax,%eax
     ret
+.cfi_endproc
 .size   ossl_vaes_vpclmulqdq_capable, .-ossl_vaes_vpclmulqdq_capable
 
 .globl ossl_aes_gcm_init_avx512
@@ -4967,8 +4981,11 @@ ossl_aes_gcm_encrypt_avx512:
 ossl_aes_gcm_decrypt_avx512:
 ossl_aes_gcm_finalize_avx512:
 ossl_gcm_gmult_avx512:
+.cfi_startproc
+.cfi_endprolog
     .byte   0x0f,0x0b    # ud2
     ret
+.cfi_endproc
 .size   ossl_aes_gcm_init_avx512, .-ossl_aes_gcm_init_avx512
 ___
 }
