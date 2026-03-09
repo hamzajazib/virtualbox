@@ -1,4 +1,4 @@
-/* $Id: DevPciVfio.cpp 113101 2026-02-20 09:03:30Z alexander.eichner@oracle.com $ */
+/* $Id: DevPciVfio.cpp 113292 2026-03-09 12:59:51Z alexander.eichner@oracle.com $ */
 /** @file
  * PCI passthrough device emulation using VFIO/IOMMUFD.
  */
@@ -143,9 +143,13 @@
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/pdmpcidev.h>
 #include <iprt/assert.h>
+#include <iprt/dir.h>
 #include <iprt/mem.h>
+#include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/errcore.h>
+
+#include <iprt/linux/sysfs.h>
 
 #include <sys/ioctl.h>
 #include <sys/mman.h>
@@ -2255,6 +2259,219 @@ static DECLCALLBACK(VBOXSTRICTRC) pciVfioConfigWrite(PPDMDEVINS pDevIns, PPDMPCI
 }
 
 
+static int pciVfioConfigureAccess(PPDMDEVINS pDevIns, PVFIOPCI pThis, PCPDMDEVHLPR3 pHlp, PCFGMNODE pCfg)
+{
+    /* Query configuration, configuration using the IOMMUFD takes precedence over the legacy VFIO group style. */
+    char szPath[RTPATH_MAX];
+    int rc = pHlp->pfnCFGMQueryStringDef(pCfg, "IommuPath", &szPath[0], sizeof(szPath), "/dev/iommu");
+    if (RT_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("Configuration error: Querying \"IommuPath\" failed"));
+
+    pThis->IommuFd.iFdIommu = open(szPath, O_RDWR);
+    if (pThis->IommuFd.iFdIommu == -1)
+    {
+        pThis->fVfioLegacy = true;
+        pThis->VfioGroup.iFdVfioGroup     = -1;
+        pThis->VfioGroup.iFdVfioContainer = -1;
+
+        rc = pHlp->pfnCFGMQueryStringDef(pCfg, "VfioPath", &szPath[0], sizeof(szPath), "/dev/vfio/vfio");
+        if (RT_FAILURE(rc))
+            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                       N_("Configuration error: Querying \"VfioPath\" failed, no access method configured"));
+
+        pThis->VfioGroup.iFdVfioContainer = open(szPath, O_RDWR);
+        if (pThis->VfioGroup.iFdVfioContainer == -1)
+            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                                       N_("Opening VFIO container path \"%s\" failed with %d"), szPath, errno);
+
+        int rcLnx = ioctl(pThis->VfioGroup.iFdVfioContainer, VFIO_GET_API_VERSION);
+        if (rcLnx == -1)
+            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                                       N_("Querying VFIO API version failed"));
+        if (rcLnx != VFIO_API_VERSION)
+            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                                       N_("Returned VFIO API version %d doesn't match expected version %d\n"),
+                                       rcLnx, VFIO_API_VERSION);
+
+        rcLnx = ioctl(pThis->VfioGroup.iFdVfioContainer, VFIO_CHECK_EXTENSION, VFIO_TYPE1_IOMMU);
+        if (rcLnx == 0)
+            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                                       N_("VFIO_TYPE1_IOMMU extension not supported"));
+
+        /* Open the group. */
+        rc = pHlp->pfnCFGMQueryString(pCfg, "VfioGroupPath", &szPath[0], sizeof(szPath));
+        if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        {
+            /* Try to determine the IOMMU group from the first device being used. */
+            PCFGMNODE pCfgFun = pHlp->pfnCFGMGetChildF(pCfg, "Fun%u", 0);
+            if (!pCfgFun)
+                return PDMDevHlpVMSetError(pDevIns, VERR_NOT_FOUND, RT_SRC_POS,
+                                           N_("Configuration error: The device configuration misses function 0"));
+
+            char szHostAddress[32]; /* Format is xxxx:xx:xx.x */
+            rc = pHlp->pfnCFGMQueryString(pCfg, "HostAddress", &szHostAddress[0], sizeof(szHostAddress));
+            if (RT_FAILURE(rc))
+                return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                           N_("Configuration error: Querying \"HostAddress\" failed, no access method configured"));
+
+            char szIommuGroup[8];
+            szIommuGroup[0] = '\0';
+            size_t cchIommuGroup = 0;
+            rc = RTLinuxSysFsGetLinkDest(&szIommuGroup[0], sizeof(szIommuGroup), &cchIommuGroup, "/sys/bus/pci/devices/%s/iommu_group", szHostAddress);
+            if (RT_FAILURE(rc))
+                return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                           N_("Configuration error: Resolving the IOMMU group of the PCI device failed"));
+
+            rc = RTPathJoin(szPath, sizeof(szPath), "/dev/vfio", szIommuGroup);
+            AssertRC(rc);
+        }
+        else  if (RT_FAILURE(rc))
+            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                       N_("Configuration error: Querying \"VfioGroupPath\" failed"));
+
+        pThis->VfioGroup.iFdVfioGroup = open(szPath, O_RDWR);
+        if (pThis->VfioGroup.iFdVfioGroup == -1)
+            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                                       N_("Opening VFIO group path \"%s\" failed with %d"), szPath, errno);
+
+        /* Check whether the group is viable. */
+        struct vfio_group_status GroupStatus;
+        GroupStatus.argsz = sizeof(vfio_group_status);
+        GroupStatus.flags = 0;
+        rcLnx = ioctl(pThis->VfioGroup.iFdVfioGroup, VFIO_GROUP_GET_STATUS, &GroupStatus);
+        if (rcLnx == -1)
+            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                                       N_("Querying VFIO status failed"));
+
+        if (!(GroupStatus.flags & VFIO_GROUP_FLAGS_VIABLE))
+            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                                       N_("The VFIO group is not usable for PCI passthrough (all devices in the group bound to VFIO?)"));
+
+        rcLnx = ioctl(pThis->VfioGroup.iFdVfioGroup, VFIO_GROUP_SET_CONTAINER, &pThis->VfioGroup.iFdVfioContainer);
+        if (rcLnx == -1)
+            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                                       N_("Attaching VFIO group to container failed"));
+
+        rcLnx = ioctl(pThis->VfioGroup.iFdVfioContainer, VFIO_SET_IOMMU, VFIO_TYPE1_IOMMU);
+        if (rcLnx == -1)
+            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                                       N_("Enabling IOMMU for container failed"));
+    }
+    else
+    {
+        /* Allocate a new I/O address space on the IOMMU. */
+        struct iommu_ioas_alloc IoasAlloc;
+        IoasAlloc.size  = sizeof(IoasAlloc);
+        IoasAlloc.flags = 0;
+        int rcLnx = ioctl(pThis->IommuFd.iFdIommu, IOMMU_IOAS_ALLOC, &IoasAlloc);
+        if (rcLnx == -1)
+            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                                       N_("Allocating I/O address space for VFIO device failed with %d"), errno);
+
+        pThis->IommuFd.idIommuHwpt = IoasAlloc.out_ioas_id;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+static int pciVfioFunConfigureAccess(PPDMDEVINS pDevIns, PVFIOPCI pThis, PVFIOPCIFUN pFun, PCPDMDEVHLPR3 pHlp, PCFGMNODE pCfg)
+{
+    bool fHostAddress = false;
+    char szPath[RTPATH_MAX];
+    int rc = pHlp->pfnCFGMQueryString(pCfg, "VfioPath", &szPath[0], sizeof(szPath));
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+    {
+        rc = pHlp->pfnCFGMQueryString(pCfg, "HostAddress", &szPath[0], sizeof(szPath));
+        if (RT_FAILURE(rc))
+            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                       N_("Configuration error: Querying \"HostAddress\" failed, no access method configured"));
+        fHostAddress = true;
+    }
+    else if (RT_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("Configuration error: Querying \"VfioPath\" failed"));
+
+    if (pThis->fVfioLegacy)
+    {
+        pFun->iFdVfio = ioctl(pThis->VfioGroup.iFdVfioGroup, VFIO_GROUP_GET_DEVICE_FD, &szPath[0]);
+        if (pFun->iFdVfio == -1)
+            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                                       N_("Failed to get device for VFIO device \"%s\" -> %d"), szPath, errno);
+    }
+    else
+    {
+        if (fHostAddress)
+        {
+            /* Try determining the VFIO device from sysfs. */
+            char szSysfsPath[128];
+            rc = RTPathJoin(szSysfsPath, sizeof(szSysfsPath), "/sys/bus/pci/devices", szPath);
+            AssertRC(rc);
+            rc = RTPathAppend(szSysfsPath, sizeof(szSysfsPath), "vfio-dev");
+            AssertRC(rc);
+
+            RTDIR hDir = NIL_RTDIR;
+            rc = RTDirOpen(&hDir, szSysfsPath);
+            if (RT_SUCCESS(rc))
+            {
+                for (;;)
+                {
+                    RTDIRENTRY Entry; /* The default name size is more than enough for the format xxxx:xx:xx.x */
+                    rc = RTDirRead(hDir, &Entry, NULL /*pcbDirEntry*/);
+                    if (RT_FAILURE(rc))
+                        break;
+
+                    if (RTDirEntryIsStdDotLink(&Entry))
+                        continue;
+
+                    if (!strncmp(Entry.szName, RT_STR_TUPLE("vfio")))
+                    {
+                        rc = RTPathJoin(szPath, sizeof(szPath), "/dev/vfio/devices", Entry.szName);
+                        AssertRC(rc);
+                        break;
+                    }
+                }
+
+                int rc2 = RTDirClose(hDir);
+                AssertRC(rc2); RT_NOREF(rc2);
+
+                if (RT_FAILURE(rc))
+                    return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                               N_("Configuration error: Resolving the VFIO device failed"));
+            }
+        }
+
+        pFun->iFdVfio = open(szPath, O_RDWR);
+        if (pFun->iFdVfio == -1)
+            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                                       N_("Opening VFIO device \"%s\" failed with %d"), szPath, errno);
+
+        /* Bind the IOMMU to the device. */
+        struct vfio_device_bind_iommufd VfioBind; RT_ZERO(VfioBind);
+        VfioBind.argsz   = sizeof(VfioBind);
+        VfioBind.flags   = 0;
+        VfioBind.iommufd = pThis->IommuFd.iFdIommu;
+        int rcLnx = ioctl(pFun->iFdVfio, VFIO_DEVICE_BIND_IOMMUFD, &VfioBind);
+        if (rcLnx == -1)
+            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                                       N_("Binding IOMMU device to opened VFIO device failed with %d"), errno);
+
+        /* And bind it to the device. */
+        struct vfio_device_attach_iommufd_pt VfioAttachIommu;
+        VfioAttachIommu.argsz = sizeof(VfioAttachIommu);
+        VfioAttachIommu.flags = 0;
+        VfioAttachIommu.pt_id = pThis->IommuFd.idIommuHwpt;
+        rcLnx = ioctl(pFun->iFdVfio, VFIO_DEVICE_ATTACH_IOMMUFD_PT, &VfioAttachIommu);
+        if (rcLnx == -1)
+            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
+                                       N_("Attaching IO address space to opened VFIO device failed with %d"), errno);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
 /**
  * @interface_method_impl{PDMDEVREG,pfnReset}
  */
@@ -2376,95 +2593,9 @@ static DECLCALLBACK(int) pciVfioConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                                     ))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
-    /* Query configuration, configuration using the IOMMUFD takes precedence over the legacy VFIO group style. */
-    char szPath[RTPATH_MAX];
-    rc = pHlp->pfnCFGMQueryString(pCfg, "IommuPath", &szPath[0], sizeof(szPath));
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-    {
-        pThis->fVfioLegacy = true;
-        pThis->VfioGroup.iFdVfioGroup     = -1;
-        pThis->VfioGroup.iFdVfioContainer = -1;
-
-        rc = pHlp->pfnCFGMQueryString(pCfg, "VfioPath", &szPath[0], sizeof(szPath));
-        if (RT_FAILURE(rc))
-            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                       N_("Configuration error: Querying \"VfioPath\" failed, no access method configured"));
-
-        pThis->VfioGroup.iFdVfioContainer = open(szPath, O_RDWR);
-        if (pThis->VfioGroup.iFdVfioContainer == -1)
-            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
-                                       N_("Opening VFIO container path \"%s\" failed with %d"), szPath, errno);
-
-        int rcLnx = ioctl(pThis->VfioGroup.iFdVfioContainer, VFIO_GET_API_VERSION);
-        if (rcLnx == -1)
-            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
-                                       N_("Querying VFIO API version failed"));
-        if (rcLnx != VFIO_API_VERSION)
-            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
-                                       N_("Returned VFIO API version %d doesn't match expected version %d\n"),
-                                       rcLnx, VFIO_API_VERSION);
-
-        rcLnx = ioctl(pThis->VfioGroup.iFdVfioContainer, VFIO_CHECK_EXTENSION, VFIO_TYPE1_IOMMU);
-        if (rcLnx == 0)
-            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
-                                       N_("VFIO_TYPE1_IOMMU extension not supported"));
-
-        /* Open the group. */
-        rc = pHlp->pfnCFGMQueryString(pCfg, "VfioGroupPath", &szPath[0], sizeof(szPath));
-        if (RT_FAILURE(rc))
-            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                       N_("Configuration error: Querying \"VfioGroupPath\" failed"));
-
-        pThis->VfioGroup.iFdVfioGroup = open(szPath, O_RDWR);
-        if (pThis->VfioGroup.iFdVfioGroup == -1)
-            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
-                                       N_("Opening VFIO group path \"%s\" failed with %d"), szPath, errno);
-
-        /* Check whether the group is viable. */
-        struct vfio_group_status GroupStatus;
-        GroupStatus.argsz = sizeof(vfio_group_status);
-        GroupStatus.flags = 0;
-        rcLnx = ioctl(pThis->VfioGroup.iFdVfioGroup, VFIO_GROUP_GET_STATUS, &GroupStatus);
-        if (rcLnx == -1)
-            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
-                                       N_("Querying VFIO status failed"));
-
-        if (!(GroupStatus.flags & VFIO_GROUP_FLAGS_VIABLE))
-            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
-                                       N_("The VFIO group is not usable for PCI passthrough (all devices in the group bound to VFIO?)"));
-
-        rcLnx = ioctl(pThis->VfioGroup.iFdVfioGroup, VFIO_GROUP_SET_CONTAINER, &pThis->VfioGroup.iFdVfioContainer);
-        if (rcLnx == -1)
-            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
-                                       N_("Attaching VFIO group to container failed"));
-
-        rcLnx = ioctl(pThis->VfioGroup.iFdVfioContainer, VFIO_SET_IOMMU, VFIO_TYPE1_IOMMU);
-        if (rcLnx == -1)
-            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
-                                       N_("Enabling IOMMU for container failed"));
-    }
-    else
-    {
-        if (RT_FAILURE(rc))
-            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                       N_("Configuration error: Querying \"IommuPath\" failed"));
-
-        pThis->IommuFd.iFdIommu = open(szPath, O_RDWR);
-        if (pThis->IommuFd.iFdIommu == -1)
-            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
-                                       N_("Opening IOMMU path \"%s\" failed with %d"), szPath, errno);
-
-        /* Allocate a new I/O address space on the IOMMU. */
-        struct iommu_ioas_alloc IoasAlloc;
-        IoasAlloc.size  = sizeof(IoasAlloc);
-        IoasAlloc.flags = 0;
-        int rcLnx = ioctl(pThis->IommuFd.iFdIommu, IOMMU_IOAS_ALLOC, &IoasAlloc);
-        if (rcLnx == -1)
-            return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
-                                       N_("Allocating I/O address space for VFIO device failed with %d"), errno);
-
-        pThis->IommuFd.idIommuHwpt = IoasAlloc.out_ioas_id;
-    }
+    rc = pciVfioConfigureAccess(pDevIns, pThis, pHlp, pCfg);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /* Initialize available functions. */
     uint32_t iPciDevNo = PDMPCIDEVREG_DEV_NO_FIRST_UNUSED;
@@ -2493,6 +2624,7 @@ static DECLCALLBACK(int) pciVfioConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                                          "VfioPath\0"
                                          "ExposeVga\0"
                                          "InterceptMmio\0"
+                                         "HostAddress\0"
                                         ))
             return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
@@ -2507,45 +2639,9 @@ static DECLCALLBACK(int) pciVfioConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("Configuration error: Querying \"ExposeVga\" failed"));
 
-        rc = pHlp->pfnCFGMQueryString(pCfgFun, "VfioPath", &szPath[0], sizeof(szPath));
+        rc = pciVfioFunConfigureAccess(pDevIns, pThis, pFun, pHlp, pCfgFun);
         if (RT_FAILURE(rc))
-            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                       N_("Configuration error: Querying \"VfioPath\" failed"));
-
-        if (pThis->fVfioLegacy)
-        {
-            pFun->iFdVfio = ioctl(pThis->VfioGroup.iFdVfioGroup, VFIO_GROUP_GET_DEVICE_FD, &szPath[0]);
-            if (pFun->iFdVfio == -1)
-                return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
-                                           N_("Failed to get device for VFIO device \"%s\" -> %d"), szPath, errno);
-        }
-        else
-        {
-            pFun->iFdVfio = open(szPath, O_RDWR);
-            if (pFun->iFdVfio == -1)
-                return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
-                                           N_("Opening VFIO device \"%s\" failed with %d"), szPath, errno);
-
-            /* Bind the IOMMU to the device. */
-            struct vfio_device_bind_iommufd VfioBind; RT_ZERO(VfioBind);
-            VfioBind.argsz   = sizeof(VfioBind);
-            VfioBind.flags   = 0;
-            VfioBind.iommufd = pThis->IommuFd.iFdIommu;
-            int rcLnx = ioctl(pFun->iFdVfio, VFIO_DEVICE_BIND_IOMMUFD, &VfioBind);
-            if (rcLnx == -1)
-                return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
-                                           N_("Binding IOMMU device to opened VFIO device failed with %d"), errno);
-
-            /* And bind it to the device. */
-            struct vfio_device_attach_iommufd_pt VfioAttachIommu;
-            VfioAttachIommu.argsz = sizeof(VfioAttachIommu);
-            VfioAttachIommu.flags = 0;
-            VfioAttachIommu.pt_id = pThis->IommuFd.idIommuHwpt;
-            rcLnx = ioctl(pFun->iFdVfio, VFIO_DEVICE_ATTACH_IOMMUFD_PT, &VfioAttachIommu);
-            if (rcLnx == -1)
-                return PDMDevHlpVMSetError(pDevIns, RTErrConvertFromErrno(errno), RT_SRC_POS,
-                                           N_("Attaching IO address space to opened VFIO device failed with %d"), errno);
-        }
+            return rc;
 
         struct vfio_device_info DevInfo;
         DevInfo.argsz = sizeof(DevInfo);
