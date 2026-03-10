@@ -1,4 +1,4 @@
-/* $Id: UINotificationObjectItem.h 113301 2026-03-10 11:21:14Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationObjectItem.h 113303 2026-03-10 11:32:48Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINotificationObjectItem class declaration.
  */
@@ -39,6 +39,7 @@
 
 /* Forward declarations: */
 class QAbstractButton;
+class QCheckBox;
 class QHBoxLayout;
 class QLabel;
 class QProgressBar;
@@ -181,12 +182,20 @@ public:
     UINotificationQuestionItem(QWidget *pParent,
                                UINotificationObject *pObject);
 
+protected slots:
+
+    /** Handles translation event. */
+    virtual void sltRetranslateUI() RT_OVERRIDE RT_FINAL;
+
 protected:
 
     /** Prepares widgets. */
     virtual void prepareWidgets() RT_OVERRIDE RT_FINAL;
     /** Prepares connections. */
     virtual void prepareConnections() RT_OVERRIDE RT_FINAL;
+
+    /** Returns forget-control width-hint. */
+    virtual int widthHintForgetControl() const RT_OVERRIDE RT_FINAL;
 
     /** Handles show @a pEvent. */
     virtual void showEvent(QShowEvent *pEvent) RT_OVERRIDE RT_FINAL;
@@ -195,6 +204,9 @@ protected:
 
 private slots:
 
+    /** Handles check state changed to @a enmCheckState. */
+    void sltHandleCheckStateChanged(Qt::CheckState enmCheckState);
+
     /** Handles @a pButton click. */
     void sltHandleButtonClick(QAbstractButton *pButton);
 
@@ -202,6 +214,9 @@ private:
 
     /** Holds the notification-question this item created for. */
     UINotificationQuestion *question() const;
+
+    /** Holds the forget button instance. */
+    QCheckBox *m_pCheckBoxForget;
 
     /** Holds the button-box instance. */
     QIDialogButtonBox *m_pButtonBox;

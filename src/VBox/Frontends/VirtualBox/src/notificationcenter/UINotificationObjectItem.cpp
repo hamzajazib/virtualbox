@@ -1,4 +1,4 @@
-/* $Id: UINotificationObjectItem.cpp 113301 2026-03-10 11:21:14Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationObjectItem.cpp 113303 2026-03-10 11:32:48Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINotificationObjectItem class implementation.
  */
@@ -27,6 +27,7 @@
 
 /* Qt includes: */
 #include <QApplication>
+#include <QCheckBox>
 #include <QFont>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -384,9 +385,20 @@ UINotificationMessage *UINotificationMessageItem::message() const
 UINotificationQuestionItem::UINotificationQuestionItem(QWidget *pParent,
                                                        UINotificationObject *pObject)
     : UINotificationObjectItem(pParent, pObject)
+    , m_pCheckBoxForget(0)
     , m_pButtonBox(0)
     , m_fPolished(false)
 {
+}
+
+void UINotificationQuestionItem::sltRetranslateUI()
+{
+    /* Call to base-class: */
+    UINotificationObjectItem::sltRetranslateUI();
+
+    /* Translate forget-button: */
+    if (m_pCheckBoxForget)
+        m_pCheckBoxForget->setText(QApplication::translate("UIMessageCenter", "Don't show again"));
 }
 
 void UINotificationQuestionItem::prepareWidgets()
@@ -397,9 +409,25 @@ void UINotificationQuestionItem::prepareWidgets()
     /* Main layout was prepared in base-class: */
     if (m_pLayoutMain)
     {
-        /* Acquire button names and check their amount: */
+        /* Acquire question object: */
         UINotificationQuestion *pQuestion = question();
         AssertPtrReturnVoid(pQuestion);
+
+        /* Prepare forget button: */
+        if (!pQuestion->internalName().isEmpty())
+        {
+            m_pCheckBoxForget = new QCheckBox(this);
+            if (m_pCheckBoxForget)
+            {
+                QFont myFont = m_pCheckBoxForget->font();
+                myFont.setPointSize(myFont.pointSize() - 2);
+                m_pCheckBoxForget->setFont(myFont);
+
+                m_pLayoutMain->addWidget(m_pCheckBoxForget);
+            }
+        }
+
+        /* Acquire button names and check their amount: */
         const QStringList buttonNames = pQuestion->buttonNames();
         const int iButtonAmount = qMax(2, buttonNames.size());
         AssertReturnVoid(iButtonAmount <= 3);
@@ -443,8 +471,17 @@ void UINotificationQuestionItem::prepareConnections()
     UINotificationObjectItem::prepareConnections();
 
     /* Connect buttons: */
+    if (m_pCheckBoxForget)
+        connect(m_pCheckBoxForget, &QCheckBox::checkStateChanged,
+                this, &UINotificationQuestionItem::sltHandleCheckStateChanged);
     AssertPtrReturnVoid(m_pButtonBox);
-    connect(m_pButtonBox, &QIDialogButtonBox::clicked, this, &UINotificationQuestionItem::sltHandleButtonClick);
+    connect(m_pButtonBox, &QIDialogButtonBox::clicked,
+            this, &UINotificationQuestionItem::sltHandleButtonClick);
+}
+
+int UINotificationQuestionItem::widthHintForgetControl() const
+{
+    return m_pCheckBoxForget ? m_pCheckBoxForget->minimumSizeHint().width() : 0;
 }
 
 void UINotificationQuestionItem::showEvent(QShowEvent *pEvent)
@@ -511,6 +548,16 @@ void UINotificationQuestionItem::keyPressEvent(QKeyEvent *pEvent)
             break;
         }
     }
+}
+
+void UINotificationQuestionItem::sltHandleCheckStateChanged(Qt::CheckState enmCheckState)
+{
+    /* Sanity check: */
+    UINotificationQuestion *pQuestion = question();
+    AssertPtrReturnVoid(pQuestion);
+
+    /* Save result: */
+    pQuestion->setDoNotShowAgain(enmCheckState == Qt::Checked);
 }
 
 void UINotificationQuestionItem::sltHandleButtonClick(QAbstractButton *pButton)
