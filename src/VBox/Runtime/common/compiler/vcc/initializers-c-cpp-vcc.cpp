@@ -1,4 +1,4 @@
-/* $Id: initializers-c-cpp-vcc.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: initializers-c-cpp-vcc.cpp 113316 2026-03-10 22:41:14Z knut.osmundsen@oracle.com $ */
 /** @file
  * IPRT - Visual C++ Compiler - C & C++ Initializers and Terminators.
  */
@@ -75,6 +75,7 @@ __declspec(allocate(".CRT$XTZ"))    PFNVCINITTERM       g_apfnRTVccTerminators_C
 
 /** Start of the C++ initializer array. */
 __declspec(allocate(".CRT$XCA"))    PFNVCINITTERM       g_apfnRTVccInitializers_Cpp_Start   = NULL;
+/* The compiler output entries in the ".CRT$XCU" section. */
 /** End of the C++ initializer array. */
 __declspec(allocate(".CRT$XCZ"))    PFNVCINITTERM       g_apfnRTVccInitializers_Cpp_End     = NULL;
 
