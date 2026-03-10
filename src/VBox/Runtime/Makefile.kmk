@@ -1,4 +1,4 @@
-# $Id: Makefile.kmk 113304 2026-03-10 15:19:22Z knut.osmundsen@oracle.com $
+# $Id: Makefile.kmk 113310 2026-03-10 21:09:59Z knut.osmundsen@oracle.com $
 ## @file
 # Sub-Makefile for the IPRT.
 #
@@ -3088,10 +3088,10 @@ VBoxRT_LDFLAGS.darwin          = \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxRT.dylib
 VBoxRT_LDFLAGS.win             = /MANIFEST \
 	/delayload:user32.dll \
-	/delayload:shell32.dll \
 	/delayload:ole32.dll \
 	/delayload:oleaut32.dll \
-	/delayload:advapi32.dll
+	/delayload:advapi32.dll \
+	/delayload:mpr.dll
 # We could alias symbols on linux this way:
 #ifn1of ($(KBUILD_TARGET), darwin os2 solaris win)
 # if "$(substr $(VBOX_GCC_std),-2)" >= "17"
