@@ -1,4 +1,4 @@
-/* $Id: UINotificationObject.h 113285 2026-03-09 09:09:02Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationObject.h 113302 2026-03-10 11:24:07Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINotificationObject class declaration.
  */
@@ -78,12 +78,22 @@ public:
     /** Handles notification-object being added. */
     virtual void handle() = 0;
 
+    /** Defines whether we should show message again. */
+    void setDoNotShowAgain(bool fDismiss) { m_fDismiss = fDismiss; }
+    /** Returns whether we should show message again. */
+    bool isDoNotShowAgain() const { return m_fDismiss; }
+
 public slots:
 
     /** Notifies model about dismissing. */
     virtual void dismiss();
     /** Notifies model about closing. */
     virtual void close();
+
+private:
+
+    /** Holds whether we should show message again. */
+    bool  m_fDismiss;
 };
 
 /** UINotificationObject extension for notification-simple. */

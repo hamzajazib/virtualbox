@@ -1,4 +1,4 @@
-/* $Id: UINotificationObject.cpp 113228 2026-03-03 14:46:16Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationObject.cpp 113302 2026-03-10 11:24:07Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINotificationObject class implementation.
  */
@@ -40,17 +40,19 @@
 *********************************************************************************************************************************/
 
 UINotificationObject::UINotificationObject()
+    : m_fDismiss(false)
 {
 }
 
 void UINotificationObject::dismiss()
 {
-    emit sigAboutToClose(true);
+    setDoNotShowAgain(true);
+    emit sigAboutToClose(isDoNotShowAgain());
 }
 
 void UINotificationObject::close()
 {
-    emit sigAboutToClose(false);
+    emit sigAboutToClose(isDoNotShowAgain());
 }
 
 
