@@ -1,4 +1,4 @@
-# $Id: Makefile.kmk 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $
+# $Id: Makefile.kmk 113305 2026-03-10 15:20:18Z knut.osmundsen@oracle.com $
 ## @file
 # Makefile for the Windows guest miniport driver.
 #
@@ -49,7 +49,6 @@ ifdef VBOX_WITH_XPDM
  VBoxVideo_LDFLAGS.amd64 = /Entry:DriverEntry
  VBoxVideo_SOURCES       = \
  	xpdm/VBoxMPDriver.cpp \
- 	xpdm/VBoxMP.def \
  	xpdm/VBoxMP.rc \
  	xpdm/VBoxMPVideoPortAPI.cpp \
  	xpdm/VBoxMPInternal.cpp \
