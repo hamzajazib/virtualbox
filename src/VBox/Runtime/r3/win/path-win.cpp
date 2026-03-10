@@ -1,4 +1,4 @@
-/* $Id: path-win.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: path-win.cpp 113309 2026-03-10 20:16:31Z knut.osmundsen@oracle.com $ */
 /** @file
  * IPRT - Path manipulation.
  */
@@ -43,6 +43,7 @@
 #include <iprt/win/shlobj.h>
 
 #include <iprt/path.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
 #include <iprt/err.h>
@@ -56,9 +57,42 @@
 #include "internal/path.h"
 #include "internal/fs.h"
 
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /* Needed for lazy loading SHGetFolderPathW in RTPathUserDocuments(). */
 typedef HRESULT WINAPI FNSHGETFOLDERPATHW(HWND, int, HANDLE, DWORD, LPWSTR);
 typedef FNSHGETFOLDERPATHW *PFNSHGETFOLDERPATHW;
+
+
+
+/** Resolves SHGetFolderPathW from shell32.   */
+static PFNSHGETFOLDERPATHW rtPathWinResolve_SHGetFolderPathW(void)
+{
+    static PFNSHGETFOLDERPATHW volatile g_pfnSHGetFolderPathW = NULL;
+    static volatile bool                g_fAlreadyResolved    = false;
+
+    PFNSHGETFOLDERPATHW pfnSHGetFolderPathW = g_pfnSHGetFolderPathW;
+    if (!pfnSHGetFolderPathW)
+    {
+        if (!g_fAlreadyResolved)
+        {
+            RTLDRMOD hShell32;
+            int rc = RTLdrLoadSystem("Shell32.dll", true /*fNoUnload*/, &hShell32);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTLdrGetSymbol(hShell32, "SHGetFolderPathW", (void**)&pfnSHGetFolderPathW);
+                RTLdrClose(hShell32);
+
+                if (RT_SUCCESS(rc))
+                    g_pfnSHGetFolderPathW = pfnSHGetFolderPathW;
+                ASMAtomicWriteBool(&g_fAlreadyResolved, true);
+            }
+        }
+    }
+    return pfnSHGetFolderPathW;
+}
 
 
 RTDECL(int) RTPathReal(const char *pszPath, char *pszRealPath, size_t cchRealPath)
@@ -152,45 +186,37 @@ RTDECL(int) RTPathUserHome(char *pszPath, size_t cchPath)
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
     AssertReturn(cchPath, VERR_INVALID_PARAMETER);
 
-    RTUTF16 wszPath[RTPATH_MAX];
-    bool    fValidFolderPath = false;
-
     /*
      * Try with Windows XP+ functionality first.
      */
-    RTLDRMOD hShell32;
-    int rc = RTLdrLoadSystem("Shell32.dll", true /*fNoUnload*/, &hShell32);
-    if (RT_SUCCESS(rc))
+    RTUTF16                   wszPath[RTPATH_MAX];
+    bool                      fValidFolderPath    = false;
+    PFNSHGETFOLDERPATHW const pfnSHGetFolderPathW = rtPathWinResolve_SHGetFolderPathW();
+    if (pfnSHGetFolderPathW)
     {
-        PFNSHGETFOLDERPATHW pfnSHGetFolderPathW;
-        rc = RTLdrGetSymbol(hShell32, "SHGetFolderPathW", (void**)&pfnSHGetFolderPathW);
-        if (RT_SUCCESS(rc))
-        {
-            HRESULT hrc = pfnSHGetFolderPathW(0, CSIDL_PROFILE, NULL, SHGFP_TYPE_CURRENT, wszPath);
-            fValidFolderPath = (hrc == S_OK);
-        }
-        RTLdrClose(hShell32);
+        HRESULT const hrc = pfnSHGetFolderPathW(0, CSIDL_PROFILE, NULL, SHGFP_TYPE_CURRENT, wszPath);
+        fValidFolderPath = (hrc == S_OK);
     }
 
-    DWORD   dwAttr;
-    if (    !fValidFolderPath
-        ||  (dwAttr = GetFileAttributesW(&wszPath[0])) == INVALID_FILE_ATTRIBUTES
-        ||  !(dwAttr & FILE_ATTRIBUTE_DIRECTORY))
+    DWORD  dwAttr;
+    if (   !fValidFolderPath
+        || (dwAttr = GetFileAttributesW(&wszPath[0])) == INVALID_FILE_ATTRIBUTES
+        || !(dwAttr & FILE_ATTRIBUTE_DIRECTORY))
     {
         /*
          * Fall back to Windows specific environment variables. HOME is not used.
          */
-        if (    !GetEnvironmentVariableW(L"USERPROFILE", &wszPath[0], RTPATH_MAX)
-            ||  (dwAttr = GetFileAttributesW(&wszPath[0])) == INVALID_FILE_ATTRIBUTES
-            ||  !(dwAttr & FILE_ATTRIBUTE_DIRECTORY))
+        if (   !GetEnvironmentVariableW(L"USERPROFILE", &wszPath[0], RTPATH_MAX)
+            || (dwAttr = GetFileAttributesW(&wszPath[0])) == INVALID_FILE_ATTRIBUTES
+            || !(dwAttr & FILE_ATTRIBUTE_DIRECTORY))
         {
             /* %HOMEDRIVE%%HOMEPATH% */
             if (!GetEnvironmentVariableW(L"HOMEDRIVE", &wszPath[0], RTPATH_MAX))
                 return VERR_PATH_NOT_FOUND;
             size_t const cwc = RTUtf16Len(&wszPath[0]);
-            if (    !GetEnvironmentVariableW(L"HOMEPATH", &wszPath[cwc], RTPATH_MAX - (DWORD)cwc)
-                ||  (dwAttr = GetFileAttributesW(&wszPath[0])) == INVALID_FILE_ATTRIBUTES
-                ||  !(dwAttr & FILE_ATTRIBUTE_DIRECTORY))
+            if (   !GetEnvironmentVariableW(L"HOMEPATH", &wszPath[cwc], RTPATH_MAX - (DWORD)cwc)
+                || (dwAttr = GetFileAttributesW(&wszPath[0])) == INVALID_FILE_ATTRIBUTES
+                || !(dwAttr & FILE_ATTRIBUTE_DIRECTORY))
                 return VERR_PATH_NOT_FOUND;
         }
     }
@@ -210,27 +236,22 @@ RTDECL(int) RTPathUserDocuments(char *pszPath, size_t cchPath)
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
     AssertReturn(cchPath, VERR_INVALID_PARAMETER);
 
-    RTLDRMOD hShell32;
-    int rc = RTLdrLoadSystem("Shell32.dll", true /*fNoUnload*/, &hShell32);
-    if (RT_SUCCESS(rc))
+    /*
+     * The directory/API is only available since Windows XP...
+     */
+    PFNSHGETFOLDERPATHW const pfnSHGetFolderPathW = rtPathWinResolve_SHGetFolderPathW();
+    if (pfnSHGetFolderPathW)
     {
-        PFNSHGETFOLDERPATHW pfnSHGetFolderPathW;
-        rc = RTLdrGetSymbol(hShell32, "SHGetFolderPathW", (void**)&pfnSHGetFolderPathW);
-        if (RT_SUCCESS(rc))
+        RTUTF16 wszPath[RTPATH_MAX];
+        HRESULT const hrc = pfnSHGetFolderPathW(0, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, wszPath);
+        if (   hrc == S_OK     /* Found */
+            || hrc == S_FALSE) /* Found, but doesn't exist */
         {
-            RTUTF16 wszPath[RTPATH_MAX];
-            HRESULT hrc = pfnSHGetFolderPathW(0, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, wszPath);
-            if (   hrc == S_OK     /* Found */
-                || hrc == S_FALSE) /* Found, but doesn't exist */
-            {
-                /*
-                 * Convert and return.
-                 */
-                RTLdrClose(hShell32);
-                return RTUtf16ToUtf8Ex(&wszPath[0], RTSTR_MAX, &pszPath, cchPath, NULL);
-            }
+            /*
+             * Convert and return.
+             */
+            return RTUtf16ToUtf8Ex(&wszPath[0], RTSTR_MAX, &pszPath, cchPath, NULL);
         }
-        RTLdrClose(hShell32);
     }
     return VERR_PATH_NOT_FOUND;
 }
