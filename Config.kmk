@@ -1,4 +1,4 @@
-# $Id: Config.kmk 113306 2026-03-10 15:20:53Z knut.osmundsen@oracle.com $
+# $Id: Config.kmk 113319 2026-03-10 22:54:23Z knut.osmundsen@oracle.com $
 ## @file
 # The global build configuration file for VBox.
 #
@@ -3905,7 +3905,7 @@ ifdef VBOX_WITH_WARNINGS_AS_ERRORS
   VBOX_GCC_WERR ?= -Werror
  endif
  VBOX_VCC_WERR ?= -WX
- VBOX_VCC_LD_WERR ?= ## @todo later also: -WX
+ VBOX_VCC_LD_WERR ?= -WX
 endif
 
 #
@@ -5840,7 +5840,7 @@ ifeq ($(KBUILD_TARGET),win)
   TEMPLATE_VBoxR0Drv_CXXFLAGS         += /analyze
  endif
  TEMPLATE_VBoxR0Drv_CFLAGS             = $(TEMPLATE_VBoxR0Drv_CXXFLAGS)
- TEMPLATE_VBoxR0Drv_LDFLAGS            = -Ignore:4197 \
+ TEMPLATE_VBoxR0Drv_LDFLAGS            = -WX -Ignore:4197 \
  	-Driver -Subsystem:NATIVE -Incremental:NO -Align:4096 -MapInfo:Exports -NoD -Release -Debug -Opt:Ref -Opt:Icf \
  	$(VBOX_VCC_LD_GUARD_CF) \
  	-Version:$(VBOX_VERSION_MAJOR)0$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
@@ -5854,8 +5854,8 @@ ifeq ($(KBUILD_TARGET),win)
  if "$(VBOX_VCC_TOOL_STEM)" >= "VCC142" # Don't waste space on x86/amd64-on-arm emulation optimizations.
   TEMPLATE_VBoxR0Drv_LDFLAGS          += -EmitVolatileMetadata:NO
  endif
- TEMPLATE_VBoxR0Drv_LDFLAGS.win.amd64  = -WX $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA) $(VBOX_VCC_LD_GUARD_EHCONT) $(VBOX_VCC_LD_CET_COMPAT)
- TEMPLATE_VBoxR0Drv_LDFLAGS.win.arm64  = -WX $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA) $(VBOX_VCC_LD_GUARD_EHCONT)
+ TEMPLATE_VBoxR0Drv_LDFLAGS.win.amd64  = $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA) $(VBOX_VCC_LD_GUARD_EHCONT) $(VBOX_VCC_LD_CET_COMPAT)
+ TEMPLATE_VBoxR0Drv_LDFLAGS.win.arm64  = $(VBOX_VCC_LD_HIGH_ENTRYOPY_VA) $(VBOX_VCC_LD_GUARD_EHCONT)
  TEMPLATE_VBoxR0Drv_LDFLAGS.win.x86    = $(VBOX_VCC_LD_CET_COMPAT)
  TEMPLATE_VBoxR0Drv_ORDERDEPS          = $(VBOX_SIGN_DRIVER_ORDERDEPS)
  TEMPLATE_VBoxR0Drv_POST_CMDS          = $(VBOX_SIGN_DRIVER_CMDS)
@@ -8464,9 +8464,10 @@ endif # VBOX_WITH_QTGUI
 ifdef VBOX_WITH_NLS
  #
  # Template for translation compilation.
- # Made as simple program without installing itself.
- # To archive it, the dummy code without runtime is used,
- # i.e. only compiler and system standard libs are linked.
+ #
+ # Made as simple program without installing itself.  To achieve it, the dummy code
+ # without runtime is used, i.e. only compiler and system standard libs are linked.
+ # On Windows we have to make an effort to not drag in half of IPRT.
  #
  TEMPLATE_VBoxNLS = VBox NLS template for installing translation files
  TEMPLATE_VBoxNLS_EXTENDS = VBoxR3Static
@@ -8476,19 +8477,32 @@ ifdef VBOX_WITH_NLS
  TEMPLATE_VBoxNLS_INSTTYPE = none
  TEMPLATE_VBoxNLS_LRCFLAGS += -silent
  TEMPLATE_VBoxNLS_QT_TRANSLATIONS_INST = $(INST_BIN)nls/
- TEMPLATE_VBoxNLS_LDFLAGS.win = $(TEMPLATE_VBoxR3Static_LDFLAGS.win) -Entry:main
  TEMPLATE_VBoxNLS_SOURCES = \
  	$(PATH_ROOT)/src/VBox/Main/nls/dummy.c
- TEMPLATE_VBoxNLS_SDKS.$(KBUILD_TARGET_ARCH) = $(filter-out VBoxOpenSslStatic,$(TEMPLATE_VBoxR3Static_SDKS.$(KBUILD_TARGET_ARCH)))
- ifdef VBOX_WITH_NOCRT_STATIC
-  TEMPLATE_VBoxNLS_LATE_LIBS.$(KBUILD_TARGET_ARCH) = $(filter-out \
-  		$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB), \
-  		$(TEMPLATE_VBoxR3Static_LATE_LIBS.$(KBUILD_TARGET_ARCH)))
+ ifeq ($(KBUILD_TARGET),win)
+  TEMPLATE_VBoxNLS_LDFLAGS.win         = $(TEMPLATE_VBoxR3Static_LDFLAGS.win) -Entry:main -SubSystem:console -Guard:No
+  TEMPLATE_VBoxNLS_LDFLAGS.win.x86     = $(TEMPLATE_VBoxR3Static_LDFLAGS.win.x86) -Guard:No
+  TEMPLATE_VBoxNLS_LDFLAGS.win.amd64   = $(TEMPLATE_VBoxR3Static_LDFLAGS.win.amd64) -Guard:No
+  TEMPLATE_VBoxNLS_LDFLAGS.win.arm64   = $(TEMPLATE_VBoxR3Static_LDFLAGS.win.arm64) -Guard:No
+  TEMPLATE_VBoxNLS_CFLAGS.debug        = $(filter-out -RTCsu,$(TEMPLATE_VBoxR3Static_CFLAGS.debug))
+  TEMPLATE_VBoxNLS_SDKS                            = $(NO_SUCH_VARIABLE)
+  TEMPLATE_VBoxNLS_SDKS.$(KBUILD_TARGET_ARCH)      = $(NO_SUCH_VARIABLE)
+  TEMPLATE_VBoxNLS_LIBS                            = $(NO_SUCH_VARIABLE)
+  TEMPLATE_VBoxNLS_LIBS.$(KBUILD_TARGET_ARCH)      = $(NO_SUCH_VARIABLE)
+  TEMPLATE_VBoxNLS_LATE_LIBS                       = $(NO_SUCH_VARIABLE)
+  TEMPLATE_VBoxNLS_LATE_LIBS.$(KBUILD_TARGET_ARCH) = $(NO_SUCH_VARIABLE)
  else
-  TEMPLATE_VBoxNLS_LATE_LIBS.$(KBUILD_TARGET_ARCH) = $(filter-out \
-  		$(VBOX_LIB_RUNTIME_STATIC) \
-  		$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB), \
-  		$(TEMPLATE_VBoxR3Static_LATE_LIBS.$(KBUILD_TARGET_ARCH)))
+  TEMPLATE_VBoxNLS_SDKS.$(KBUILD_TARGET_ARCH) = $(filter-out VBoxOpenSslStatic,$(TEMPLATE_VBoxR3Static_SDKS.$(KBUILD_TARGET_ARCH)))
+  ifdef VBOX_WITH_NOCRT_STATIC
+   TEMPLATE_VBoxNLS_LATE_LIBS.$(KBUILD_TARGET_ARCH) = $(filter-out \
+   		$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB), \
+   		$(TEMPLATE_VBoxR3Static_LATE_LIBS.$(KBUILD_TARGET_ARCH)))
+  else
+   TEMPLATE_VBoxNLS_LATE_LIBS.$(KBUILD_TARGET_ARCH) = $(filter-out \
+   		$(VBOX_LIB_RUNTIME_STATIC) \
+   		$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB), \
+   		$(TEMPLATE_VBoxR3Static_LATE_LIBS.$(KBUILD_TARGET_ARCH)))
+  endif
  endif
 endif # !VBOX_WITH_NLS
 
@@ -9499,7 +9513,7 @@ SVN                    ?= svn$(HOSTSUFF_EXE)
 GIT                    ?= git$(HOSTSUFF_EXE)
 VBOX_SVN_REV_KMK        = $(PATH_OUT)/revision.kmk
 ifndef VBOX_SVN_REV
- VBOX_SVN_REV_CONFIG_FALLBACK := $(patsubst %:,,  $Rev: 113306 $  )
+ VBOX_SVN_REV_CONFIG_FALLBACK := $(patsubst %:,,  $Rev: 113319 $  )
  VBOX_SVN_REV_FALLBACK := $(if-expr $(VBOX_SVN_REV_CONFIG_FALLBACK) > $(VBOX_SVN_REV_VERSION_FALLBACK),$(VBOX_SVN_REV_CONFIG_FALLBACK),$(VBOX_SVN_REV_VERSION_FALLBACK))
  VBOX_SVN_DEP          := $(firstword $(wildcard $(PATH_ROOT)/.svn/wc.db $(abspath $(PATH_ROOT)/../.svn/wc.db) $(abspath $(PATH_ROOT)/../../.svn/wc.db) $(PATH_ROOT)/.svn/entries))
  VBOX_GIT_DEP          := $(firstword $(wildcard $(PATH_ROOT)/.git/config $(abspath $(PATH_ROOT)/../.git/config) $(abspath $(PATH_ROOT)/../../.git/config)))
@@ -9513,7 +9527,7 @@ ifndef VBOX_SVN_REV
  ifneq ($(VBOX_GIT_DEP),)
   #
   # VBOX_SVN_REV_CONFIG_FALLBACK is not properly populated for a git checkout,
-  # as the $Rev: 113306 $ is not expanded, so we have to set it based on the information in the repo.
+  # as the $Rev: 113319 $ is not expanded, so we have to set it based on the information in the repo.
   #
   VBOX_SVN_REV_FALLBACK := $(shell $(GIT) log -1 $(PATH_ROOT)/Config.kmk | $(SED) -e 's/^[ \t]*//' -e '/svn:sync-xref-src-repo-rev\: r/!d' -e 's/svn:sync-xref-src-repo-rev\: r*//; t a; :a q')
  endif
