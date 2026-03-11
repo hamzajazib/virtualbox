@@ -1,4 +1,4 @@
-/* $Id: VirtualBoxImpl.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: VirtualBoxImpl.cpp 113348 2026-03-11 13:06:35Z knut.osmundsen@oracle.com $ */
 /** @file
  * Implementation of IVirtualBox in VBoxSVC.
  */
@@ -6717,141 +6717,93 @@ HRESULT VirtualBox::i_unloadCryptoIfModule(void)
  */
 void VirtualBox::i_reportDriverVersions()
 {
-    /** @todo r=klaus this code is very confusing, as it uses TCHAR (and
-     * randomly also _TCHAR, which sounds to me like asking for trouble),
-     * the "sz" variable prefix but "%ls" for the format string - so the whole
-     * thing is better compiled with UNICODE and _UNICODE defined. Would be
-     * far easier to read if it would be coded explicitly for the unicode
-     * case, as it won't work otherwise. */
-    DWORD   err;
-    HRESULT hrc;
-    LPVOID  aDrivers[1024];
-    LPVOID *pDrivers      = aDrivers;
-    UINT    cNeeded       = 0;
-    TCHAR   szSystemRoot[MAX_PATH];
-    TCHAR  *pszSystemRoot = szSystemRoot;
-    LPVOID  pVerInfo      = NULL;
-    DWORD   cbVerInfo     = 0;
+    /* Get the system root path. */
+    WCHAR wszSystemRoot[MAX_PATH] = {0};
+    UINT const cwcNeeded = GetWindowsDirectory(wszSystemRoot, RT_ELEMENTS(wszSystemRoot) - 1);
+    AssertLogRelMsgReturnVoid(cwcNeeded > 0 && cwcNeeded < RT_ELEMENTS(wszSystemRoot),
+                              ("GetWindowsDirectory failed: err=%Rwrc (%#x), cwcNeeded=%#x\n",
+                               GetLastError(), GetLastError(), cwcNeeded));
 
-    do
+    /* Enumerate the loaded drivers. */
+    LPVOID  apvDrivers[1024] = {{NULL}};
+    LPVOID *papvDrivers      = apvDrivers;
+    DWORD   cbNeeded         = 0;
+    if (   !EnumDeviceDrivers(apvDrivers, sizeof(apvDrivers), &cbNeeded)
+        || cbNeeded > sizeof(apvDrivers))
     {
-        cNeeded = GetWindowsDirectory(szSystemRoot, RT_ELEMENTS(szSystemRoot));
-        if (cNeeded == 0)
-        {
-            err = GetLastError();
-            hrc = HRESULT_FROM_WIN32(err);
-            AssertLogRelMsgFailed(("GetWindowsDirectory failed, hrc=%Rhrc (0x%x) err=%u\n",
-                                                   hrc, hrc, err));
-            break;
-        }
-        else if (cNeeded > RT_ELEMENTS(szSystemRoot))
-        {
-            /* The buffer is too small, allocate big one. */
-            pszSystemRoot = (TCHAR *)RTMemTmpAlloc(cNeeded * sizeof(_TCHAR));
-            if (!pszSystemRoot)
-            {
-                AssertLogRelMsgFailed(("RTMemTmpAlloc failed to allocate %d bytes\n", cNeeded));
-                break;
-            }
-            if (GetWindowsDirectory(pszSystemRoot, cNeeded) == 0)
-            {
-                err = GetLastError();
-                hrc = HRESULT_FROM_WIN32(err);
-                AssertLogRelMsgFailed(("GetWindowsDirectory failed, hrc=%Rhrc (0x%x) err=%u\n",
-                                                   hrc, hrc, err));
-                break;
-            }
-        }
-
-        DWORD  cbNeeded = 0;
-        if (!EnumDeviceDrivers(aDrivers, sizeof(aDrivers), &cbNeeded) || cbNeeded > sizeof(aDrivers))
-        {
-            pDrivers = (LPVOID *)RTMemTmpAlloc(cbNeeded);
-            if (!EnumDeviceDrivers(pDrivers, cbNeeded, &cbNeeded))
-            {
-                err = GetLastError();
-                hrc = HRESULT_FROM_WIN32(err);
-                AssertLogRelMsgFailed(("EnumDeviceDrivers failed, hrc=%Rhrc (0x%x) err=%u\n",
-                                                   hrc, hrc, err));
-                break;
-            }
-        }
-
-        LogRel(("Installed Drivers:\n"));
-
-        TCHAR szDriver[1024];
-        int cDrivers = cbNeeded / sizeof(pDrivers[0]);
-        for (int i = 0; i < cDrivers; i++)
-        {
-            if (GetDeviceDriverBaseName(pDrivers[i], szDriver, sizeof(szDriver) / sizeof(szDriver[0])))
-            {
-                if (_tcsnicmp(TEXT("vbox"), szDriver, 4))
-                    continue;
-            }
-            else
-                continue;
-            if (GetDeviceDriverFileName(pDrivers[i], szDriver, sizeof(szDriver) / sizeof(szDriver[0])))
-            {
-                _TCHAR szTmpDrv[1024];
-                _TCHAR *pszDrv = szDriver;
-                if (!_tcsncmp(TEXT("\\SystemRoot"), szDriver, 11))
-                {
-                    _tcscpy_s(szTmpDrv, pszSystemRoot);
-                    _tcsncat_s(szTmpDrv, szDriver + 11, sizeof(szTmpDrv) / sizeof(szTmpDrv[0]) - _tclen(pszSystemRoot));
-                    pszDrv = szTmpDrv;
-                }
-                else if (!_tcsncmp(TEXT("\\??\\"), szDriver, 4))
-                    pszDrv = szDriver + 4;
-
-                /* Allocate a buffer for version info. Reuse if large enough. */
-                DWORD cbNewVerInfo = GetFileVersionInfoSize(pszDrv, NULL);
-                if (cbNewVerInfo > cbVerInfo)
-                {
-                    if (pVerInfo)
-                        RTMemTmpFree(pVerInfo);
-                    cbVerInfo = cbNewVerInfo;
-                    pVerInfo = RTMemTmpAlloc(cbVerInfo);
-                    if (!pVerInfo)
-                    {
-                        AssertLogRelMsgFailed(("RTMemTmpAlloc failed to allocate %d bytes\n", cbVerInfo));
-                        break;
-                    }
-                }
-
-                if (GetFileVersionInfo(pszDrv, NULL, cbVerInfo, pVerInfo))
-                {
-                    UINT   cbSize = 0;
-                    LPBYTE lpBuffer = NULL;
-                    if (VerQueryValue(pVerInfo, TEXT("\\"), (VOID FAR* FAR*)&lpBuffer, &cbSize))
-                    {
-                        if (cbSize)
-                        {
-                            VS_FIXEDFILEINFO *pFileInfo = (VS_FIXEDFILEINFO *)lpBuffer;
-                            if (pFileInfo->dwSignature == 0xfeef04bd)
-                            {
-                                LogRel(("  %ls (Version: %d.%d.%d.%d)\n", pszDrv,
-                                        (pFileInfo->dwFileVersionMS >> 16) & 0xffff,
-                                        (pFileInfo->dwFileVersionMS >> 0) & 0xffff,
-                                        (pFileInfo->dwFileVersionLS >> 16) & 0xffff,
-                                        (pFileInfo->dwFileVersionLS >> 0) & 0xffff));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
+        papvDrivers = (LPVOID *)RTMemTmpAlloc(cbNeeded);
+        AssertLogRelMsgReturnVoid(EnumDeviceDrivers(papvDrivers, cbNeeded, &cbNeeded),
+                                  ("EnumDeviceDrivers failed: err=%Rwrc (%#x), cbNeeded=%#x\n",
+                                   GetLastError(), GetLastError(), cbNeeded));
     }
-    while (0);
 
-    if (pVerInfo)
-        RTMemTmpFree(pVerInfo);
+    /* Display info about all 'VBox*' drivers. */
+    LogRel(("Installed Drivers:\n"));
+    LPVOID         pvVerInfo = NULL;
+    DWORD          cbVerInfo = 0;
+    unsigned const cDrivers  = cbNeeded / sizeof(papvDrivers[0]);
+    for (unsigned i = 0; i < cDrivers; i++)
+    {
+        if (!papvDrivers[i]) /* MSC /analyze */
+            continue;
+        TCHAR wszDriver[1024];
+        if (!GetDeviceDriverBaseNameW(papvDrivers[i], wszDriver, RT_ELEMENTS(wszDriver)))
+            continue;
+        if (RTUtf16NICmpAscii(wszDriver, RT_STR_TUPLE("vbox")) != 0)
+            continue;
 
-    if (pDrivers != aDrivers)
-        RTMemTmpFree(pDrivers);
+        if (GetDeviceDriverFileNameW(papvDrivers[i], wszDriver, RT_ELEMENTS(wszDriver)))
+        {
+            /* Convert NT path to a plain win32 one. (wszTmpDrv is too big for overflows.) */
+            WCHAR *pwszDrv;
+            WCHAR  wszTmpDrv[MAX_PATH + 1024 + 16];
+            if (RTUtf16NICmpAscii(wszDriver, RT_STR_TUPLE("\\SystemRoot\\")) == 0)
+            {
+                RTUtf16Copy(wszTmpDrv, RT_ELEMENTS(wszTmpDrv), wszSystemRoot);
+                RTUtf16Cat(wszTmpDrv, RT_ELEMENTS(wszTmpDrv), &wszDriver[11]);
+                pwszDrv = wszTmpDrv;
+            }
+            else if (RTUtf16NCmpAscii(wszDriver, RT_STR_TUPLE("\\??\\")) == 0)
+                pwszDrv = &wszDriver[4];
+            else
+                pwszDrv = wszDriver;
 
-    if (pszSystemRoot != szSystemRoot)
-        RTMemTmpFree(pszSystemRoot);
+            /* Allocate a buffer for version info. Reuse previous if large enough. */
+            DWORD cbNewVerInfo = GetFileVersionInfoSizeW(pwszDrv, NULL);
+            if (!pvVerInfo || cbNewVerInfo > cbVerInfo)
+            {
+                if (pvVerInfo)
+                    RTMemTmpFree(pvVerInfo);
+                cbVerInfo = cbNewVerInfo;
+                pvVerInfo = RTMemTmpAlloc(cbVerInfo);
+                AssertLogRelMsgBreak(pvVerInfo, ("RTMemTmpAlloc failed to allocate %u bytes\n", cbVerInfo));
+            }
+
+            /* Get the version info and log it. */
+            if (GetFileVersionInfo(pwszDrv, NULL, cbVerInfo, pvVerInfo))
+            {
+                UINT   cbSize   = 0;
+                PVOID  pvBuffer = NULL;
+                if (   VerQueryValueW(pvVerInfo, L"\\", &pvBuffer, &cbSize)
+                    && cbSize > 0)
+                {
+                    VS_FIXEDFILEINFO const * const pFileInfo = (VS_FIXEDFILEINFO const *)pvBuffer;
+                    if (pFileInfo->dwSignature == VS_FFI_SIGNATURE)
+                        LogRel(("  %ls (Version: %d.%d.%d.%d)\n", pwszDrv,
+                                (pFileInfo->dwFileVersionMS >> 16) & 0xffff,
+                                (pFileInfo->dwFileVersionMS >>  0) & 0xffff,
+                                (pFileInfo->dwFileVersionLS >> 16) & 0xffff,
+                                (pFileInfo->dwFileVersionLS >>  0) & 0xffff));
+                }
+            }
+        }
+    }
+
+    if (pvVerInfo)
+        RTMemTmpFree(pvVerInfo);
+
+    if (papvDrivers != apvDrivers)
+        RTMemTmpFree(papvDrivers);
 }
 #else /* !RT_OS_WINDOWS */
 void VirtualBox::i_reportDriverVersions(void)
