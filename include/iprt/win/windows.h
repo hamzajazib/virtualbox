@@ -96,6 +96,9 @@
 # else
 #  pragma warning(disable:4255) /* warning C4255: 'FARPROC' : no function prototype given: converting '()' to '(void)' */
 # endif
+# ifdef _PREFAST_ /* /analyze active */
+#  pragma warning(disable:6553) /* winreg.h(780) : warning C6553: The annotation for function 'RegOpenKeyExW' on _Param_(3) does not apply to a value type.*/
+# endif
 #endif
 
 #include <Windows.h>
