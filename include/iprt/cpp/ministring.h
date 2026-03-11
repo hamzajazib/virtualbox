@@ -175,9 +175,12 @@ public:
         if (a_cTimes)
         {
             reserve(a_cTimes + 1);
-            memset(m_psz, a_ch, a_cTimes);
-            m_psz[a_cTimes] = '\0';
-            m_cch = a_cTimes;
+            if (m_psz) /* MSC /analyze tweak - not really needed */
+            {
+                memset(m_psz, a_ch, a_cTimes);
+                m_psz[a_cTimes] = '\0';
+                m_cch = a_cTimes;
+            }
         }
     }
 
