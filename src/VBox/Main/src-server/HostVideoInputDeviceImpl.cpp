@@ -1,4 +1,4 @@
-/* $Id: HostVideoInputDeviceImpl.cpp 112876 2026-02-09 09:24:42Z knut.osmundsen@oracle.com $ */
+/* $Id: HostVideoInputDeviceImpl.cpp 113337 2026-03-11 12:48:11Z knut.osmundsen@oracle.com $ */
 /** @file
  * Host video capture device implementation.
  */
@@ -251,11 +251,11 @@ static void hwcClose(int handle)
         close(handle);
 }
 
-#ifdef RT_OS_SOLARIS
+# ifdef RT_OS_SOLARIS
 static int hwcIoctl(int handle, int fn, void *pv)
-#else
+# else
 static int hwcIoctl(int handle, unsigned long fn, void *pv)
-#endif
+# endif
 {
     int ret;
     do
@@ -263,14 +263,14 @@ static int hwcIoctl(int handle, unsigned long fn, void *pv)
         ret = ioctl(handle, fn, pv);
     } while (ret == -1 && errno == EINTR);
 
-#ifdef RT_OS_SOLARIS
+# ifdef RT_OS_SOLARIS
     if (ret == 0)
         return VINF_SUCCESS;
     Assert(ret == -1 && errno > 0);
     return RTErrConvertFromErrno((unsigned)errno);
-#else
+# else
     return ret == 0 ? VINF_SUCCESS : VERR_FILE_IO_ERROR;
-#endif
+# endif
 }
 
 static int hostWebcamList(PFNVBOXHOSTWEBCAMADD pfnWebcamAdd, void *pvUser, uint64_t *pu64WebcamAddResult)
@@ -290,24 +290,24 @@ static int hostWebcamList(PFNVBOXHOSTWEBCAMADD pfnWebcamAdd, void *pvUser, uint6
             int vrc2 = hwcOpen(pszPath, &handle);
             if (RT_SUCCESS(vrc2))
             {
-#if defined(RT_OS_LINUX)
+# if defined(RT_OS_LINUX)
                 struct v4l2_capability_3_4_0 caps;
-#else
+# else
                 struct v4l2_capability caps;
-#endif
+# endif
                 RT_ZERO(caps);
                 vrc2 = hwcIoctl(handle, VIDIOC_QUERYCAP, &caps);
                 if (RT_SUCCESS(vrc2))
                 {
                     if (
-#if defined(RT_OS_LINUX)
+# if defined(RT_OS_LINUX)
                         /* On Linux host make sure that actual device has required
                          * capabilities. Filter out meta devices (V4L2_CAP_META_CAPTURE). */
                         hwcLinuxVideoCaptureDevice(&caps))
-#else
+# else
                            (caps.capabilities & V4L2_CAP_VIDEO_CAPTURE) != 0
                         && (caps.capabilities & V4L2_CAP_STREAMING) != 0)
-#endif
+# endif
                     {
                         char *pszAlias = NULL;
                         RTStrAPrintf(&pszAlias, ".%d", iDevice);
@@ -340,6 +340,7 @@ static int hostWebcamList(PFNVBOXHOSTWEBCAMADD pfnWebcamAdd, void *pvUser, uint6
 
     return vrc;
 }
+
 #elif defined(RT_OS_WINDOWS)
 /*
  * Device emumeration entry point.
@@ -371,7 +372,9 @@ static HRESULT hwcFillList(PFNVBOXHOSTWEBCAMADD pfnWebcamAdd,
         ++iDevice;
 
         IPropertyBag *pPropBag = NULL;
+        _Pragma("warning(push)");_Pragma("warning(disable:6387)"); /* MSC /analyze: param(1) shouldn't be NULL. incorrect annotation? */
         HRESULT hr = pMoniker->BindToStorage(0, 0, IID_PPV_ARGS(&pPropBag));
+        _Pragma("warning(pop)");
         if (FAILED(hr))
         {
             pMoniker->Release();
@@ -470,9 +473,11 @@ static int hostWebcamList(PFNVBOXHOSTWEBCAMADD pfnWebcamAdd, void *pvUser, uint6
         return VERR_NOT_SUPPORTED;
     return VINF_SUCCESS;
 }
+
 #elif defined(RT_OS_DARWIN)
 DECLHIDDEN(int) DarwinHostWebcamList(PFNVBOXHOSTWEBCAMADD pfnWebcamAdd, void *pvUser, uint64_t *pu64WebcamAddResult);
 # define hostWebcamList DarwinHostWebcamList
+
 #else
 /** @todo The other hosts. */
 static int hostWebcamList(PFNVBOXHOSTWEBCAMADD pfnWebcamAdd, void *pvUser, uint64_t *pu64WebcamAddResult)
