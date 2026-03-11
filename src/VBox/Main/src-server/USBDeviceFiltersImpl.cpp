@@ -1,4 +1,4 @@
-/* $Id: USBDeviceFiltersImpl.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: USBDeviceFiltersImpl.cpp 113341 2026-03-11 12:53:41Z knut.osmundsen@oracle.com $ */
 /** @file
  * Implementation of IUSBDeviceFilters.
  */
@@ -1036,7 +1036,7 @@ HRESULT USBDeviceFilters::i_notifyProxy(bool aInsertFilters)
     LogFlowThisFunc(("aInsertFilters=%RTbool\n", aInsertFilters));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.hrc(), false);
+    AssertComRCReturn(autoCaller.hrc(), autoCaller.hrc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
