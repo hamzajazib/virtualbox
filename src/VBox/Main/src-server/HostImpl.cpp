@@ -1,4 +1,4 @@
-/* $Id: HostImpl.cpp 113055 2026-02-17 10:27:27Z alexander.eichner@oracle.com $ */
+/* $Id: HostImpl.cpp 113335 2026-03-11 12:44:12Z knut.osmundsen@oracle.com $ */
 /** @file
  * VirtualBox COM class implementation: Host
  */
@@ -4267,7 +4267,7 @@ BOOL Host::i_HostIsNativeApiSupported()
     if (cwcPath >= MAX_PATH || cwcPath < 2)
         return FALSE;
 
-    if (wszPath[cwcPath - 1] != '\\' || wszPath[cwcPath - 1] != '/')
+    if (wszPath[cwcPath - 1] != '\\' && wszPath[cwcPath - 1] != '/')
         wszPath[cwcPath++] = '\\';
     RTUtf16CopyAscii(&wszPath[cwcPath], RT_ELEMENTS(wszPath) - cwcPath, "WinHvPlatform.dll");
     if (GetFileAttributesW(wszPath) == INVALID_FILE_ATTRIBUTES)
