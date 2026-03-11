@@ -1,4 +1,4 @@
-/* $Id: ExtPackManagerImpl.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: ExtPackManagerImpl.cpp 113334 2026-03-11 12:42:48Z knut.osmundsen@oracle.com $ */
 /** @file
  * VirtualBox Main - interface for Extension Packs, VBoxSVC & VBoxC.
  */
@@ -1173,7 +1173,7 @@ HRESULT ExtPack::i_checkVrde(void)
             hrc = setError(E_FAIL, tr("The extension pack '%s' does not include a VRDE module"), m->Desc.strName.c_str());
     }
     else
-        hrc = setError(E_FAIL, "%s", m->strWhyUnusable.c_str());
+        hrc = setError(E_FAIL, "%s", m ? m->strWhyUnusable.c_str() : "m-is-null");
     return hrc;
 }
 
@@ -1197,7 +1197,7 @@ HRESULT ExtPack::i_checkCrypto(void)
             hrc = setError(E_FAIL, tr("The extension pack '%s' does not include a cryptographic module"), m->Desc.strName.c_str());
     }
     else
-        hrc = setError(E_FAIL, "%s", m->strWhyUnusable.c_str());
+        hrc = setError(E_FAIL, "%s", m ? m->strWhyUnusable.c_str() : "m-is-null");
     return hrc;
 }
 
@@ -2792,7 +2792,7 @@ HRESULT ExtPackManager::i_runSetUidToRootHelper(Utf8Str const *a_pstrDisplayInfo
                     }
 
                     /* append if we've got room. */
-                    if (cbBufReq <= cbStdErrBuf)
+                    if (cbBufReq <= cbStdErrBuf && pszStdErrBuf) /* latter for shutting up MSC /analyze */
                     {
                         memcpy(&pszStdErrBuf[offStdErrBuf], achBuf, cbRead);
                         offStdErrBuf = offStdErrBuf + cbRead;
