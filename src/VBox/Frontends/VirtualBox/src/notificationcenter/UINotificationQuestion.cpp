@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.cpp 113272 2026-03-05 16:06:54Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.cpp 113325 2026-03-11 12:14:08Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion implementations.
  */
@@ -1013,39 +1013,6 @@ UINotificationQuestion::~UINotificationQuestion()
 }
 
 /* static */
-void UINotificationQuestion::createQuestionInt(UINotificationCenter *pParent,
-                                               const QString &strName,
-                                               const QString &strDetails,
-                                               const QStringList &buttonNames,
-                                               bool fOkByDefault,
-                                               const QString &strInternalName,
-                                               const QString &strHelpKeyword)
-{
-    /* Make sure parent is set: */
-    AssertPtr(pParent);
-    UINotificationCenter *pEffectiveParent = pParent ? pParent : gpNotificationCenter;
-
-    /* Check if question suppressed: */
-    if (isSuppressed(strInternalName))
-        return;
-
-    /* Check if question already exists: */
-    if (   !strInternalName.isEmpty()
-        && m_questions.contains(strInternalName))
-        return;
-
-    /* Create question finally: */
-    const QUuid uId = pEffectiveParent->append(new UINotificationQuestion(strName,
-                                                                          strDetails,
-                                                                          buttonNames,
-                                                                          fOkByDefault,
-                                                                          strInternalName,
-                                                                          strHelpKeyword));
-    if (!strInternalName.isEmpty())
-        m_questions[strInternalName] = uId;
-}
-
-/* static */
 int UINotificationQuestion::createBlockingQuestionInt(UINotificationCenter *pParent,
                                                       const QString &strName,
                                                       const QString &strDetails,
@@ -1072,23 +1039,6 @@ int UINotificationQuestion::createBlockingQuestionInt(UINotificationCenter *pPar
     const int iResult = pEffectiveParent->showBlocking(pQuestion);
     delete pQuestion;
     return iResult;
-}
-
-/* static */
-void UINotificationQuestion::createQuestion(const QString &strName,
-                                            const QString &strDetails,
-                                            const QStringList &buttonNames /* = QStringList() */,
-                                            bool fOkByDefault /* = true */,
-                                            const QString &strInternalName /* = QString() */,
-                                            const QString &strHelpKeyword /* = QString() */,
-                                            QWidget *pParent /* = 0 */)
-{
-    /* Acquire notification-center, make sure it's present: */
-    UINotificationCenter *pCenter = UINotificationCenter::acquire(pParent);
-    AssertPtrReturnVoid(pCenter);
-
-    /* Redirect to wrapper above: */
-    return createQuestionInt(pCenter, strName, strDetails, buttonNames, fOkByDefault, strInternalName, strHelpKeyword);
 }
 
 /* static */

@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.h 113272 2026-03-05 16:06:54Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.h 113325 2026-03-11 12:14:08Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion declarations.
  */
@@ -278,21 +278,6 @@ protected:
 
 private:
 
-    /** Creates question.
-      * @param  pParent          Brings the local notification-center reference.
-      * @param  strName          Brings the question name.
-      * @param  strDetails       Brings the question details.
-      * @param  buttonNames      Brings the list of button names.
-      * @param  fOkByDefault     Brings whether Ok button should be default one.
-      * @param  strInternalName  Brings the question internal name.
-      * @param  strHelpKeyword   Brings the question help keyword. */
-    static void createQuestionInt(UINotificationCenter *pParent,
-                                  const QString &strName,
-                                  const QString &strDetails,
-                                  const QStringList &buttonNames,
-                                  bool fOkByDefault,
-                                  const QString &strInternalName,
-                                  const QString &strHelpKeyword);
     /** Creates blocking question.
       * @param  pParent          Brings the local notification-center reference.
       * @param  strName          Brings the question name.
@@ -309,21 +294,6 @@ private:
                                          const QString &strInternalName,
                                          const QString &strHelpKeyword);
 
-    /** Creates question.
-      * @param  strName          Brings the question name.
-      * @param  strDetails       Brings the question details.
-      * @param  buttonNames      Brings the list of button names.
-      * @param  fOkByDefault     Brings whether Ok button should be default one.
-      * @param  strInternalName  Brings the question internal name.
-      * @param  strHelpKeyword   Brings the question help keyword.
-      * @param  pParent          Brings the local notification-center reference. */
-    static void createQuestion(const QString &strName,
-                               const QString &strDetails,
-                               const QStringList &buttonNames = QStringList(),
-                               bool fOkByDefault = true,
-                               const QString &strInternalName = QString(),
-                               const QString &strHelpKeyword = QString(),
-                               QWidget *pParent = 0);
     /** Creates blocking question.
       * @param  strName          Brings the question name.
       * @param  strDetails       Brings the question details.
