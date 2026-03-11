@@ -1,4 +1,4 @@
-/* $Id: VBoxSupLib-win.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: VBoxSupLib-win.cpp 113367 2026-03-11 21:37:21Z knut.osmundsen@oracle.com $ */
 /** @file
  * IPRT - VBoxSupLib.dll, Windows.
  */
@@ -48,7 +48,7 @@
  * @remarks The dllexport is for forcing the linker to generate an import
  *          library, so the build system doesn't get confused.
  */
-extern "C" __declspec(dllexport)
+extern "C"
 BOOL __stdcall DllMainEntrypoint(HANDLE hModule, DWORD dwReason, PVOID pvReserved)
 {
     RT_NOREF1(pvReserved);
