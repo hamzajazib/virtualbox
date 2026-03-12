@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.h 113372 2026-03-12 09:40:15Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.h 113373 2026-03-12 10:04:12Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion declarations.
  */
@@ -96,6 +96,9 @@ public:
         static bool confirmMachineItemRemoval(const QString &strNames);
         /** Confirms @a machines removal. */
         static int confirmMachineRemoval(const QList<CMachine> &machines);
+
+        /** Confirms cloud @a machines removal. */
+        static int confirmCloudMachineRemoval(const QList<CCloudMachine> &machines);
 
         /** Confirms restoring for the snapshot with @a strName specified.
           * @param  fAlsoCreateNewSnapshot  Brings whether we should create new snapshot on the basis of current state. */

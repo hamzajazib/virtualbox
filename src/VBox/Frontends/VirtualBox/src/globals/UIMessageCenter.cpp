@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.cpp 113372 2026-03-12 09:40:15Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.cpp 113373 2026-03-12 10:04:12Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class implementation.
  */
@@ -44,7 +44,6 @@
 #include "VBoxAboutDlg.h"
 
 /* COM includes: */
-#include "CCloudMachine.h"
 #include "CConsole.h"
 #include "CHost.h"
 #include "CHostNetworkInterface.h"
@@ -620,34 +619,6 @@ bool UIMessageCenter::confirmSettingsReloading(QWidget *pParent /* = 0 */) const
     setWarningShown("confirmSettingsReloading", false);
 
     return fResult;
-}
-
-int UIMessageCenter::confirmCloudMachineRemoval(const QList<CCloudMachine> &machines) const
-{
-    /* Enumerate the machines: */
-    QStringList machineNames;
-    foreach (const CCloudMachine &comMachine, machines)
-    {
-        /* Append machine name to the full name string: */
-        if (comMachine.GetAccessible())
-            machineNames << QString("<b>%1</b>").arg(comMachine.GetName());
-    }
-
-    /* Prepare message text: */
-    QString strText = tr("<p>You are about to remove following cloud virtual machines from the machine list:</p>"
-                         "<p>%1</p>"
-                         "<p>Would you like to delete the instances and boot volumes of these machines as well?</p>")
-                         .arg(machineNames.join(", "));
-
-    /* Prepare message itself: */
-    return message(0, MessageType_Question,
-                   strText, QString(),
-                   0 /* auto-confirm id */,
-                   AlertButton_Choice1,
-                   AlertButton_Choice2,
-                   AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape,
-                   tr("Delete everything"),
-                   tr("Remove only"));
 }
 
 bool UIMessageCenter::confirmVisoDiscard(QWidget *pParent /* = 0*/) const

@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.h 113372 2026-03-12 09:40:15Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.h 113373 2026-03-12 10:04:12Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class declaration.
  */
@@ -281,11 +281,6 @@ public:
       * @{ */
         bool confirmSettingsDiscarding(QWidget *pParent = 0) const;
         bool confirmSettingsReloading(QWidget *pParent = 0) const;
-    /** @} */
-
-    /** @name VirtualBox Manager / Chooser Pane warnings.
-      * @{ */
-        int confirmCloudMachineRemoval(const QList<CCloudMachine> &machines) const;
     /** @} */
 
     /** @name VirtualBox Manager / Media Manager warnings.

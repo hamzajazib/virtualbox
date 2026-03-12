@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.cpp 113372 2026-03-12 09:40:15Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.cpp 113373 2026-03-12 10:04:12Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion implementations.
  */
@@ -169,6 +169,29 @@ int UINotificationQuestion::confirmMachineRemoval(const QList<CMachine> &machine
                           << QApplication::translate("UIMessageCenter", "Remove", "machine") /* ok button text */,
             false /* Ok by default? */,
             strOption);
+}
+
+/* static */
+int UINotificationQuestion::confirmCloudMachineRemoval(const QList<CCloudMachine> &machines)
+{
+    /* Enumerate the machines: */
+    QStringList machineNames;
+    foreach (const CCloudMachine &comMachine, machines)
+    {
+        /* Append machine name to the full name string: */
+        if (comMachine.GetAccessible())
+            machineNames << comMachine.GetName();
+    }
+
+    /* Prepare message itself: */
+    return createBlockingQuestion(
+        QApplication::translate("UIMessageCenter", "Remove cloud machines?"),
+        QApplication::translate("UIMessageCenter", "<p>Remove these virtual cloud machines from the machine "
+                                                   "list?</p><p><b>%1</b></p>").arg(machineNames.join(", ")),
+        QStringList() << QString() /* cancel button text */
+                      << QApplication::translate("UIMessageCenter", "Remove", "machine") /* ok button text */,
+        false /* Ok by default? */,
+        QApplication::translate("UIMessageCenter", "Delete corresponding instances and boot volumes."));
 }
 
 /* static */

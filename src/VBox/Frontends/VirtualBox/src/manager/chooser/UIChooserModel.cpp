@@ -1,4 +1,4 @@
-/* $Id: UIChooserModel.cpp 113372 2026-03-12 09:40:15Z sergey.dubov@oracle.com $ */
+/* $Id: UIChooserModel.cpp 113373 2026-03-12 10:04:12Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIChooserModel class implementation.
  */
@@ -50,7 +50,6 @@
 #include "UICloudNetworkingStuff.h"
 #include "UICommon.h"
 #include "UIExtraDataManager.h"
-#include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UINotificationCenter.h"
 #include "UIVirtualBoxEventHandler.h"
@@ -2022,8 +2021,8 @@ void UIChooserModel::unregisterCloudMachineItems(const QList<UIChooserItemMachin
         m_pTimerCloudProfileUpdate->stop();
 
     /* Confirm machine removal: */
-    const int iResultCode = msgCenter().confirmCloudMachineRemoval(machines);
-    if (iResultCode == AlertButton_Cancel)
+    const int iResultCode = UINotificationQuestion::confirmCloudMachineRemoval(machines);
+    if (iResultCode == Question::Result_Cancel)
     {
         /* Resume cloud profile update if cancelled: */
         if (m_pTimerCloudProfileUpdate)
@@ -2050,7 +2049,7 @@ void UIChooserModel::unregisterCloudMachineItems(const QList<UIChooserItemMachin
         /* Removing cloud machine: */
         UINotificationProgressCloudMachineRemove *pNotification =
             new UINotificationProgressCloudMachineRemove(comMachine,
-                                                         iResultCode == AlertButton_Choice1,
+                                                         iResultCode & Question::Result_AcceptOption,
                                                          strProviderShortName,
                                                          strProfileName);
         connect(pNotification, &UINotificationProgressCloudMachineRemove::sigCloudMachineRemoved,
