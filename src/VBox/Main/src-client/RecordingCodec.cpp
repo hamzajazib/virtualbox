@@ -1,4 +1,4 @@
-/* $Id: RecordingCodec.cpp 113380 2026-03-13 10:01:45Z andreas.loeffler@oracle.com $ */
+/* $Id: RecordingCodec.cpp 113387 2026-03-13 14:11:41Z andreas.loeffler@oracle.com $ */
 /** @file
  * Recording codec wrapper.
  */
@@ -485,8 +485,6 @@ static DECLCALLBACK(int) recordingCodecVPXCompose(PRECORDINGCODEC pCodec, PRECOR
             if (RT_FAILURE(vrc))
                 break;
 
-            pFront = pBack;
-
             sw = pSrc->Info.uWidth;
             sh = pSrc->Info.uHeight;
             sx = pSrc->Pos.x;
@@ -496,6 +494,51 @@ static DECLCALLBACK(int) recordingCodecVPXCompose(PRECORDINGCODEC pCodec, PRECOR
 
             dx = pSrc->Pos.x;
             dy = pSrc->Pos.y;
+
+            /* Re-apply software cursor when the updated video region overlaps it.
+             *
+             * Front keeps the composed image (framebuffer + cursor), while back keeps plain
+             * framebuffer data. A video update can overwrite cursor pixels in front; refresh
+             * the full cursor area from back and blend the cursor again in that case. */
+            PRECORDINGVIDEOFRAME const pCursor = pCodec->Video.VPX.pCursorShape;
+            if (pCursor)
+            {
+                uint32_t const uCurX = pCodec->Video.VPX.PosCursorOld.x;
+                uint32_t const uCurY = pCodec->Video.VPX.PosCursorOld.y;
+                if (   uCurX < pFront->Info.uWidth
+                    && uCurY < pFront->Info.uHeight)
+                {
+                    uint32_t const uCurW = RT_MIN(pCursor->Info.uWidth,  pFront->Info.uWidth  - uCurX);
+                    uint32_t const uCurH = RT_MIN(pCursor->Info.uHeight, pFront->Info.uHeight - uCurY);
+                    if (uCurW && uCurH)
+                    {
+                        uint64_t const uUpdX0 = pSrc->Pos.x;
+                        uint64_t const uUpdY0 = pSrc->Pos.y;
+                        uint64_t const uUpdX1 = uUpdX0 + pSrc->Info.uWidth;
+                        uint64_t const uUpdY1 = uUpdY0 + pSrc->Info.uHeight;
+                        uint64_t const uCurX0 = uCurX;
+                        uint64_t const uCurY0 = uCurY;
+                        uint64_t const uCurX1 = uCurX0 + uCurW;
+                        uint64_t const uCurY1 = uCurY0 + uCurH;
+
+                        bool const fIntersects =    uUpdX0 < uCurX1
+                                                 && uUpdX1 > uCurX0
+                                                 && uUpdY0 < uCurY1
+                                                 && uUpdY1 > uCurY0;
+                        if (fIntersects)
+                        {
+                            vrc = RecordingVideoFrameBlitFrame(pFront, uCurX, uCurY,
+                                                               pBack,  uCurX, uCurY, uCurW, uCurH);
+                            if (RT_SUCCESS(vrc))
+                                RecordingVideoFrameBlitRawAlpha(pFront, uCurX, uCurY,
+                                                                pCursor->pau8Buf, pCursor->cbBuf,
+                                                                0 /* uSrcX */, 0 /* uSrcY */, uCurW, uCurH,
+                                                                pCursor->Info.uBytesPerLine,
+                                                                pCursor->Info.uBPP, pCursor->Info.enmPixelFmt);
+                        }
+                    }
+                }
+            }
             break;
         }
 

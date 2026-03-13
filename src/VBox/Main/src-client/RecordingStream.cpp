@@ -1,4 +1,4 @@
-/* $Id: RecordingStream.cpp 113382 2026-03-13 10:21:15Z andreas.loeffler@oracle.com $ */
+/* $Id: RecordingStream.cpp 113387 2026-03-13 14:11:41Z andreas.loeffler@oracle.com $ */
 /** @file
  * Recording stream code.
  */
@@ -553,10 +553,19 @@ int RecordingStream::process(RTMSINTERVAL msTimeout)
                 case RECORDINGFRAME_TYPE_CURSOR_POS:
                 case RECORDINGFRAME_TYPE_CURSOR_SHAPE:
                 {
-                    int const vrc2 = recordingCodecEncode(pCodec, pFrame, pFrame->msTimestamp, m_pCtx /* pvUser */);
+                    /* Cursor frames must first be composed into the current image and then encoded. */
+                    int vrc2 = recordingCodecCompose(pCodec, pFrame, pFrame->msTimestamp, m_pCtx /* pvUser */);
                     AssertRC(vrc2);
                     if (RT_SUCCESS(vrc))
                         vrc = vrc2;
+
+                    if (RT_SUCCESS(vrc2))
+                    {
+                        vrc2 = recordingCodecEncode(pCodec, pFrame, pFrame->msTimestamp, m_pCtx /* pvUser */);
+                        AssertRC(vrc2);
+                        if (RT_SUCCESS(vrc))
+                            vrc = vrc2;
+                    }
                     break;
                 }
 
@@ -843,7 +852,6 @@ int RecordingStream::cmdQueueAddFrame(PRECORDINGFRAME pFrame, PRECORDINGFRAMEPOO
 
     /* Sanity. */
     Assert(pCmd->idxPool != RECORDINGFRAME_TYPE_INVALID);
-    Assert(pCmd->msTimestamp);
     Assert(pFrame->msTimestamp == pCmd->msTimestamp);
 
     RECORDINGCMD *pCmdWr;
