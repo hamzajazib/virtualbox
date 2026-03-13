@@ -1,4 +1,4 @@
-# $Id: Makefile.kmk 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $
+# $Id: Makefile.kmk 113398 2026-03-13 23:46:55Z knut.osmundsen@oracle.com $
 ## @file
 # Sub-Makefile for the VBox web service.
 #
@@ -273,6 +273,11 @@ ifdef VBOX_GSOAP_INSTALLED
     vboxsoap_CXXFLAGS += -O0 ## @todo this could be interesting for g++ (not clang++): -fcprop-registers
    endif
   endif
+  ifdef VBOX_WITH_MSC_ANALYZE_THIS
+   vboxsoap_CXXFLAGS.win += -wd6319 # soapH-noinline-5.cpp(6) : warning C6319: Use of the comma-operator in a tested expression causes the left argument to be ignored when it has no side-effects.
+   vboxsoap_CXXFLAGS.win += -wd6386 # soapC-19.cpp(79) : warning C6386: Buffer overrun while writing to 'p'. (false positive)
+   vboxsoap_CXXFLAGS.win += -wd6011 # soapC-19.cpp(85) : warning C6011: Dereferencing NULL pointer 'soap'. (fixed in gsoap 2.8.140)
+  endif
   vboxsoap_INCS := \
   	$(VBOX_GSOAP_INCS) \
   	$(VBOXWEB_OUT_DIR) \
@@ -359,6 +364,9 @@ ifdef VBOX_GSOAP_INSTALLED
    endif
    if "$(VBOX_VCC_TOOL_STEM)" >= "VCC140"
     $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS.win += -wd4456 # stdsoap2.cpp(3127): warning C4456: declaration of 'i' hides previous local declaration
+   endif
+   ifdef VBOX_WITH_MSC_ANALYZE_THIS
+    $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS.win += -analyze- # Too many problems in this file.
    endif
   endif
 
@@ -858,10 +866,13 @@ ifdef VBOX_GSOAP_INSTALLED
 	$(call MSG_GENERATE,,lots of files,$(GSOAPH_RELEVANT))
 	$(RM) -f $@
 	$(REDIRECT) -C $(VBOXWEB_OUT_DIR) -- $(VBOX_SOAPCPP2) $(VBOXWEB_SOAPCPP2_SKIP_FILES) -L -2 -w -I$(VBOX_PATH_GSOAP_IMPORT) $(GSOAPH_RELEVANT)
- ifeq ($(KBUILD_TARGET),win) # MSC -Wall workaround.
+ ifeq ($(KBUILD_TARGET),win) # MSC -Wall & /analyze workarounds.
 	$(CP) -f "$(VBOXWEB_SOAP_CLIENT_H)" "$(VBOXWEB_SOAP_CLIENT_H).tmp"
 	$(SED) -f $(VBOX_PATH_WEBSERVICE)/stdsoap2.sed --output "$(VBOXWEB_SOAP_CLIENT_H)" "$(VBOXWEB_SOAP_CLIENT_H).tmp"
 	$(RM) -f "$(VBOXWEB_SOAP_CLIENT_H).tmp"
+	$(CP) -f "$(VBOXWEB_OUT_DIR)/soapC.cpp" "$(VBOXWEB_OUT_DIR)/soapC.cpp.tmp"
+	$(SED) -f $(VBOX_PATH_WEBSERVICE)/stdsoap2.sed --output "$(VBOXWEB_OUT_DIR)/soapC.cpp" "$(VBOXWEB_OUT_DIR)/soapC.cpp.tmp"
+	$(RM) -f "$(VBOXWEB_OUT_DIR)/soapC.cpp.tmp"
  endif
  ifndef VBOX_WITHOUT_NOINLINE_SOAPH
 	$(MV) -f -- "$(VBOXWEB_OUT_DIR)/soapH.h" "$(VBOXWEB_OUT_DIR)/soapH.h.tmp"
