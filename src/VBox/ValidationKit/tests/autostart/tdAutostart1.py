@@ -35,7 +35,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Id: tdAutostart1.py 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $"
+__version__ = "$Id: tdAutostart1.py 113386 2026-03-13 12:55:16Z knut.osmundsen@oracle.com $"
 
 # Standard Python imports.
 import os;
@@ -100,9 +100,8 @@ class tdAutostartOs(vboxtestvms.BaseTestVm):
     """
     Base autostart helper class to provide common methods.
     """
-    # pylint: disable=too-many-arguments
-    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type = None, cMbRam = None,  \
-                 cCpus = 1, fPae = None, sGuestAdditionsIso = None):
+    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, # pylint: disable=too-many-arguments,too-many-positional-arguments
+                 eNic0Type = None, cMbRam = None,  cCpus = 1, fPae = None, sGuestAdditionsIso = None):
         vboxtestvms.BaseTestVm.__init__(self, sVmName, oSet = oSet, sKind = sKind);
         self.oTstDrv = oTstDrv;
         self.sHdd = sHdd;
@@ -656,10 +655,9 @@ class tdAutostartOsLinux(tdAutostartOs):
     """
     Autostart support methods for Linux guests.
     """
-    # pylint: disable=too-many-arguments
-    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type = None, cMbRam = None,  \
-                 cCpus = 1, fPae = None, sGuestAdditionsIso = None):
-        tdAutostartOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam, \
+    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd,  # pylint: disable=too-many-arguments,too-many-positional-arguments
+                 eNic0Type = None, cMbRam = None, cCpus = 1, fPae = None, sGuestAdditionsIso = None):
+        tdAutostartOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam,
                                cCpus, fPae, sGuestAdditionsIso);
         try:    self.sVBoxInstaller = '^VirtualBox-.*\\.run$';
         except: pass;
@@ -912,10 +910,9 @@ class tdAutostartOsDarwin(tdAutostartOs):
     """
     Autostart support methods for Darwin guests.
     """
-    # pylint: disable=too-many-arguments
-    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type = None, cMbRam = None,  \
-                 cCpus = 1, fPae = None, sGuestAdditionsIso = None):
-        tdAutostartOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam, \
+    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, # pylint: disable=too-many-arguments,too-many-positional-arguments
+                 eNic0Type = None, cMbRam = None, cCpus = 1, fPae = None, sGuestAdditionsIso = None):
+        tdAutostartOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam,
                                cCpus, fPae, sGuestAdditionsIso);
         raise base.GenError('Testing the autostart functionality for Darwin is not implemented');
 
@@ -923,10 +920,9 @@ class tdAutostartOsSolaris(tdAutostartOs):
     """
     Autostart support methods for Solaris guests.
     """
-    # pylint: disable=too-many-arguments
-    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type = None, cMbRam = None,  \
-                 cCpus = 1, fPae = None, sGuestAdditionsIso = None):
-        tdAutostartOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam, \
+    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, # pylint: disable=too-many-arguments,too-many-positional-arguments
+                 eNic0Type = None, cMbRam = None,  cCpus = 1, fPae = None, sGuestAdditionsIso = None):
+        tdAutostartOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam,
                                cCpus, fPae, sGuestAdditionsIso);
         raise base.GenError('Testing the autostart functionality for Solaris is not implemented');
 
@@ -934,10 +930,9 @@ class tdAutostartOsWin(tdAutostartOs):
     """
     Autostart support methods for Windows guests.
     """
-    # pylint: disable=too-many-arguments
-    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type = None, cMbRam = None,  \
-                 cCpus = 1, fPae = None, sGuestAdditionsIso = None):
-        tdAutostartOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam, \
+    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, # pylint: disable=too-many-arguments,too-many-positional-arguments
+                 eNic0Type = None, cMbRam = None, cCpus = 1, fPae = None, sGuestAdditionsIso = None):
+        tdAutostartOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam,
                                cCpus, fPae, sGuestAdditionsIso);
         try:    self.sVBoxInstaller = '^VirtualBox-.*\\.(exe|msi)$';
         except: pass;

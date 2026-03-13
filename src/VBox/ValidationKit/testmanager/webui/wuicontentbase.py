@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# $Id: wuicontentbase.py 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $
+# $Id: wuicontentbase.py 113386 2026-03-13 12:55:16Z knut.osmundsen@oracle.com $
 
 """
 Test Manager Web-UI - Content Base Classes.
@@ -36,7 +36,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 112403 $"
+__version__ = "$Revision: 113386 $"
 
 
 # Standard python imports.
@@ -815,8 +815,9 @@ class WuiListContentBase(WuiContentBase):
     Base for the list content classes.
     """
 
-    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffectiveDate, sTitle, # pylint: disable=too-many-arguments
-                 sId = None, fnDPrint = None, oDisp = None, aiSelectedSortColumns = None, fTimeNavigation = True):
+    def __init__(self, aoEntries, iPage, cItemsPerPage, # pylint: disable=too-many-arguments,too-many-positional-arguments
+                 tsEffectiveDate, sTitle, sId = None, fnDPrint = None, oDisp = None, aiSelectedSortColumns = None,
+                 fTimeNavigation = True):
         WuiContentBase.__init__(self, fnDPrint = fnDPrint, oDisp = oDisp);
         self._aoEntries         = aoEntries; ## @todo should replace this with a Logic object and define methods for querying.
         self._iPage             = iPage;
@@ -1230,8 +1231,8 @@ class WuiListContentWithActionBase(WuiListContentBase):
     Base for the list content with action classes.
     """
 
-    def __init__(self, aoEntries, iPage, cItemsPerPage, tsEffectiveDate, sTitle, # pylint: disable=too-many-arguments
-                 sId = None, fnDPrint = None, oDisp = None, aiSelectedSortColumns = None):
+    def __init__(self, aoEntries, iPage, cItemsPerPage, # pylint: disable=too-many-arguments,too-many-positional-arguments
+                 tsEffectiveDate, sTitle, sId = None, fnDPrint = None, oDisp = None, aiSelectedSortColumns = None):
         WuiListContentBase.__init__(self, aoEntries, iPage, cItemsPerPage, tsEffectiveDate, sTitle, sId = sId,
                                     fnDPrint = fnDPrint, oDisp = oDisp, aiSelectedSortColumns = aiSelectedSortColumns);
         self._aoActions     = None; # List of [ oValue, sText, sHover ] provided by the child class.

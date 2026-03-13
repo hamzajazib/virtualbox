@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# $Id: base.py 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $
+# $Id: base.py 113386 2026-03-13 12:55:16Z knut.osmundsen@oracle.com $
 # pylint: disable=too-many-lines
 
 """
@@ -37,7 +37,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 112403 $"
+__version__ = "$Revision: 113386 $"
 
 
 # Standard python imports.
@@ -1301,8 +1301,8 @@ class FilterCriterion(object):
     ksType_Ranges  = 'ranges';   ##< List of (unsigned) integer ranges.
     ## @}
 
-    def __init__(self, sName, sVarNm = None, sType = ksType_UInt, # pylint: disable=too-many-arguments
-                 sState = ksState_NotSelected, sKind = ksKind_ElementOfOrNot,
+    def __init__(self, sName, sVarNm = None, # pylint: disable=too-many-arguments,too-many-positional-arguments
+                 sType = ksType_UInt, sState = ksState_NotSelected, sKind = ksKind_ElementOfOrNot,
                  sTable = None, sColumn = None, asTables = None, oSub = None):
         assert len(sVarNm) == 2;    # required by wuimain.py for filtering.
         self.sName      = sName;

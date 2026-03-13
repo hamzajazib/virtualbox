@@ -36,7 +36,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Id: tdStorageRawDrive1.py 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $"
+__version__ = "$Id: tdStorageRawDrive1.py 113386 2026-03-13 12:55:16Z knut.osmundsen@oracle.com $"
 
 # Standard Python imports.
 import os;
@@ -63,9 +63,8 @@ class tdStorageRawDriveOs(vboxtestvms.BaseTestVm):
     """
     Base autostart helper class to provide common methods.
     """
-    # pylint: disable=too-many-arguments
-    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type = None, cMbRam = None,  \
-                 cCpus = 1, fPae = None, sGuestAdditionsIso = None, sBootSector = None):
+    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd,  # pylint: disable=too-many-arguments,too-many-positional-arguments
+                 eNic0Type = None, cMbRam = None, cCpus = 1, fPae = None, sGuestAdditionsIso = None, sBootSector = None):
         vboxtestvms.BaseTestVm.__init__(self, sVmName, oSet = oSet, sKind = sKind);
         self.oTstDrv = oTstDrv;
         self.sHdd = sHdd;
@@ -1234,10 +1233,9 @@ class tdStorageRawDriveOsLinux(tdStorageRawDriveOs):
     """
     Autostart support methods for Linux guests.
     """
-    # pylint: disable=too-many-arguments
-    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type = None, cMbRam = None,  \
-                 cCpus = 1, fPae = None, sGuestAdditionsIso = None, sBootSector = None):
-        tdStorageRawDriveOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam, \
+    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, # pylint: disable=too-many-arguments,too-many-positional-arguments
+                 eNic0Type = None, cMbRam = None, cCpus = 1, fPae = None, sGuestAdditionsIso = None, sBootSector = None):
+        tdStorageRawDriveOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam,
                                cCpus, fPae, sGuestAdditionsIso, sBootSector);
         self.sVBoxInstaller = '^VirtualBox-.*\\.run$';
         return;
@@ -1358,10 +1356,9 @@ class tdStorageRawDriveOsDarwin(tdStorageRawDriveOs):
     """
     Autostart support methods for Darwin guests.
     """
-    # pylint: disable=too-many-arguments
-    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type = None, cMbRam = None,  \
-                 cCpus = 1, fPae = None, sGuestAdditionsIso = None, sBootSector = None):
-        tdStorageRawDriveOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam, \
+    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, # pylint: disable=too-many-arguments,too-many-positional-arguments
+                 eNic0Type = None, cMbRam = None, cCpus = 1, fPae = None, sGuestAdditionsIso = None, sBootSector = None):
+        tdStorageRawDriveOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam,
                                cCpus, fPae, sGuestAdditionsIso, sBootSector);
         raise base.GenError('Testing the autostart functionality for Darwin is not implemented');
 
@@ -1369,10 +1366,9 @@ class tdStorageRawDriveOsSolaris(tdStorageRawDriveOs):
     """
     Autostart support methods for Solaris guests.
     """
-    # pylint: disable=too-many-arguments
-    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type = None, cMbRam = None,  \
-                 cCpus = 1, fPae = None, sGuestAdditionsIso = None, sBootSector = None):
-        tdStorageRawDriveOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam, \
+    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, # pylint: disable=too-many-arguments,too-many-positional-arguments
+                 eNic0Type = None, cMbRam = None, cCpus = 1, fPae = None, sGuestAdditionsIso = None, sBootSector = None):
+        tdStorageRawDriveOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam,
                                cCpus, fPae, sGuestAdditionsIso, sBootSector);
         raise base.GenError('Testing the autostart functionality for Solaris is not implemented');
 
@@ -1380,10 +1376,9 @@ class tdStorageRawDriveOsWin(tdStorageRawDriveOs):
     """
     Autostart support methods for Windows guests.
     """
-    # pylint: disable=too-many-arguments
-    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type = None, cMbRam = None,  \
-                 cCpus = 1, fPae = None, sGuestAdditionsIso = None, sBootSector = None):
-        tdStorageRawDriveOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam, \
+    def __init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, # pylint: disable=too-many-arguments,too-many-positional-arguments
+                 eNic0Type = None, cMbRam = None, cCpus = 1, fPae = None, sGuestAdditionsIso = None, sBootSector = None):
+        tdStorageRawDriveOs.__init__(self, oSet, oTstDrv, sVmName, sKind, sHdd, eNic0Type, cMbRam,
                                cCpus, fPae, sGuestAdditionsIso, sBootSector);
         self.sVBoxInstaller = r'^VirtualBox-.*\.(exe|msi)$';
         self.sVMDKPath=r'C:\Temp\vmdk';

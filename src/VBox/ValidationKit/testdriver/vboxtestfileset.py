@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# $Id: vboxtestfileset.py 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $
+# $Id: vboxtestfileset.py 113386 2026-03-13 12:55:16Z knut.osmundsen@oracle.com $
 # pylint: disable=too-many-lines
 
 """
@@ -37,7 +37,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 112403 $"
+__version__ = "$Revision: 113386 $"
 
 
 # Standard Python imports.
@@ -67,7 +67,7 @@ class TestFileSet(testfileset.TestFileSet):
     utility from the validation kit.
     """
 
-    def __init__(self, oTestVm, sBasePath, sSubDir, # pylint: disable=too-many-arguments
+    def __init__(self, oTestVm, sBasePath, sSubDir,  # pylint: disable=too-many-arguments,too-many-positional-arguments
                  oRngFileSizes = xrange(0, 16384),
                  oRngManyFiles = xrange(128, 512),
                  oRngTreeFiles = xrange(128, 384),

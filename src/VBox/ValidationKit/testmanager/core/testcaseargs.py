@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# $Id: testcaseargs.py 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $
+# $Id: testcaseargs.py 113386 2026-03-13 12:55:16Z knut.osmundsen@oracle.com $
 
 """
 Test Manager - Test Case Arguments Variations.
@@ -36,7 +36,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 112403 $"
+__version__ = "$Revision: 113386 $"
 
 
 # Standard python imports.
@@ -146,9 +146,9 @@ class TestCaseArgsData(ModelDataBase):
         oDb.execute('SELECT * FROM TestCaseArgs WHERE idGenTestCaseArgs = %s', (idGenTestCaseArgs,));
         return self.initFromDbRow(oDb.fetchOne());
 
-    def initFromValues(self, sArgs, cSecTimeout = None, sTestBoxReqExpr = None, sBuildReqExpr = None,  # pylint: disable=too-many-arguments
-                       cGangMembers = 1, idTestCase = None, idTestCaseArgs = None, tsEffective = None, tsExpire = None,
-                       uidAuthor = None, idGenTestCaseArgs = None, sSubName = None):
+    def initFromValues(self, sArgs, cSecTimeout = None,  # pylint: disable=too-many-arguments,too-many-positional-arguments
+                       sTestBoxReqExpr = None, sBuildReqExpr = None, cGangMembers = 1, idTestCase = None, idTestCaseArgs = None,
+                       tsEffective = None, tsExpire = None, uidAuthor = None, idGenTestCaseArgs = None, sSubName = None):
         """
         Reinitialize from values.
         Returns self.
