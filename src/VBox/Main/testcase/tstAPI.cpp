@@ -1,4 +1,4 @@
-/* $Id: tstAPI.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: tstAPI.cpp 113399 2026-03-13 23:48:15Z knut.osmundsen@oracle.com $ */
 /** @file
  * tstAPI - test program for our COM/XPCOM interface
  */
@@ -1583,7 +1583,7 @@ int main(int argc, char *argv[])
 #endif
 
     RTPrintf("Press enter to release Session and VirtualBox instances...");
-    getchar();
+    (void)getchar();
 
     // end "all-stuff" scope
     ////////////////////////////////////////////////////////////////////////////
@@ -1591,7 +1591,7 @@ int main(int argc, char *argv[])
     while (0);
 
     RTPrintf("Press enter to shutdown COM...");
-    getchar();
+    (void)getchar();
 
     com::Shutdown();
 

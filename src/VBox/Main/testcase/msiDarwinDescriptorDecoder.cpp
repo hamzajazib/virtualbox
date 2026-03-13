@@ -1,4 +1,4 @@
-/* $Id: msiDarwinDescriptorDecoder.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: msiDarwinDescriptorDecoder.cpp 113399 2026-03-13 23:48:15Z knut.osmundsen@oracle.com $ */
 /** @file
  * msiDarwinDescriptorDecoder
  */
@@ -40,11 +40,16 @@ typedef DWORD (WINAPI *PFNMSIDECOMPOSEDESCRIPTORW)(PCWSTR pwszDescriptor,
 int wmain(int cArgs, wchar_t **papwszArgs)
 {
     HMODULE hmodMsi = LoadLibrary("msi.dll");
+    if (!hmodMsi)
+    {
+        fprintf(stderr, "Failed to load msi.dll\n");
+        return 1;
+    }
     PFNMSIDECOMPOSEDESCRIPTORW pfnMsiDecomposeDescriptorW;
     pfnMsiDecomposeDescriptorW = (PFNMSIDECOMPOSEDESCRIPTORW)GetProcAddress(hmodMsi, "MsiDecomposeDescriptorW");
     if (!pfnMsiDecomposeDescriptorW)
     {
-        fprintf(stderr, "Failed to load msi.dll or resolve 'MsiDecomposeDescriptorW'\n");
+        fprintf(stderr, "Failed to resolve 'MsiDecomposeDescriptorW'\n");
         return 1;
     }
 
@@ -57,19 +62,17 @@ int wmain(int cArgs, wchar_t **papwszArgs)
         DWORD   offArguments = ~(DWORD)0;
         DWORD dwErr = pfnMsiDecomposeDescriptorW(papwszArgs[iArg], wszProductCode, wszFeatureId, wszComponentCode, &offArguments);
         if (dwErr == 0)
-        {
             fprintf(stderr,
-                    "#%u: '%ls'\n"
+                    "#%d: '%ls'\n"
                     " ->       Product=%ls\n"
                     " ->     FeatureId=%ls\n"
                     " -> ComponentCode=%ls\n"
-                    " ->  offArguments=%#lx (%ld)\n"
+                    " ->  offArguments=%#lx (%lu)\n"
                     , iArg, papwszArgs[iArg], wszProductCode, wszFeatureId, wszComponentCode, offArguments, offArguments);
-        }
         else
         {
             fprintf(stderr,
-                    "#%u: '%ls'\n"
+                    "#%d: '%ls'\n"
                     " -> error %lu (%#lx)\n"
                     , iArg, papwszArgs[iArg], dwErr, dwErr);
             rcExit = 1;

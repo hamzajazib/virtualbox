@@ -1,4 +1,4 @@
-/* $Id: tstVBoxAPIWin.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: tstVBoxAPIWin.cpp 113399 2026-03-13 23:48:15Z knut.osmundsen@oracle.com $ */
 /** @file
  *
  * tstVBoxAPIWin - sample program to illustrate the VirtualBox
@@ -238,7 +238,7 @@ int testStartVM(IVirtualBox *virtualBox)
             machine->ShowConsoleWindow(0);
 
             printf("Press enter to power off VM and close the session...\n");
-            getchar();
+            (void)getchar();
 
             /* Power down the machine. */
             rc = console->PowerDown(&progress);
@@ -269,7 +269,7 @@ int testStartVM(IVirtualBox *virtualBox)
 int main()
 {
     /* Initialize the COM subsystem. */
-    CoInitialize(NULL);
+    (void)CoInitialize(NULL);
 
     /* Instantiate the VirtualBox root object. */
     IVirtualBoxClient *virtualBoxClient;

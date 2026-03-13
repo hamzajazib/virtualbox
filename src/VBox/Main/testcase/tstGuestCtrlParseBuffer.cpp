@@ -1,4 +1,4 @@
-/* $Id: tstGuestCtrlParseBuffer.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: tstGuestCtrlParseBuffer.cpp 113399 2026-03-13 23:48:15Z knut.osmundsen@oracle.com $ */
 /** @file
  * Tests for VBoxService toolbox output streams.
  */
@@ -223,6 +223,8 @@ static struct
     { RT_STR_TUPLE("이것은 테스트입니다\0bar\0"), 2, VINF_SUCCESS }
 };
 
+/* warning C6262: Function uses '65732' bytes of stack.  Consider moving some data to heap. (VS2022: must disable for rest of file) */
+RT_NO_WARN_MSC_PREFAST(6262);
 
 /**
  * Reads and parses the stream from a given file.
