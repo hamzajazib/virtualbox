@@ -1,4 +1,4 @@
-# $Id: Config.kmk 113331 2026-03-11 12:25:16Z knut.osmundsen@oracle.com $
+# $Id: Config.kmk 113396 2026-03-13 23:32:59Z knut.osmundsen@oracle.com $
 ## @file
 # The global build configuration file for VBox.
 #
@@ -2686,6 +2686,9 @@ define def_VBoxMidlOutputDisableMscWarnings
 		'#endif' \
 		'#if _MSC_VER >= 1900 /* RT_MSC_VER_VC140 */' \
 		'# pragma warning(disable:5039)' \
+		'#endif' \
+		'#if defined(_PREFAST_) && _MSC_VER >= 1900 /* RT_MSC_VER_VC140 */' \
+		'# pragma warning(disable:28251)' \
 		'#endif' \
                ''
 	$(QUIET)$(CAT_EXT) "$1.tmp" >> "$1"
@@ -7484,8 +7487,9 @@ ifeq ($(KBUILD_TARGET),win)
  endif
  ifdef VBOX_WITH_MSC_ANALYZE_THIS
   #    -wd6255:  warning C6255: `_alloca` indicates failure by raising a stack overflow exception.  Consider using _malloca instead.
-  #	-wd28251: warning C28251: Inconsistent annotation for 'BSTR_UserSize': this instance has no annotations. See e:\vbox\svn\trunk\tools\win.x86\sdk\v10.0.22000.0\include\10.0.22000.0\um\oaidl.h(5912).
+  #    -wd28251: warning C28251: Inconsistent annotation for 'DllCanUnloadNow': this instance has no annotations.
   TEMPLATE_VBoxMainExe_CXXFLAGS         += /analyze -wd6255 -wd28251
+  TEMPLATE_VBoxMainExe_CFLAGS           += /analyze -wd6255 -wd28251
  endif
  TEMPLATE_VBoxMainExe_CXXFLAGS.debug     = -RTCsu
  TEMPLATE_VBoxMainExe_CXXFLAGS.dbgopt    = $(NO_SUCH_VARIABLE)
@@ -9514,7 +9518,7 @@ SVN                    ?= svn$(HOSTSUFF_EXE)
 GIT                    ?= git$(HOSTSUFF_EXE)
 VBOX_SVN_REV_KMK        = $(PATH_OUT)/revision.kmk
 ifndef VBOX_SVN_REV
- VBOX_SVN_REV_CONFIG_FALLBACK := $(patsubst %:,,  $Rev: 113331 $  )
+ VBOX_SVN_REV_CONFIG_FALLBACK := $(patsubst %:,,  $Rev: 113396 $  )
  VBOX_SVN_REV_FALLBACK := $(if-expr $(VBOX_SVN_REV_CONFIG_FALLBACK) > $(VBOX_SVN_REV_VERSION_FALLBACK),$(VBOX_SVN_REV_CONFIG_FALLBACK),$(VBOX_SVN_REV_VERSION_FALLBACK))
  VBOX_SVN_DEP          := $(firstword $(wildcard $(PATH_ROOT)/.svn/wc.db $(abspath $(PATH_ROOT)/../.svn/wc.db) $(abspath $(PATH_ROOT)/../../.svn/wc.db) $(PATH_ROOT)/.svn/entries))
  VBOX_GIT_DEP          := $(firstword $(wildcard $(PATH_ROOT)/.git/config $(abspath $(PATH_ROOT)/../.git/config) $(abspath $(PATH_ROOT)/../../.git/config)))
@@ -9528,7 +9532,7 @@ ifndef VBOX_SVN_REV
  ifneq ($(VBOX_GIT_DEP),)
   #
   # VBOX_SVN_REV_CONFIG_FALLBACK is not properly populated for a git checkout,
-  # as the $Rev: 113331 $ is not expanded, so we have to set it based on the information in the repo.
+  # as the $Rev: 113396 $ is not expanded, so we have to set it based on the information in the repo.
   #
   VBOX_SVN_REV_FALLBACK := $(shell $(GIT) log -1 $(PATH_ROOT)/Config.kmk | $(SED) -e 's/^[ \t]*//' -e '/svn:sync-xref-src-repo-rev\: r/!d' -e 's/svn:sync-xref-src-repo-rev\: r*//; t a; :a q')
  endif
