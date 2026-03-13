@@ -1,4 +1,4 @@
-/* $Id: RecordingUtils.cpp 113380 2026-03-13 10:01:45Z andreas.loeffler@oracle.com $ */
+/* $Id: RecordingUtils.cpp 113383 2026-03-13 10:31:37Z andreas.loeffler@oracle.com $ */
 /** @file
  * Recording utility code.
  */
@@ -421,7 +421,7 @@ size_t RecordingUtilsCalcCapacityFromFpsAndLatency(size_t uFPS, RTMSINTERVAL msL
  * @param   cMin                Minimum number of frame slots.
  * @param   cMax                Maximum number of frame slots.
  */
-size_t RecordingCalcCapacityFromLatency(RTMSINTERVAL msLatencyBudget, size_t msPerFrame, size_t cMin, size_t cMax)
+size_t RecordingUtilsCalcCapacityFromLatency(RTMSINTERVAL msLatencyBudget, size_t msPerFrame, size_t cMin, size_t cMax)
 {
     AssertReturn(msPerFrame > 0, cMin);
 
