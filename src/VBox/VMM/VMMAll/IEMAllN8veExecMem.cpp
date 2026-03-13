@@ -1,4 +1,4 @@
-/* $Id: IEMAllN8veExecMem.cpp 113157 2026-02-25 12:37:24Z knut.osmundsen@oracle.com $ */
+/* $Id: IEMAllN8veExecMem.cpp 113385 2026-03-13 12:54:29Z knut.osmundsen@oracle.com $ */
 /** @file
  * IEM - Native Recompiler, Executable Memory Allocator.
  */
@@ -45,6 +45,7 @@
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/system.h>
 #if   defined(RT_ARCH_AMD64)
 # include <iprt/x86.h>
 #elif defined(RT_ARCH_ARM64)
