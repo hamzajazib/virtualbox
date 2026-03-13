@@ -1,4 +1,4 @@
-/* $Id: RecordingCodec.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: RecordingCodec.cpp 113380 2026-03-13 10:01:45Z andreas.loeffler@oracle.com $ */
 /** @file
  * Recording codec wrapper.
  */
@@ -87,12 +87,22 @@ static int recordingCodecVPXEncodeWorker(PRECORDINGCODEC pCodec, vpx_image_t *pI
 *********************************************************************************************************************************/
 
 #ifdef VBOX_WITH_LIBVPX /* Currently only used by VPX. */
+/**
+ * Enters a codec's critical section.
+ *
+ * @param   pCodec              Codec instance to lock.
+ */
 DECLINLINE(void) recordingCodecLock(PRECORDINGCODEC pCodec)
 {
     int vrc2 = RTCritSectEnter(&pCodec->CritSect);
     AssertRC(vrc2);
 }
 
+/**
+ * Leaves a codec's critical section.
+ *
+ * @param   pCodec              Codec instance to unlock.
+ */
 DECLINLINE(void) recordingCodecUnlock(PRECORDINGCODEC pCodec)
 {
     int vrc2 = RTCritSectLeave(&pCodec->CritSect);
@@ -119,6 +129,73 @@ DECLINLINE(void) recordingCodecVPXClearPlanes(PRECORDINGCODEC pCodec)
     size_t const cbUVPlane = (pCodec->Parms.u.Video.uWidth / 2) * (pCodec->Parms.u.Video.uHeight / 2);
     memset(pCodec->Video.VPX.RawImage.planes[VPX_PLANE_U], 128, cbUVPlane);
     memset(pCodec->Video.VPX.RawImage.planes[VPX_PLANE_V], 128, cbUVPlane);
+}
+
+/**
+ * Checks whether the VPX encoder is allowed to emit a frame at this timestamp.
+ *
+ * @returns @c true if encoding should proceed now, @c false if it should be deferred.
+ * @param   pCodec              Codec instance to query.
+ * @param   msTimestamp         Timestamp (PTS, in ms) to evaluate.
+ */
+DECLINLINE(bool) recordingCodecVPXShouldEncode(const PRECORDINGCODEC pCodec, uint64_t msTimestamp)
+{
+    if (pCodec->Parms.u.Video.uDelayMs == 0)
+        return true;
+
+    if (!pCodec->State.fHaveWrittenFrame)
+        return true;
+
+    if (msTimestamp <= pCodec->State.tsLastWrittenMs)
+        return false;
+
+    uint64_t const msNextAllowed = pCodec->State.tsLastWrittenMs + pCodec->Parms.u.Video.uDelayMs;
+    return msTimestamp >= msNextAllowed;
+}
+
+/**
+ * Rebuilds the VPX raw I420 image from the currently composed frame if needed.
+ *
+ * @returns VBox status code.
+ * @param   pCodec              Codec instance to update.
+ * @param   msTimestamp         Timestamp (PTS, in ms) associated with this update.
+ */
+static int recordingCodecVPXEnsureRawImage(PRECORDINGCODEC pCodec, uint64_t msTimestamp)
+{
+    PRECORDINGCODECVPX pVPX = &pCodec->Video.VPX;
+
+    if (!pVPX->fRawImageDirty)
+        return VINF_SUCCESS;
+
+    PRECORDINGVIDEOFRAME pSrc = pVPX->pFrameComposite ? pVPX->pFrameComposite : &pVPX->Front;
+    AssertPtrReturn(pSrc, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSrc->pau8Buf, VERR_INVALID_POINTER);
+
+    int32_t sx = 0;
+    int32_t sy = 0;
+    int32_t sw = (int32_t)pSrc->Info.uWidth;
+    int32_t sh = (int32_t)pSrc->Info.uHeight;
+    int32_t dx = 0;
+    int32_t dy = 0;
+
+    int vrc = RecordingUtilsCoordsCropCenter(&pCodec->Parms, &sx, &sy, &sw, &sh, &dx, &dy);
+    if (vrc != VINF_SUCCESS)
+        return vrc;
+
+    RT_NOREF(msTimestamp);
+#ifdef VBOX_RECORDING_DEBUG_DUMP_FRAMES
+    RecordingDbgDumpVideoFrameEx(pSrc, NULL /* Use default directory */,
+                                      "vpx-before-encode", msTimestamp);
+#endif
+
+    recordingCodecVPXClearPlanes(pCodec);
+
+    RecordingUtilsConvBGRA32ToYUVI420Ex(/* Destination */
+                                        pVPX->pu8YuvBuf, dx, dy, pCodec->Parms.u.Video.uWidth, pCodec->Parms.u.Video.uHeight,
+                                        /* Source */
+                                        pSrc->pau8Buf, sx, sy, sw, sh, pSrc->Info.uBytesPerLine, pSrc->Info.uBPP);
+    pVPX->fRawImageDirty = false;
+    return VINF_SUCCESS;
 }
 
 /** @copydoc RECORDINGCODECOPS::pfnInit */
@@ -332,25 +409,28 @@ static int recordingCodecVPXEncodeWorker(PRECORDINGCODEC pCodec, vpx_image_t *pI
     return vrc;
 }
 
-/** @copydoc RECORDINGCODECOPS::pfnEncode */
-static DECLCALLBACK(int) recordingCodecVPXEncode(PRECORDINGCODEC pCodec, PRECORDINGFRAME pFrame,
-                                                 uint64_t msTimestamp, void *pvUser)
+/** @copydoc RECORDINGCODECOPS::pfnCompose */
+static DECLCALLBACK(int) recordingCodecVPXCompose(PRECORDINGCODEC pCodec, PRECORDINGFRAME pFrame,
+                                                  uint64_t msTimestamp, void *pvUser)
 {
+    RT_NOREF(pvUser);
+
     recordingCodecLock(pCodec);
 
-    int vrc;
+    PRECORDINGCODECVPX pVPX = &pCodec->Video.VPX;
+
+    int vrc = VINF_SUCCESS;
 
     /* If no frame is given, encode the last composed frame again with the given timestamp. */
     if (pFrame == NULL)
     {
-        vrc = recordingCodecVPXEncodeWorker(pCodec, &pCodec->Video.VPX.RawImage, msTimestamp);
+        vrc = recordingCodecVPXEncodeWorker(pCodec, &pVPX->RawImage, msTimestamp);
         recordingCodecUnlock(pCodec);
         return vrc;
     }
 
-    RecordingContext *pCtx = (RecordingContext *)pvUser;
-    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
-
+    /* All frames must match the given timestamp.
+     * Otherwise something is inconsistent. */
     Assert(pFrame->msTimestamp == msTimestamp);
 
     /* Note: We get BGRA 32 input here. */
@@ -391,13 +471,20 @@ static DECLCALLBACK(int) recordingCodecVPXEncode(PRECORDINGCODEC pCodec, PRECORD
                                         pSrc->pau8Buf, pSrc->cbBuf, 0 /* uSrcX */, 0 /* uSrcY */, pSrc->Info.uWidth, pSrc->Info.uHeight,
                                         pSrc->Info.uBytesPerLine, pSrc->Info.uBPP, pSrc->Info.enmPixelFmt);
 #if 0
-            RecordingUtilsDbgDumpVideoFrameEx(pFront, "/tmp/recording", "encode-front");
+            RecordingUtilsDbgDumpVideoFrameEx(pFront, "/tmp/recording", "encode-front", msTimestamp);
             RecordingUtilsDbgDumpImageData(pSrc->pau8Buf, pSrc->cbBuf,
                                            "/tmp/recording", "encode-src",
-                                           pSrc->Info.uWidth, pSrc->Info.uHeight, pSrc->Info.uBytesPerLine, pSrc->Info.uBPP);
+                                           pSrc->Info.uWidth, pSrc->Info.uHeight, pSrc->Info.uBytesPerLine, pSrc->Info.uBPP,
+                                           msTimestamp);
 #endif
+            if (RT_FAILURE(vrc))
+                break;
+
             vrc = RecordingVideoFrameBlitFrame(pBack, pSrc->Pos.x, pSrc->Pos.y,
                                                pSrc,  0 /* uSrcX */, 0 /* uSrcY */, pSrc->Info.uWidth, pSrc->Info.uHeight);
+            if (RT_FAILURE(vrc))
+                break;
+
             pFront = pBack;
 
             sw = pSrc->Info.uWidth;
@@ -482,15 +569,22 @@ static DECLCALLBACK(int) recordingCodecVPXEncode(PRECORDINGCODEC pCodec, PRECORD
                                                 0 /* uSrcX */, 0 /* uSrcY */, pCursor->Info.uWidth, pCursor->Info.uHeight,
                                                 pCursor->Info.uBytesPerLine, pCursor->Info.uBPP, pCursor->Info.enmPixelFmt);
 #if 0
-            RecordingUtilsDbgDumpVideoFrameEx(pFront, "/tmp/recording", "cursor-alpha-front");
+            RecordingUtilsDbgDumpVideoFrameEx(pFront, "/tmp/recording", "cursor-alpha-front", msTimestamp);
 #endif
             break;
         }
 
         default:
             AssertFailed();
+            vrc = VERR_INVALID_PARAMETER;
             break;
 
+    }
+
+    if (RT_FAILURE(vrc))
+    {
+        recordingCodecUnlock(pCodec);
+        return vrc;
     }
 
     /* Nothing to encode? Bail out. */
@@ -498,40 +592,59 @@ static DECLCALLBACK(int) recordingCodecVPXEncode(PRECORDINGCODEC pCodec, PRECORD
         || sh == 0)
     {
         recordingCodecUnlock(pCodec);
-        return VINF_SUCCESS;
+        return VWRN_RECORDING_ENCODING_SKIPPED;
     }
 
     Log3Func(("Source: %RU32x%RU32 (Pos %RU32x%RU32)\n", sw, sh, sx, sy));
     Log3Func(("Front : %RU32x%RU32\n", pFront->Info.uWidth, pFront->Info.uHeight));
     Log3Func(("Codec : %RU32x%RU32\n", pCodec->Parms.u.Video.uWidth, pCodec->Parms.u.Video.uHeight));
 
-    vrc = RecordingUtilsCoordsCropCenter(&pCodec->Parms, &sx, &sy, &sw, &sh, &dx, &dy);
-    if (vrc == VINF_SUCCESS) /* vrc might be VWRN_RECORDING_ENCODING_SKIPPED to skip encoding. */
-    {
-        Log3Func(("Encoding source %RI32,%RI32 (%RI32x%RI32) to dest %RI32,%RI32 (%RU32x%RU32) -- %zu bytes\n",
-                  sx, sy, sw, sh,
-                  dx, dy, pCodec->Parms.u.Video.uWidth, pCodec->Parms.u.Video.uHeight,
-                  (size_t)(sw * sh * (pFront->Info.uBPP / 8))));
-#if 0
-        AssertReturn(sw + dx <= (int32_t)pCodec->Parms.u.Video.uWidth,  VERR_INVALID_PARAMETER);
-        AssertReturn(sy + sh <= (int32_t)pCodec->Parms.u.Video.uHeight, VERR_INVALID_PARAMETER);
-#endif
-#if 0
-        RecordingUtilsDbgDumpImageData(pFront->pau8Buf, pFront->cbBuf,
-                                       NULL /* Use default temp dir */, "cropped", sx, sy, sw, sh,
-                                       pFront->Info.uBytesPerLine, pFront->Info.uBPP);
-#endif
-        /* Blit (and convert from BGRA 32) the changed parts of the front buffer to the YUV 420 surface of the codec. */
-        RecordingUtilsConvBGRA32ToYUVI420Ex(/* Destination */
-                                            pCodec->Video.VPX.pu8YuvBuf, dx, dy, pCodec->Parms.u.Video.uWidth, pCodec->Parms.u.Video.uHeight,
-                                            /* Source */
-                                            pFront->pau8Buf, sx, sy, sw, sh, pFront->Info.uBytesPerLine, pFront->Info.uBPP);
+    pVPX->pFrameComposite = pFront;
+    pVPX->fRawImageDirty  = true;
 
-        vrc = recordingCodecVPXEncodeWorker(pCodec, &pCodec->Video.VPX.RawImage, msTimestamp);
+    recordingCodecUnlock(pCodec);
+    return VINF_SUCCESS;
+}
+
+/** @copydoc RECORDINGCODECOPS::pfnEncode */
+static DECLCALLBACK(int) recordingCodecVPXEncode(PRECORDINGCODEC pCodec, const PRECORDINGFRAME pFrame,
+                                                 uint64_t msTimestamp, void *pvUser)
+{
+    LogFlowFuncEnter();
+
+    RT_NOREF(pFrame, pvUser); /* Composing is done in recordingCodecVPXCompose(). */
+
+    recordingCodecLock(pCodec);
+
+    PRECORDINGCODECVPX pVPX = &pCodec->Video.VPX;
+
+    /* First things first: Do we need to encode anything at the given point in time? */
+    bool fSkipEncoding = !recordingCodecVPXShouldEncode(pCodec, msTimestamp);
+    if (fSkipEncoding)
+    {
+        /* Large updates can be split into multiple RECORDINGFRAME_TYPE_VIDEO chunks carrying
+         * the same timestamp. If we drop all chunks after the first one, the composed frame can
+         * end up incomplete (for example, missing bottom tiles in full-screen updates).
+         *
+         * Allow equal-timestamp video chunks to be encoded so tiled updates get fully committed. */
+        if (   pCodec->State.fHaveWrittenFrame
+            && msTimestamp == pCodec->State.tsLastWrittenMs)
+            fSkipEncoding = false;
     }
+
+    int vrc;
+    if (!fSkipEncoding)
+    {
+        vrc = recordingCodecVPXEnsureRawImage(pCodec, msTimestamp);
+        if (vrc == VINF_SUCCESS)
+            vrc = recordingCodecVPXEncodeWorker(pCodec, &pVPX->RawImage, msTimestamp);
+    }
+    else
+        vrc = VWRN_RECORDING_ENCODING_SKIPPED;
 
     recordingCodecUnlock(pCodec);
 
+    LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
 
@@ -560,6 +673,9 @@ static DECLCALLBACK(int) recordingCodecVPXScreenChange(PRECORDINGCODEC pCodec, P
     {
         RecordingVideoFrameClear(&pVPX->Front);
         RecordingVideoFrameClear(&pVPX->Back);
+
+        pVPX->fRawImageDirty  = true;
+        pVPX->pFrameComposite = &pVPX->Front;
 
         recordingCodecVPXClearPlanes(pCodec);
 
@@ -968,10 +1084,23 @@ static DECLCALLBACK(int) recordingCodecAudioParseOptions(PRECORDINGCODEC pCodec,
 }
 #endif
 
+/**
+ * Resets codec runtime state.
+ *
+ * @param   pCodec              Codec instance to reset.
+ */
 static void recordingCodecReset(PRECORDINGCODEC pCodec)
 {
     pCodec->State.tsLastWrittenMs = 0;
     pCodec->State.cEncErrors = 0;
+    pCodec->State.fHaveWrittenFrame = false;
+
+    if (pCodec->Parms.enmType == RECORDINGCODECTYPE_VIDEO)
+    {
+        PRECORDINGCODECVPX pVPX = &pCodec->Video.VPX;
+        pVPX->fRawImageDirty  = true;
+        pVPX->pFrameComposite = &pVPX->Front;
+    }
 }
 
 /**
@@ -997,6 +1126,8 @@ int recordingCodecCreateAudio(PRECORDINGCODEC pCodec, RecordingAudioCodec_T enmA
     int vrc;
 
     recordingCodecCreateCommon(pCodec);
+
+    RT_ZERO(pCodec->Ops);
 
     switch (enmAudioCodec)
     {
@@ -1051,6 +1182,7 @@ int recordingCodecCreateVideo(PRECORDINGCODEC pCodec, RecordingVideoCodec_T enmV
             pCodec->Ops.pfnDestroy      = recordingCodecVPXDestroy;
             pCodec->Ops.pfnFinalize     = recordingCodecVPXFinalize;
             pCodec->Ops.pfnParseOptions = recordingCodecVPXParseOptions;
+            pCodec->Ops.pfnCompose      = recordingCodecVPXCompose;
             pCodec->Ops.pfnEncode       = recordingCodecVPXEncode;
             pCodec->Ops.pfnScreenChange = recordingCodecVPXScreenChange;
 
@@ -1169,7 +1301,30 @@ int recordingCodecDestroy(PRECORDINGCODEC pCodec)
 }
 
 /**
- * Feeds the codec encoder with frame data to encode.
+ * Feeds the codec encoder with data needed to compose a full frame.
+ *
+ * @returns VBox status code.
+ * @param   pCodec              Codec to use.
+ * @param   pFrame              Pointer to frame data to use for composing.
+ * @param   msTimestamp         Timestamp (PTS) to use for encoding.
+ * @param   pvUser              User data pointer. Optional and can be NULL.
+ */
+int recordingCodecCompose(PRECORDINGCODEC pCodec, const PRECORDINGFRAME pFrame, uint64_t msTimestamp, void *pvUser)
+{
+    AssertPtrReturn(pCodec->Ops.pfnCompose, VERR_NOT_SUPPORTED);
+
+    int vrc = pCodec->Ops.pfnCompose(pCodec, pFrame, msTimestamp, pvUser);
+    if (vrc == VINF_SUCCESS)
+    {
+        pCodec->State.tsLastWrittenMs = msTimestamp;
+        pCodec->State.fHaveWrittenFrame = true;
+    }
+
+    return vrc;
+}
+
+/**
+ * Triggers encoding the currently built frame.
  *
  * @returns VBox status code.
  * @param   pCodec              Codec to use.
@@ -1177,29 +1332,14 @@ int recordingCodecDestroy(PRECORDINGCODEC pCodec)
  * @param   msTimestamp         Timestamp (PTS) to use for encoding.
  * @param   pvUser              User data pointer. Optional and can be NULL.
  */
-int recordingCodecEncodeFrame(PRECORDINGCODEC pCodec, const PRECORDINGFRAME pFrame, uint64_t msTimestamp, void *pvUser)
+int recordingCodecEncode(PRECORDINGCODEC pCodec, const PRECORDINGFRAME pFrame, uint64_t msTimestamp, void *pvUser)
 {
-    AssertPtrReturn(pCodec->Ops.pfnEncode, VERR_NOT_SUPPORTED);
-
     int vrc = pCodec->Ops.pfnEncode(pCodec, pFrame, msTimestamp, pvUser);
-    if (RT_SUCCESS(vrc))
-        pCodec->State.tsLastWrittenMs = pFrame->msTimestamp;
-
-    return vrc;
-}
-
-/**
- * Feeds the codec encoder with the current composed image.
- *
- * @returns VBox status code.
- * @param   pCodec              Codec to use.
- * @param   msTimestamp         Timestamp (PTS) to use for encoding.
- */
-int recordingCodecEncodeCurrent(PRECORDINGCODEC pCodec, uint64_t msTimestamp)
-{
-    int vrc = pCodec->Ops.pfnEncode(pCodec, NULL /* pFrame */, msTimestamp, NULL /* pvUser */);
-    if (RT_SUCCESS(vrc))
-        pCodec->State.tsLastWrittenMs = msTimestamp;
+    if (vrc == VINF_SUCCESS)
+    {
+        pCodec->State.tsLastWrittenMs   = msTimestamp;
+        pCodec->State.fHaveWrittenFrame = true;
+    }
 
     return vrc;
 }
@@ -1250,7 +1390,7 @@ int recordingCodecFinalize(PRECORDINGCODEC pCodec)
  */
 bool recordingCodecIsInitialized(const PRECORDINGCODEC pCodec)
 {
-    return pCodec->Ops.pfnInit != NULL; /* pfnInit acts as a beacon for initialization status. */
+    return pCodec && pCodec->Ops.pfnInit != NULL; /* pfnInit acts as a beacon for initialization status. */
 }
 
 /**
@@ -1264,14 +1404,55 @@ bool recordingCodecIsInitialized(const PRECORDINGCODEC pCodec)
  */
 uint32_t recordingCodecGetWritable(const PRECORDINGCODEC pCodec, uint64_t msTimestamp)
 {
-    Log3Func(("%RU64 -- tsLastWrittenMs=%RU64 + uDelayMs=%RU32\n",
-              msTimestamp, pCodec->State.tsLastWrittenMs,pCodec->Parms.u.Video.uDelayMs));
+    AssertPtrReturn(pCodec, 0);
 
-    if (msTimestamp < pCodec->State.tsLastWrittenMs + pCodec->Parms.u.Video.uDelayMs)
-        return 0; /* Too early for writing (respect set FPS). */
+    uint64_t msDelay = 0;
+    if (pCodec->Parms.enmType == RECORDINGCODECTYPE_VIDEO)
+        msDelay = pCodec->Parms.u.Video.uDelayMs;
+    else if (pCodec->Parms.enmType == RECORDINGCODECTYPE_AUDIO)
+        msDelay = pCodec->Parms.msFrame;
+    else
+        return 0;
+
+    Log3Func(("%RU64 -- tsLastWrittenMs=%RU64 + msDelay=%RU64\n",
+              msTimestamp, pCodec->State.tsLastWrittenMs, msDelay));
+
+    if (   pCodec->State.fHaveWrittenFrame
+        && msTimestamp < pCodec->State.tsLastWrittenMs + msDelay)
+        return 0; /* Too early for writing (respect set pacing). */
 
     /* For now we just return the complete frame space. */
     AssertMsg(pCodec->Parms.cbFrame, ("Codec not initialized yet\n"));
     return pCodec->Parms.cbFrame;
 }
 
+/**
+ * Returns the next writable deadline (time to wait in ms until writable).
+ *
+ * @returns Deadline in ms until writable. 0 means writable now.
+ * @param   pCodec              Codec instance.
+ * @param   msTimestamp         Current timestamp (PTS, in ms).
+ */
+RTMSINTERVAL recordingCodecGetDeadlineMs(const PRECORDINGCODEC pCodec, uint64_t msTimestamp)
+{
+    AssertPtrReturn(pCodec, 0);
+
+    uint64_t msDelay = 0;
+    if (pCodec->Parms.enmType == RECORDINGCODECTYPE_VIDEO)
+        msDelay = pCodec->Parms.u.Video.uDelayMs;
+    else if (pCodec->Parms.enmType == RECORDINGCODECTYPE_AUDIO)
+        msDelay = pCodec->Parms.msFrame;
+    else
+        return 0;
+
+    if (   !pCodec->State.fHaveWrittenFrame
+        || msDelay == 0)
+        return 0;
+
+    uint64_t const msNext = pCodec->State.tsLastWrittenMs + msDelay;
+    if (msTimestamp >= msNext)
+        return 0;
+
+    uint64_t const msWait = msNext - msTimestamp;
+    return (RTMSINTERVAL)RT_MIN(msWait, (uint64_t)UINT32_MAX);
+}

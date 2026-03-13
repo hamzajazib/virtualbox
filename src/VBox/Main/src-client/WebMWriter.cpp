@@ -1,4 +1,4 @@
-/* $Id: WebMWriter.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: WebMWriter.cpp 113380 2026-03-13 10:01:45Z andreas.loeffler@oracle.com $ */
 /** @file
  * WebMWriter.cpp - WebM container handling.
  */
@@ -582,7 +582,11 @@ int WebMWriter::processQueue(WebMQueue *pQueue, bool fForce)
     if (!fForce)
     {
         /* Only process when we reached a certain threshold. */
-        if (RTTimeMilliTS() - pQueue->tsLastProcessedMs < 5000 /* ms */ /** @todo Make this configurable */)
+        uint64_t const tsDiff = RTTimeMilliTS() - pQueue->tsLastProcessedMs;
+        bool     const fProcess = tsDiff >= 100 /* ms */; /** @todo Make this configurable */
+
+        Log3Func(("tsDiff=%RU64 -> %RTbool\n", tsDiff, fProcess));
+        if (!fProcess)
             return VINF_SUCCESS;
     }
 

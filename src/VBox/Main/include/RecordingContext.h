@@ -1,4 +1,4 @@
-/* $Id: RecordingContext.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: RecordingContext.h 113380 2026-03-13 10:01:45Z andreas.loeffler@oracle.com $ */
 /** @file
  * Recording code header. Used by VBoxSVC + VBoxC.
  *
@@ -35,6 +35,8 @@
 #endif
 
 #include <map>
+
+#include <iprt/types.h>
 
 #include <VBox/err.h>
 
@@ -137,14 +139,15 @@ public:
     int SetError(int rc, const com::Utf8Str &strText);
 
     int SendAudioFrame(const void *pvData, size_t cbData, uint64_t uTimestampMs);
-    int SendVideoFrame(uint32_t uScreen, uint32_t uWidth, uint32_t uHeight, RECORDINGPIXELFMT enmPixelFmt, uint32_t uBytesPerLine, const void *pvData, size_t cbData, uint32_t uPosX, uint32_t uPosY, uint64_t msTimestamp);
+    int SendVideoFrame(uint32_t uScreen, uint32_t uWidth, uint32_t uHeight, uint8_t uBPP, uint32_t uBytesPerLine, const void *pvData, size_t cbData, uint32_t uPosX, uint32_t uPosY, uint64_t msTimestamp);
     int SendCursorPositionChange(uint32_t uScreen, int32_t x, int32_t y, uint64_t msTimestamp);
     int SendCursorShapeChange(bool fVisible, bool fAlpha, uint32_t xHot, uint32_t yHot, uint32_t uWidth, uint32_t uHeight, const uint8_t *pu8Shape, size_t cbShape, uint64_t msTimestamp);
-    int SendScreenChange(uint32_t uScreen, uint32_t uWidth, uint32_t uHeight, RECORDINGPIXELFMT enmPixelFmt, uint32_t uBytesPerLine, uint64_t uTimestampMs);
+    int SendScreenChange(uint32_t uScreen, uint32_t uWidth, uint32_t uHeight, uint8_t uBPP, uint32_t uBytesPerLine, uint64_t uTimestampMs);
 
 public:
 
     uint64_t GetCurrentPTS(void) const;
+    RTMSINTERVAL GetSchedulingHintMs(void) const;
     bool IsFeatureEnabled(RecordingFeature_T enmFeature);
     bool IsFeatureEnabled(uint32_t uScreen, RecordingFeature_T enmFeature);
     bool IsReady(void);

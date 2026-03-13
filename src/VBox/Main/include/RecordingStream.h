@@ -1,4 +1,4 @@
-/* $Id: RecordingStream.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: RecordingStream.h 113380 2026-03-13 10:01:45Z andreas.loeffler@oracle.com $ */
 /** @file
  * Recording stream code header.
  */
@@ -38,6 +38,9 @@
 #include <map>
 #include <vector>
 
+#include <iprt/types.h>
+
+#include <iprt/circbuf.h>
 #include <iprt/critsect.h>
 #include <iprt/req.h>
 #include <iprt/semaphore.h>
@@ -55,161 +58,6 @@ class WebMWriter;
 class RecordingContext;
 
 /**
- * Virtual block worker base class.
- *
- * Can be used for keeping and working on a block set.
- */
-class RecordingBlockWorker
-{
-protected:
-
-    /** Constructor -- will throw rc on errors. */
-    RecordingBlockWorker(const char *pszName,
-                         uint32_t msTimeout = RT_INDEFINITE_WAIT, uint32_t msWait = 0, void *pvUser = NULL)
-        : m_fShutdown(false)
-        , m_tsLastRunMs(0)
-        , m_msTimeout(msTimeout)
-        , m_msWait(msWait)
-        , m_pvUser(pvUser)
-    {
-        RTStrPrintf(m_szName, sizeof(m_szName), "%s", pszName);
-
-        if (m_msWait)
-        {
-            int vrc = RTSemEventCreate(&m_hSemEvent);
-            if (RT_FAILURE(vrc))
-                throw vrc;
-
-            /** @todo Handle threading creation here. */
-        }
-    }
-
-    virtual ~RecordingBlockWorker(void)
-    {
-        /** @todo Handle threading shutdown here. */
-
-        if (m_msWait)
-            RTSemEventDestroy(m_hSemEvent);
-    }
-
-public:
-
-    int Run(void);
-    int Notify(void);
-
-protected:
-
-    /**
-     * Pure virtual worker function. Must be implemented by the derived class.
-     * Will be called by the Run() function.
-     * Keep the implementation short so that this class can handle timeouts in a proper manner.
-     *
-     * @return VBox status code. Returning an error will abort the current worker run.
-     * @retval VINF_CALLBACK_RETURN if the worker wants to signal that there is nothing more to do in the current iteration.
-     * @param  msTimeout    Timeout (in ms) hint.
-     *                      This gives the worker a hint for how long it can run.
-     * @param  fShutdown    Shutdown flag.
-     * @param  pvUser       Handed-in user supplied pointer. Might be NULL. */
-    virtual DECLCALLBACK(int) Worker(uint64_t msTimeout, bool fShutdown, void *pvUser) = 0;
-
-protected:
-
-    /**
-     * Returns whether the stream's processing timeout has been reached.
-     *
-     * @returns \c true if timeout has been reached, or \c false if not.
-     */
-    bool timeoutReached(void) const
-    {
-        return timeoutRemaining() == 0 ? true : false;
-    }
-
-    /**
-     * Returns the remaining processing timeout (in ms).
-     *
-     * @returns Timeout remaining (in ms),
-     * @retval  UINT64_MAX if no timeout was configured.
-     * @retval  0 if timeout has been reached.
-     */
-    uint64_t timeoutRemaining(void) const
-    {
-        if (m_msTimeout == RT_INDEFINITE_WAIT)
-            return UINT64_MAX;
-        uint64_t const tsDiff = RTTimeMilliTS() - m_tsLastRunMs;
-        return tsDiff < m_msTimeout ? m_msTimeout - tsDiff : 0;
-    }
-
-    /**
-     * Resets the processing timeout for a worker iteration.
-     */
-    void timeoutReset(void)
-    {
-        m_tsLastRunMs = RTTimeMilliTS();
-    }
-
-    /**
-     * Sets a new processing timeout.
-     */
-    void timeoutSet(uint32_t msTimeout)
-    {
-        m_msTimeout = msTimeout;
-    }
-
-protected:
-
-    /** Worker name. Used for STAM paths.
-     *  @todo */
-    char                m_szName[8];
-    /** Shutdown indicator. */
-    bool                m_fShutdown;
-    /** Last run timestamp (in ms).
-     *  Set to 0 if never run (yet). */
-    uint64_t            m_tsLastRunMs;
-    /** Timeout (in ms) to use.
-     *  This specifies the maximum time the worker is allowed to run per iteration.
-     *  Specify RT_INDEFINITE_WAIT for running until all data is processed. */
-    uint32_t            m_msTimeout;
-    /** Event semaphore for triggering the worker. */
-    RTSEMEVENT          m_hSemEvent;
-    /** Waiting time (in ms) to use before calling the worker again.
-     *  If set to 0 (default), the worker wil be called immediately.
-     *  If set to RT_INDEFINITE_WAIT, the worker needs to be triggered via Notify() from another thread.
-     *  Any other value will wait for the time (in ms) specified and calls the worker again. */
-    uint32_t            m_msWait;
-    /** User-supplied pointer for the worker function. */
-    void               *m_pvUser;
-};
-
-/**
- * Implementation of the block worker class for the stream's housekeeping.
- *
- ** @todo Use this in a separate thread?
- */
-class RecordingBlockWorkerHousekeeping : public RecordingBlockWorker
-{
-public:
-
-    RecordingBlockWorkerHousekeeping(void)
-        : RecordingBlockWorker("Housekeeping", RT_MS_1SEC /* ms timeout */) { }
-
-    virtual ~RecordingBlockWorkerHousekeeping()
-    {
-        /* Invoke the worker one last time, to indicate shutdown. */
-        m_fShutdown = true;
-        Run();
-    }
-
-    int Insert(uint64_t uPTS, RecordingBlocks *pBlocks);
-
-    DECLCALLBACK(int) Worker(uint64_t msTimeout, bool fShutdown, void *pvUser);
-
-protected:
-
-    /** Set of recording (data) blocks for this worker to process. */
-    RecordingBlockSet   m_BlockSet;
-};
-
-/**
  * Class for managing a recording stream.
  *
  * A recording stream represents one entity to record (e.g. on screen / monitor),
@@ -217,18 +65,25 @@ protected:
  */
 class RecordingStream
 {
+    struct RECORDINGCMD;
+
 public:
 
-    RecordingStream(RecordingContext *pCtx, uint32_t uScreen, const ComPtr<IRecordingScreenSettings> &ScreenSettings, PRECORDINGCODEC pCodecAudio);
+    RecordingStream(RecordingContext *pCtx, uint32_t uScreen, const ComPtr<IRecordingScreenSettings> &ScreenSettings, PRECORDINGFRAMEPOOL paPoolsCommonEnc);
 
     virtual ~RecordingStream(void);
 
+    int InitVideo(const ComPtr<IRecordingScreenSettings> &ScreenSettings);
+#ifdef VBOX_WITH_AUDIO_RECORDING
+    int InitAudio(const ComPtr<IRecordingScreenSettings> &ScreenSettings, PRECORDINGCODEC pCodecAudio);
+#endif
+
 public:
 
-    int Init(RecordingContext *pCtx, uint32_t uScreen, const ComPtr<IRecordingScreenSettings> &ScreenSettings, PRECORDINGCODEC pCodecAudio);
-    int Uninit(void);
+    static DECLCALLBACK(int) Thread(RTTHREAD hThreadSelf, void *pvUser);
 
-    int ThreadMain(int rcWait, uint64_t msTimestamp, RecordingBlockMap &commonBlocks);
+    int ThreadWorker(int rcWait, RTMSINTERVAL msTimeout);
+    int Notify(void);
     int SendAudioFrame(const void *pvData, size_t cbData, uint64_t msTimestamp);
     int SendCursorPos(uint8_t idCursor, PRECORDINGPOS pPos, uint64_t msTimestamp);
     int SendCursorShape(uint8_t idCursor, PRECORDINGVIDEOFRAME pShape, uint64_t msTimestamp);
@@ -258,20 +113,38 @@ protected:
     int open(const ComPtr<IRecordingScreenSettings> &ScreenSettings);
     int close(void);
 
-    int initInternal(RecordingContext *pCtx, uint32_t uScreen, const ComPtr<IRecordingScreenSettings> &ScreenSettings, PRECORDINGCODEC pCodecAudio);
-    int uninitInternal(void);
+    int initCommon(RecordingContext *pCtx, uint32_t uScreen, const ComPtr<IRecordingScreenSettings> &ScreenSettings, PRECORDINGFRAMEPOOL paPoolsCommonEnc);
+    int uninitCommon(void);
 
-    int initVideo(const ComPtr<IRecordingScreenSettings> &ScreenSettings);
-    int unitVideo(void);
+    int uninitVideo(void);
+#ifdef VBOX_WITH_AUDIO_RECORDING
+    int uninitAudio(void);
+#endif
 
-    void housekeepingWorker(void);
+#ifdef VBOX_WITH_RECORDING_STATS
+    void statsVideoOnFrameQueued(PRECORDINGVIDEOFRAME pVideoFrame);
+    void statsVideoLogBuckets(const char *pszPrefix) const;
+#endif
 
-    bool isLimitReachedInternal(uint64_t msTimestamp) const;
+    inline bool isLimitReachedInternal(uint64_t msTimestamp) const;
+    inline bool isVideoEnabled(void) const;
+    inline bool isAudioEnabled(void) const;
+
     int iterateInternal(uint64_t msTimestamp);
 
-    int addFrame(PRECORDINGFRAME pFrame, uint64_t msTimestamp);
-    int process(RecordingBlockSet &streamBlocks, RecordingBlockMap &commonBlocks);
+    int cmdQueueAddFrame(PRECORDINGFRAME pFrame, PRECORDINGFRAMEPOOL pPool, RECORDINGCMD *pCmd);
+    int cmdQueueAddFrame(PRECORDINGFRAME pFrame, PRECORDINGFRAMEPOOL pPool);
+    uint8_t cmdQueueGetPressure(void) const;
+
+    struct RECORDINGPKT;
+    RECORDINGPKT &packetLookupOrCreate(uint64_t msTimestamp, size_t cFramesExpected);
+
+    int videoEnqueueFrame(PRECORDINGVIDEOFRAME pVideoFrame, uint64_t msTimestamp);
+
+    int process(RTMSINTERVAL msTimeout);
     int codecWriteToWebM(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, uint64_t msAbsPTS, uint32_t uFlags);
+
+    bool shouldDropFrame(RECORDINGFRAME_TYPE enmType) const;
 
     void lock(void);
     void unlock(void);
@@ -299,6 +172,40 @@ protected:
         RECORDINGSTREAMSTATE_32BIT_HACK    = 0x7fffffff
     };
 
+    /**
+     * Structure for maintaining a recording command.
+     */
+    typedef struct RECORDINGCMD
+    {
+        /** Timestamp (PTS, in ms). */
+        uint64_t msTimestamp;
+        /** Pool index (frame type). */
+        uint8_t  idxPool;
+    } RECORDINGCMD;
+    /** Pointer to a RECORDINGCMD struct. */
+    typedef RECORDINGCMD *PRECORDINGCMD;
+
+    /**
+     * Structure for maintaining a recording packet.
+     *
+     * A recording packet contains 2 or more frames with the same timestamp.
+     */
+    typedef struct RECORDINGPKT
+    {
+        /** Monotonically increasing paket ID. */
+        uint64_t                       idPkt;
+        /** Packet timestamp (PTS, in ms). */
+        uint64_t                       msTimestamp;
+        /** Timestamp when first member was seen. */
+        uint64_t                       tsFirstSeenMs;
+        /** Expected number of frames in this packet. */
+        size_t                         cExpected;
+        /** Number of frames seen so far. */
+        size_t                         cSeen;
+    } RECORDINGPKT;
+    /** Pointer to a RECORDINGPKT struct. */
+    typedef RECORDINGPKT *PRECORDINGPKT;
+
     /** Pointer (weak) to console object.
      *  Needed for STAM. */
     Console * const         m_pConsole;
@@ -323,6 +230,12 @@ protected:
     uint16_t            m_uScreenID;
     /** Critical section to serialize access. */
     RTCRITSECT          m_CritSect;
+    /** Semaphore to signal this stream's worker thread. */
+    RTSEMEVENT          m_WaitEvent;
+    /** Stream worker thread. */
+    RTTHREAD            m_Thread;
+    /** Shutdown indicator for stream worker thread. */
+    bool                m_fShutdown;
     /** Timestamp (in ms) of when recording has been started. */
     uint64_t            m_tsStartMs;
 #ifdef VBOX_WITH_AUDIO_RECORDING
@@ -335,6 +248,9 @@ protected:
      *
      *  Might be NULL if not being used. */
     PRECORDINGCODEC     m_pCodecAudio;
+    /** Pointer to the recording context's commonly encoded frame pools.
+     *  Might be NULL if not being used. */
+    PRECORDINGFRAMEPOOL m_paPoolsCommonEnc;
 #endif /* VBOX_WITH_AUDIO_RECORDING */
 #ifdef VBOX_WITH_STATISTICS
     /** STAM values. */
@@ -343,7 +259,7 @@ protected:
         STAMCOUNTER     cVideoFramesAdded;
         STAMCOUNTER     cVideoFramesToEncode;
         STAMCOUNTER     cVideoFramesEncoded;
-        STAMCOUNTER     cVideoFramesHousekeeping;
+        STAMCOUNTER     cVideoFramesSkipped;
 # ifdef VBOX_WITH_AUDIO_RECORDING
         STAMCOUNTER     cAudioFramesAdded;
         /* Note: STAM values for frames to encode / encoded / housekeeping
@@ -351,11 +267,10 @@ protected:
                  which needs to be multiplexed for now. */
         STAMCOUNTER     cAudioFramesToEncode;
         STAMCOUNTER     cAudioFramesEncoded;
-        STAMCOUNTER     cAudioFramesHousekeeping;
+        STAMPROFILE     profileFnProcessAudio;
 # endif
         STAMPROFILE     profileFnProcessTotal;
         STAMPROFILE     profileFnProcessVideo;
-        STAMPROFILE     profileFnProcessAudio;
     } m_STAM;
 #endif /* VBOX_WITH_STATISTICS */
     /** Video codec instance data to use. */
@@ -369,6 +284,23 @@ protected:
         /** Current surface screen info being used.
          *  Can be changed by a SendScreenChange() call. */
         RECORDINGSURFACEINFO ScreenInfo;
+#ifdef VBOX_WITH_RECORDING_STATS
+        /** Internal, non-STAM video stats. */
+        struct
+        {
+            /** Total amount of dirty video bytes queued so far (sum of pVideoFrame->cbBuf). */
+            uint64_t                   cbDirtyTotal;
+            /** Approximate number of video frames currently pending in this stream's queue path. */
+            uint64_t                   cPendingVideo;
+            /** Dirty-size distribution buckets (frame count):
+             *  [0]=<=16K, [1]=<=64K, [2]=<=256K, [3]=<=1M, [4]=<=4M, [5]=>4M. */
+            uint64_t                   acDirtyBuckets[6];
+            /** Generic video-pool pressure statistics (samples / >=50/75/90/100 / max). */
+            RECORDINGPOOLPRESSURESTATS PoolPressure;
+            /** Maximum observed command-queue occupancy percentage [0..100]. */
+            uint64_t                   uCmdQPctMax;
+        } Stats;
+#endif
     } m_Video;
     /** Cached (const) settings from IRecordingScreen. Same naming (minus notation).
      *  Kept around for speed reasons during runtime. */
@@ -380,11 +312,23 @@ protected:
         ULONG                  uMaxTime;
         ULONG                  uMaxFileSize;
     } m_SettingsCache;
-    /** Set of unprocessed recording (data) blocks for this stream. */
-    RecordingBlockSet   m_BlockSet;
-    /** Housekeeping block worker. */
-    RecordingBlockWorkerHousekeeping
-                        m_Housekeeping;
+    /** The stream's frame pools.
+     *  Used to keep (re-)allocation of passed-in frames. */
+#ifdef DEBUG
+    public:
+#endif
+    RECORDINGFRAMEPOOL  m_aFramePool[RECORDINGFRAME_TYPE_MAX];
+    /** The command pool.
+     *  It holds RECORDINGCMD entries to know which pool / timestamp / group to process next. */
+    PRTCIRCBUF          m_pCmdCircBuf;
+    /** Next packet ID.
+     *  Monotonically increasing. */
+    uint64_t            m_uPacketNext;
+    /** Deferred packet map.
+     *  Key is the timecode (PTS, in ms).
+     *  Used by stream worker only. */
+    std::map<uint64_t, RECORDINGPKT>
+                        m_mapPkts;
 };
 
 /** Vector of recording streams. */

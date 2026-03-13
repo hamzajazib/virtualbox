@@ -713,6 +713,7 @@
 # define RTCircBufIsWriting                             RT_MANGLER(RTCircBufIsWriting)
 # define RTCircBufOffsetRead                            RT_MANGLER(RTCircBufOffsetRead)
 # define RTCircBufOffsetWrite                           RT_MANGLER(RTCircBufOffsetWrite)
+# define RTCircBufPeek                                  RT_MANGLER(RTCircBufPeek)
 # define RTCircBufReleaseReadBlock                      RT_MANGLER(RTCircBufReleaseReadBlock)
 # define RTCircBufReleaseWriteBlock                     RT_MANGLER(RTCircBufReleaseWriteBlock)
 # define RTCircBufReset                                 RT_MANGLER(RTCircBufReset)

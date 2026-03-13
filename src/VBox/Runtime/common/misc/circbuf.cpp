@@ -1,4 +1,4 @@
-/* $Id: circbuf.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: circbuf.cpp 113380 2026-03-13 10:01:45Z andreas.loeffler@oracle.com $ */
 /** @file
  * IPRT - Lock Free Circular Buffer
  */
@@ -43,6 +43,7 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/errcore.h>
+#include <iprt/string.h> /* For memcpy(). */
 
 
 /*********************************************************************************************************************************
@@ -258,5 +259,41 @@ RTDECL(void) RTCircBufReleaseWriteBlock(PRTCIRCBUF pBuf, size_t cbSize)
 
     ASMAtomicAddZ(&pBuf->cbUsed, cbSize);
     ASMAtomicWriteBool(&pBuf->fWriting, false);
+}
+
+
+RTDECL(int) RTCircBufPeek(PRTCIRCBUF pBuf, size_t offRead, size_t cbReq, const void **ppv, size_t *pcbAvail)
+{
+    *ppv = NULL;
+    *pcbAvail = 0;
+
+    if (cbReq == 0)
+        return VINF_SUCCESS;
+
+    size_t const cbBuf  = pBuf->cbBuf;
+    size_t const cbUsed = pBuf->cbUsed;
+
+    /* offRead must be within the readable range. */
+    AssertReturn(offRead <= cbUsed, VERR_INVALID_PARAMETER);
+
+    size_t cbAvail = cbUsed - offRead;
+    if (!cbAvail)
+        return VINF_SUCCESS;
+
+    size_t cbThis = cbReq < cbAvail ? cbReq : cbAvail;
+
+    /* Compute absolute offset in backing store. */
+    size_t offAbs = pBuf->offRead + offRead;
+    if (offAbs >= cbBuf)
+        offAbs %= cbBuf;
+
+    /* Return a contiguous chunk (stop at wrap boundary). */
+    size_t cbToEnd = cbBuf - offAbs;
+    if (cbThis > cbToEnd)
+        cbThis = cbToEnd;
+
+    *ppv = (uint8_t const *)pBuf->pvBuf + offAbs;
+    *pcbAvail = cbThis;
+    return VINF_SUCCESS;
 }
 

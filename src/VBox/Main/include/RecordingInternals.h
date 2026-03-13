@@ -1,4 +1,4 @@
-/* $Id: RecordingInternals.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: RecordingInternals.h 113380 2026-03-13 10:01:45Z andreas.loeffler@oracle.com $ */
 /** @file
  * Recording internals header.
  */
@@ -40,6 +40,7 @@
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/circbuf.h>
 #include <iprt/types.h> /* drag in stdint.h before vpx does it. */
 
 #include "VBox/com/string.h"
@@ -65,6 +66,16 @@
 *********************************************************************************************************************************/
 #define VBOX_RECORDING_VORBIS_HZ_MAX             48000   /**< Maximum sample rate (in Hz) Vorbis can handle. */
 #define VBOX_RECORDING_VORBIS_FRAME_MS_DEFAULT   20      /**< Default Vorbis frame size (in ms). */
+
+#ifdef DEBUG_DISABLED
+ /* Enable the following to get some recording statistics in the log. */
+ #define VBOX_WITH_RECORDING_STATS
+ /* Dumps video frame data as uncompressed bitmaps to the temporary directory.
+  * Warning! This generates *a lot* of data! */
+ #define VBOX_RECORDING_DEBUG_DUMP_FRAMES
+ /* Dumps tiles as bitmaps to temporary dir and draws a red border around the tiles. */
+ #define VBOX_RECORDING_DEBUG_TILES
+#endif
 
 
 /*********************************************************************************************************************************
@@ -226,7 +237,18 @@ typedef struct RECORDINGCODECOPS
     DECLCALLBACKMEMBER(int, pfnParseOptions,  (PRECORDINGCODEC pCodec, const com::Utf8Str &strOptions));
 
     /**
-     * Feeds the codec encoder with data to encode.
+     * Feeds the codec encoder with data needed to compose a full frame.
+     *
+     * @returns VBox status code.
+     * @param   pCodec              Codec instance to use.
+     * @param   pFrame              Pointer to frame data to use for composing. Optional and can be NULL.
+     * @param   msTimestamp         Timestamp (PTS) of frame to encode.
+     * @param   pvUser              User data pointer. Optional and can be NULL.
+     */
+    DECLCALLBACKMEMBER(int, pfnCompose,      (PRECORDINGCODEC pCodec, const PRECORDINGFRAME pFrame, uint64_t msTimestamp, void *pvUser));
+
+    /**
+     * Triggers encoding the currently built frame.
      *
      * @returns VBox status code.
      * @param   pCodec              Codec instance to use.
@@ -368,6 +390,10 @@ typedef struct RECORDINGCODECVPX
     PRECORDINGVIDEOFRAME pCursorShape;
     /** Old cursor position since last cursor position message. */
     RECORDINGPOS        PosCursorOld;
+    /** Flag indicating that the cached YUV image needs to be rebuilt from the composed frame. */
+    bool                fRawImageDirty;
+    /** Frame buffer holding the most recent composed image (front or back buffer). */
+    PRECORDINGVIDEOFRAME pFrameComposite;
 
 } RECORDINGCODECVPX;
 /** Pointer to a VPX encoder state. */
@@ -400,6 +426,8 @@ typedef struct RECORDINGCODECSTATE
     uint64_t            tsLastWrittenMs;
     /** Number of encoding errors. */
     uint64_t            cEncErrors;
+    /** Indicates whether at least one frame has been written already. */
+    bool                fHaveWrittenFrame;
 } RECORDINGCODECSTATE;
 /** Pointer to an internal encoder state. */
 typedef RECORDINGCODECSTATE *PRECORDINGCODECSTATE;
@@ -445,6 +473,9 @@ typedef struct RECORDINGCODEC
 
 /**
  * Enumeration for a recording frame type.
+ *
+ * Note: For frame pool use, don't leave any (numbering) gaps here.
+ *       Also, don't change the order without proper testing first.
  */
 enum RECORDINGFRAME_TYPE
 {
@@ -462,8 +493,131 @@ enum RECORDINGFRAME_TYPE
     RECORDINGFRAME_TYPE_CURSOR_POS    = 4,
     /** Screen change information.
      *  Sent when the screen properties (resolution, BPP, ...) have changed. */
-    RECORDINGFRAME_TYPE_SCREEN_CHANGE = 5
+    RECORDINGFRAME_TYPE_SCREEN_CHANGE = 5,
+    /** End marker. Must come last. */
+    RECORDINGFRAME_TYPE_MAX
 };
+
+/** Maximum number of circular buffer readers.
+ *  This must match the maximum recording streams. */
+#define RECORDINGCIRCBUF_MAX_READERS 64
+
+/**
+ * Structure for maintaining a single recording circular buffer reader.
+ */
+typedef struct RECORDINGCIRCBUFRDR
+{
+    /** Current reading position.
+     *  Set to UINT64_MAX if not active. */
+    volatile uint64_t uReadPos;
+} RECORDINGCIRCBUFRDR;
+/** Pointer to RECORDINGCIRCBUFRDR. */
+typedef RECORDINGCIRCBUFRDR *PRECORDINGCIRCBUFRDR;
+
+/**
+ * Circular buffer for supporting multiple readers (consumers)
+ * of recording frames. Needed for common (across streams) frame data.
+ */
+typedef struct RECORDINGCIRCBUF
+{
+    /** The circular buffer where to keep the data. */
+    PRTCIRCBUF          pCircBuf;
+    /** Monotonic logical position (in bytes) at underlying RTCircBuf read pointer (writer advances). */
+    volatile uint64_t   uBasePos;
+    /** Monotonic logical position (in bytes) at end of committed writes (writer publishes). */
+    volatile uint64_t   uWritePos;
+    /** Reader count and ID generator. */
+    volatile uint32_t   cRdr;
+    /** Reader list. */
+    RECORDINGCIRCBUFRDR aRdr[RECORDINGCIRCBUF_MAX_READERS];
+} RECORDINGCIRCBUF;
+/** Pointer to RECORDINGCIRCBUF. */
+typedef RECORDINGCIRCBUF *PRECORDINGCIRCBUF;
+
+int  RecordingCircBufCreate(PRECORDINGCIRCBUF pBuf, size_t cbSize);
+void RecordingCircBufDestroy(PRECORDINGCIRCBUF pCircBuf);
+int  RecordingCircBufAddReader(PRECORDINGCIRCBUF pCircBuf, uint32_t *pIdRdr);
+int  RecordingCircBufRemoveReader(PRECORDINGCIRCBUF pCircBuf, uint32_t idRdr);
+int  RecordingCircBufAcquireWrite(RECORDINGCIRCBUF *pBuf, size_t cbReq, void **ppv, size_t *pcbAcquired);
+int  RecordingCircBufReleaseWrite(RECORDINGCIRCBUF *pBuf, size_t cbToCommit);
+int  RecordingCircBufAcquireRead(RECORDINGCIRCBUF *pBuf, uint32_t idRdr, size_t cbReq, const void **ppv, size_t *pcbAcquired);
+int  RecordingCircBufReleaseRead(RECORDINGCIRCBUF *pBuf, uint32_t idRdr, size_t cbToConsume);
+size_t RecordingCircBufReadable(const PRECORDINGCIRCBUF pBuf, uint32_t idRdr);
+size_t RecordingCircBufUsed(const PRECORDINGCIRCBUF pBuf);
+size_t RecordingCircBufSize(const PRECORDINGCIRCBUF pBuf);
+
+/**
+ * Structure for maintaining a recording frame pool.
+ *
+ * A frame pool consists of an internal ring buffer to avoid (re-)allocation
+ * when sending frames to (a) recording stream(s).
+ */
+typedef struct RECORDINGFRAMEPOOL
+{
+    /** Pool identifier (currently mirrors @a enmType for logging/debugging). */
+    uint8_t             uId;
+    /** Backing circular buffer storing fixed-size frame slots. */
+    RECORDINGCIRCBUF    CircBuf;
+    /** Frame type stored in this pool.
+     *  Set to RECORDINGFRAME_TYPE_INVALID when uninitialized. */
+    RECORDINGFRAME_TYPE enmType;
+    /** Size (in bytes) of one frame slot in @a CircBuf. */
+    size_t              cbFrame;
+    /** Number of frame slots configured for this pool. */
+    size_t              cFrames;
+} RECORDINGFRAMEPOOL;
+/** Pointer to a RECORDINGFRAMEPOOL. */
+typedef RECORDINGFRAMEPOOL *PRECORDINGFRAMEPOOL;
+
+/** Use all readers / raw used occupancy for RecordingFramePoolGetPressure(). */
+#define RECORDINGFRAMEPOOL_PRESSURE_READER_ALL UINT32_MAX
+
+int RecordingFramePoolInit(PRECORDINGFRAMEPOOL pPool, RECORDINGFRAME_TYPE enmType, size_t cbFrame, size_t cCapacity);
+void RecordingFramePoolDestroy(PRECORDINGFRAMEPOOL pPool);
+bool RecordingFramePoolIsInitialized(PRECORDINGFRAMEPOOL pPool);
+int  RecordingFramePoolAddReader(PRECORDINGFRAMEPOOL pPool, uint32_t *pIdRdr);
+int  RecordingFramePoolRemoveReader(PRECORDINGFRAMEPOOL pPool, uint32_t idRdr);
+PRECORDINGFRAME RecordingFramePoolAcquireRead(PRECORDINGFRAMEPOOL pPool, uint32_t idRdr);
+void RecordingFramePoolReleaseRead(PRECORDINGFRAMEPOOL pPool, uint32_t idRdr);
+PRECORDINGFRAME RecordingFramePoolAcquireWrite(PRECORDINGFRAMEPOOL pPool);
+void RecordingFramePoolReleaseWrite(PRECORDINGFRAMEPOOL pPool);
+int  RecordingFramePoolReclaim(PRECORDINGFRAMEPOOL pPool);
+size_t RecordingFramePoolFrameSize(const PRECORDINGFRAMEPOOL pPool);
+size_t RecordingFramePoolFree(const PRECORDINGFRAMEPOOL pPool);
+size_t RecordingFramePoolReadable(const PRECORDINGFRAMEPOOL pPool, uint32_t idRdr);
+size_t RecordingFramePoolUsed(const PRECORDINGFRAMEPOOL pPool);
+size_t RecordingFramePoolSize(const PRECORDINGFRAMEPOOL pPool);
+uint8_t RecordingFramePoolGetPressure(const RECORDINGFRAMEPOOL *pPool, uint32_t idRdr);
+
+#ifdef VBOX_WITH_RECORDING_STATS
+/**
+ * Generic pressure statistics for queue / pool occupancy in percent.
+ */
+typedef struct RECORDINGPOOLPRESSURESTATS
+{
+    /** Number of occupancy samples taken. */
+    uint64_t cSamples;
+    /** Number of samples at >= 50% occupancy. */
+    uint64_t cGe50;
+    /** Number of samples at >= 75% occupancy. */
+    uint64_t cGe75;
+    /** Number of samples at >= 90% occupancy. */
+    uint64_t cGe90;
+    /** Number of samples at >= 100% occupancy. */
+    uint64_t cGe100;
+    /** Maximum observed occupancy percentage [0..100]. */
+    uint64_t uPctMax;
+    /** Number of frames dropped because the associated pool/queue was full. */
+    uint64_t cDrops;
+} RECORDINGPOOLPRESSURESTATS;
+/** Pointer to RECORDINGPOOLPRESSURESTATS. */
+typedef RECORDINGPOOLPRESSURESTATS *PRECORDINGPOOLPRESSURESTATS;
+
+void RecordingStatsPoolPressureSample(PRECORDINGPOOLPRESSURESTATS pStats, size_t cUsed, size_t cCapacity);
+void RecordingStatsPoolPressureLog(const char *pszPrefix, const char *pszPoolName,
+                                   const RECORDINGPOOLPRESSURESTATS *pStats,
+                                   size_t cUsed, size_t cCapacity);
+#endif /* VBOX_WITH_RECORDING_STATS */
 
 /**
  * Structure for keeping a single recording audio frame.
@@ -496,6 +650,8 @@ typedef struct RECORDINGFRAME
 {
     /** List node. */
     RTLISTNODE              Node;
+    /** Number of references held of to this frame. */
+    uint64_t                cRefs;
     /** Stream index (hint) where this frame should go to.
      *  Specify UINT16_MAX to broadcast to all streams. */
     uint16_t                idStream;
@@ -503,6 +659,13 @@ typedef struct RECORDINGFRAME
     RECORDINGFRAME_TYPE     enmType;
     /** Timestamp (PTS, in ms). */
     uint64_t                msTimestamp;
+    /** Encoder parameters.
+     *  Only valid if this frame is processed by an encoder. */
+    struct
+    {
+        /** Codec flags of type RECORDINGCODEC_ENC_F_XXX. */
+        uint32_t            uFlags;
+    } Enc;
     /** Union holding different frame types depending on \a enmType. */
     union
     {
@@ -511,9 +674,11 @@ typedef struct RECORDINGFRAME
          *  Used by RECORDINGFRAME_TYPE_AUDIO. */
         RECORDINGAUDIOFRAME  Audio;
 #endif
-        /** A (weak) pointer to a video frame. */
+        /** Video frame.
+         *  Used by RECORDINGFRAME_TYPE_VIDEO. */
         RECORDINGVIDEOFRAME  Video;
-        /** Recording screen information. */
+        /** Recording screen information.
+         *  Used by RECORDINGFRAME_TYPE_SCREEN_CHANGE. */
         RECORDINGSURFACEINFO ScreenInfo;
         /** Cursor shape frame.
          *  Used by RECORDINGFRAME_TYPE_CURSOR_SHAPE. */
@@ -522,6 +687,9 @@ typedef struct RECORDINGFRAME
          *  Used by RECORDINGFRAME_TYPE_CURSOR_POS. */
         RECORDINGCURSORINFO  Cursor;
     } u;
+    RT_FLEXIBLE_ARRAY_EXTENSION
+    uint8_t                  abData[RT_FLEXIBLE_ARRAY];
+    /** Following there can be allocated data, such as pixel data. */
 } RECORDINGFRAME;
 /** Pointer to a RECORDINGFRAME. */
 typedef RECORDINGFRAME *PRECORDINGFRAME;
@@ -531,6 +699,9 @@ PRECORDINGVIDEOFRAME RecordingVideoFrameAllocEx(const void *pvData, uint32_t x, 
 void RecordingVideoFrameFree(PRECORDINGVIDEOFRAME pFrame);
 int RecordingVideoFrameInit(PRECORDINGVIDEOFRAME pFrame, uint32_t fFlags, uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint8_t uBPP, RECORDINGPIXELFMT enmFmt);
 void RecordingVideoFrameDestroy(PRECORDINGVIDEOFRAME pFrame);
+uint64_t RecordingFrameRefs(PRECORDINGFRAME pFrame);
+uint64_t RecordingFrameAcquire(PRECORDINGFRAME pFrame);
+uint64_t RecordingFrameRelease(PRECORDINGFRAME pFrame);
 PRECORDINGVIDEOFRAME RecordingVideoFrameDup(PRECORDINGVIDEOFRAME pFrame);
 void RecordingVideoFrameClear(PRECORDINGVIDEOFRAME pFrame);
 void RecordingVideoFrameBlitRawAlpha(PRECORDINGVIDEOFRAME pDstFrame, uint32_t uDstX, uint32_t uDstY, const uint8_t *pu8Src, size_t cbSrc, uint32_t uSrcX, uint32_t uSrcY, uint32_t uSrcWidth, uint32_t uSrcHeight, uint32_t uSrcBytesPerLine, uint8_t uSrcBPP, RECORDINGPIXELFMT enmFmt);
@@ -542,239 +713,18 @@ int RecordingVideoFrameBlitFrame(PRECORDINGVIDEOFRAME pDstFrame, uint32_t uDstX,
 void RecordingAudioFrameFree(PRECORDINGAUDIOFRAME pFrame);
 #endif
 
+void RecordingFrameDestroy(PRECORDINGFRAME pFrame);
 void RecordingFrameFree(PRECORDINGFRAME pFrame);
-
-/**
- * Generic structure for keeping a single video recording (data) block.
- */
-struct RecordingBlock
-{
-    RecordingBlock()
-        : cRefs(0)
-        , uFlags(RECORDINGCODEC_ENC_F_NONE)
-        , msTimestamp(0)
-        , pvData(NULL)
-        , cbData(0) { }
-
-    virtual ~RecordingBlock()
-    {
-        Destroy();
-    }
-
-    /**
-     * Returns the current reference count.
-     *
-     * @returns  Number of current references.
-     */
-    uint64_t GetRefs(void)
-    {
-        Assert(cRefs <= 4); /* Helps finding refcounting bugs. Value chosen at random. */
-        return ASMAtomicReadU64(&cRefs);
-    }
-
-    /**
-     * Adds a reference to a recording block.
-     *
-     * @returns  Number of new references.
-     */
-    uint64_t AddRef(void)
-    {
-        Assert(cRefs <= 4); /* Helps finding refcounting bugs. Value chosen at random. */
-        return ASMAtomicIncU64(&cRefs);
-    }
-
-    /**
-     * Releases a reference to a recording block.
-     *
-     * @returns  Number of new references after release.
-     */
-    uint64_t Release(void)
-    {
-        Assert(cRefs);
-        return ASMAtomicDecU64(&cRefs);
-    }
-
-    /**
-     * Unlinks the stored data (giving up ownership).
-     *
-     * @note All references to this recording block must be released first.
-     *
-     * @returns Pointer to unlinked data. Can be NULL if no data stored.
-     * @param   pcbData         Where to return the size (in bytes) of the returned data. Optional and can be NULL.
-     */
-    void *Unlink(size_t *pcbData)
-    {
-        AssertMsgReturn(cRefs == 0, ("Can't unlink data, as there are references to it (%RU64)\n", cRefs), NULL);
-
-        void *pvDataUnlinked = pvData;
-        if (pcbData)
-            *pcbData = cbData;
-
-        pvData  = NULL;
-        cbData  = 0;
-
-        return pvDataUnlinked;
-    }
-
-    /**
-     * Destroys a recording block.
-     *
-     * @note Must be released via Release() first.
-     */
-    void Destroy(void)
-    {
-        AssertMsgReturnVoid(cRefs == 0, ("Recording block still holds references (%RU64)\n", cRefs));
-        RecordingFrameFree((PRECORDINGFRAME)pvData);
-
-        cRefs   = 0;
-        pvData  = NULL;
-        cbData  = 0;
-    }
-
-    /** Number of references held of this block. */
-    uint64_t           cRefs;
-    /** Block flags of type RECORDINGCODEC_ENC_F_XXX. */
-    uint64_t           uFlags;
-    /** The (absolute) timestamp (in ms, PTS) of this block. */
-    uint64_t           msTimestamp;
-    /** Opaque data block to the actual block data. Currently only used with PRECORDINGFRAME. */
-    void              *pvData;
-    /** Size (in bytes) of the (opaque) data block. */
-    size_t             cbData;
-};
-
-/** List for keeping video recording (data) blocks. */
-typedef std::list<RecordingBlock *> RecordingBlockList;
-
-/** Structure for queuing all blocks bound to a single timecode.
- *  This can happen if multiple tracks are being involved. */
-struct RecordingBlocks
-{
-    virtual ~RecordingBlocks()
-    {
-        Clear();
-    }
-
-    /**
-     * Resets a recording block list by removing (destroying)
-     * all current elements.
-     */
-    void Clear()
-    {
-        while (!List.empty())
-        {
-            RecordingBlock *pBlock = List.front();
-            if (pBlock->GetRefs() == 0)
-            {
-                List.pop_front();
-                delete pBlock;
-            }
-        }
-
-        Assert(List.size() == 0);
-    }
-
-    /** The actual block list for this timecode. */
-    RecordingBlockList List;
-};
-
-/** A block map containing all currently queued blocks.
- *  The key specifies a unique timecode, whereas the value
- *  is a list of blocks which all correlate to the same key (timecode). */
-typedef std::map<uint64_t, RecordingBlocks *> RecordingBlockMap;
-
-/**
- * Structure for holding a set of recording (data) blocks.
- */
-struct RecordingBlockSet
-{
-    /**
-     * Constructor.
-     *
-     * Will throw rc on failure.
-     */
-    RecordingBlockSet()
-        : tsLastProcessedMs(0)
-    {
-        int const vrc = RTCritSectInit(&CritSect);
-        if (RT_FAILURE(vrc))
-            throw vrc;
-    }
-
-    virtual ~RecordingBlockSet()
-    {
-        Clear();
-
-        RTCritSectDelete(&CritSect);
-    }
-
-    /**
-     * Inserts a block list within the given PTS.
-     *
-     * @param  uPTS             Timestamp (PTS) to insert block list to.
-     * @param  pBlocks          Block list to insert.
-     *                          This class will take ownership of the data.
-     */
-    int Insert(uint64_t uPTS, RecordingBlocks *pBlocks)
-    {
-        int vrc = RTCritSectEnter(&CritSect);
-        if (RT_SUCCESS(vrc))
-        {
-            try
-            {
-                Map.insert(std::make_pair(uPTS, pBlocks));
-            }
-            catch (std::bad_alloc &)
-            {
-                vrc = VERR_NO_MEMORY;
-            }
-            RTCritSectLeave(&CritSect);
-        }
-
-        return vrc;
-    }
-
-    /**
-     * Resets a recording block set by removing (destroying)
-     * all current elements.
-     */
-    void Clear(void)
-    {
-        int vrc = RTCritSectEnter(&CritSect);
-        if (RT_SUCCESS(vrc))
-        {
-            RecordingBlockMap::iterator it = Map.begin();
-            while (it != Map.end())
-            {
-                it->second->Clear();
-                delete it->second;
-                Map.erase(it);
-                it = Map.begin();
-            }
-
-            Assert(Map.size() == 0);
-
-            RTCritSectLeave(&CritSect);
-        }
-    }
-
-    /** Critical section for protecting the set. */
-    RTCRITSECT        CritSect;
-    /** Timestamp (in ms) when this set was last processed.
-     *  Set to 0 if not processed yet. */
-    uint64_t          tsLastProcessedMs;
-    /** All blocks related to this block set. */
-    RecordingBlockMap Map;
-};
 
 int recordingCodecCreateAudio(PRECORDINGCODEC pCodec, RecordingAudioCodec_T enmAudioCodec);
 int recordingCodecCreateVideo(PRECORDINGCODEC pCodec, RecordingVideoCodec_T enmVideoCodec);
 int recordingCodecInit(const PRECORDINGCODEC pCodec, const PRECORDINGCODECCALLBACKS pCallbacks, const ComPtr<IRecordingScreenSettings> &ScreenSettings);
 int recordingCodecDestroy(PRECORDINGCODEC pCodec);
-int recordingCodecEncodeFrame(PRECORDINGCODEC pCodec, const PRECORDINGFRAME pFrame, uint64_t msTimestamp, void *pvUser);
-int recordingCodecEncodeCurrent(PRECORDINGCODEC pCodec, uint64_t msTimestamp);
+int recordingCodecCompose(PRECORDINGCODEC pCodec, const PRECORDINGFRAME pFrame, uint64_t msTimestamp, void *pvUser);
+int recordingCodecEncode(PRECORDINGCODEC pCodec, const PRECORDINGFRAME pFrame, uint64_t msTimestamp, void *pvUser);
 int recordingCodecScreenChange(PRECORDINGCODEC pCodec, PRECORDINGSURFACEINFO pInfo);
 int recordingCodecFinalize(PRECORDINGCODEC pCodec);
 bool recordingCodecIsInitialized(const PRECORDINGCODEC pCodec);
 uint32_t recordingCodecGetWritable(const PRECORDINGCODEC pCodec, uint64_t msTimestamp);
+RTMSINTERVAL recordingCodecGetDeadlineMs(const PRECORDINGCODEC pCodec, uint64_t msTimestamp);
 #endif /* !MAIN_INCLUDED_RecordingInternals_h */

@@ -1,13 +1,6 @@
-/* $Id: RecordingContext.cpp 113106 2026-02-20 15:14:14Z andreas.loeffler@oracle.com $ */
+/* $Id: RecordingContext.cpp 113380 2026-03-13 10:01:45Z andreas.loeffler@oracle.com $ */
 /** @file
  * Recording context code.
- *
- * This code employs a separate encoding thread per recording context
- * to keep time spent in EMT as short as possible. Each configured VM display
- * is represented by an own recording stream, which in turn has its own rendering
- * queue. Common recording data across all recording streams is kept in a
- * separate queue in the recording context to minimize data duplication and
- * multiplexing overhead in EMT.
  */
 
 /*
@@ -32,6 +25,39 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
+/**
+ * The recording subsystem is built around the RecordingContext that
+ * coordinates one recording session per VM, and one RecordingStream per
+ * recorded screen.
+ *
+ * The context owns session-wide state, shared resources,
+ * and worker coordination, while each stream owns its screen-specific
+ * video path, codec interaction, and output track handling. Encoding and
+ * file writing are intentionally decoupled from EMT-facing producers, so
+ * display and audio producers can submit frames quickly without blocking
+ * on expensive encode or I/O work.
+ *
+ * Data enters through RecordingContext::Send* entry points. Video,
+ * cursor, and screen-change updates are forwarded directly to the target
+ * stream, copied into stream frame pools, queued as lightweight commands,
+ * and then consumed by the stream worker for compose/encode/write.
+ *
+ * Audio is handled as shared data at context level: raw audio frames are queued
+ * once, encoded once in the context path, and multiplexed to all active
+ * streams. This avoids redundant per-stream audio encoding, lowers CPU
+ * use, and preserves timestamp consistency.
+ *
+ * Scheduling is driven by a hint interval (see m_schedulingHintMs) used as
+ * worker wake and processing budget. Context and stream workers sleep on
+ * events with timeouts, wake early when new work arrives, and switch to
+ * immediate drain mode under backlog pressure.
+ *
+ * Queue and pool pressure are monitored continuously, and controlled
+ * backpressure is applied by throttling or dropping lower-priority or stale
+ * work (for example cursor updates, oversized tiled bursts, or incomplete
+ * deferred packets).
+ */
+
 #ifdef LOG_GROUP
 # undef LOG_GROUP
 #endif
@@ -54,7 +80,7 @@
 #include <VBox/err.h>
 #include <VBox/com/VirtualBox.h>
 #ifdef VBOX_WITH_STATISTICS
-#include <VBox/vmm/vmmr3vtable.h>
+# include <VBox/vmm/vmmr3vtable.h>
 #endif
 
 #include "ConsoleImpl.h"
@@ -67,12 +93,6 @@
 #include "VirtualBoxErrorInfoImpl.h"
 
 using namespace com;
-
-#ifdef DEBUG_andy
-/** Enables dumping audio / video data for debugging reasons. */
-//# define VBOX_RECORDING_DUMP
-#endif
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -102,18 +122,28 @@ public:
 
     void Destroy();
 
-    int CreateOrUpdate(bool fAlpha, uint32_t uWidth, uint32_t uHeight, const uint8_t *pu8Shape, size_t cbShape);
+    int CreateOrUpdate(bool fAlpha, uint32_t xHot, uint32_t yHot,
+                       uint32_t uWidth, uint32_t uHeight, const uint8_t *pu8Shape, size_t cbShape);
 
     int Move(int32_t iX, int32_t iY);
 
     /** Cursor state flags. */
     uint32_t            m_fFlags;
+    /** Current cursor hot spot X coordinate. */
+    uint32_t            m_xHot;
+    /** Current cursor hot spot Y coordinate. */
+    uint32_t            m_yHot;
     /** The current cursor shape. */
     RECORDINGVIDEOFRAME m_Shape;
 };
 
+/**
+ * Recording cursor state constructor.
+ */
 RecordingCursorState::RecordingCursorState()
     : m_fFlags(VBOX_RECORDING_CURSOR_F_NONE)
+    , m_xHot(0)
+    , m_yHot(0)
 {
     m_Shape.Pos.x = UINT16_MAX;
     m_Shape.Pos.y = UINT16_MAX;
@@ -121,6 +151,9 @@ RecordingCursorState::RecordingCursorState()
     RT_ZERO(m_Shape);
 }
 
+/**
+ * Recording cursor state destructor.
+ */
 RecordingCursorState::~RecordingCursorState()
 {
     Destroy();
@@ -144,7 +177,8 @@ void RecordingCursorState::Destroy(void)
  * @param   pu8Shape            Pixel data of new cursor shape.
  * @param   cbShape             Bytes of \a pu8Shape.
  */
-int RecordingCursorState::CreateOrUpdate(bool fAlpha, uint32_t uWidth, uint32_t uHeight, const uint8_t *pu8Shape, size_t cbShape)
+int RecordingCursorState::CreateOrUpdate(bool fAlpha, uint32_t xHot, uint32_t yHot,
+                                         uint32_t uWidth, uint32_t uHeight, const uint8_t *pu8Shape, size_t cbShape)
 {
     int vrc;
 
@@ -152,17 +186,19 @@ int RecordingCursorState::CreateOrUpdate(bool fAlpha, uint32_t uWidth, uint32_t 
 
     const uint8_t uBPP = 32; /* Seems to be fixed. */
 
-    uint32_t offShape;
+    /* Shape data can contain an AND mask prefix; skip it when present. */
+    uint32_t const cbAndMask  = ((uWidth + 7) / 8 * uHeight + 3) & ~3;
+    uint32_t const cbPixelMin = uWidth * uHeight * (uBPP / 8);
+    uint32_t       offShape   = 0;
+    if (cbShape >= cbAndMask + cbPixelMin)
+        offShape = cbAndMask;
+    AssertReturn(cbShape >= offShape + cbPixelMin, VERR_INVALID_PARAMETER);
+
     if (fAlpha)
-    {
-        /* Calculate the offset to the actual pixel data. */
-        offShape = (uWidth + 7) / 8 * uHeight; /* size of the AND mask */
-        offShape = (offShape + 3) & ~3;
-        AssertReturn(offShape <= cbShape, VERR_INVALID_PARAMETER);
         fFlags |= RECORDINGVIDEOFRAME_F_BLIT_ALPHA;
-    }
-    else
-        offShape = 0;
+
+    m_xHot = RT_MIN(xHot, uWidth  ? uWidth  - 1 : 0);
+    m_yHot = RT_MIN(yHot, uHeight ? uHeight - 1 : 0);
 
     /* Cursor shape size has become bigger? Reallocate. */
     if (cbShape > m_Shape.cbBuf)
@@ -197,10 +233,14 @@ int RecordingCursorState::CreateOrUpdate(bool fAlpha, uint32_t uWidth, uint32_t 
  */
 int RecordingCursorState::Move(int32_t iX, int32_t iY)
 {
-    /* No relative coordinates here. */
-    if (   iX < 0
-        || iY < 0)
-        return VERR_NO_CHANGE;
+    /* Convert hot spot coordinates to top-left cursor frame coordinates. */
+    iX -= (int32_t)m_xHot;
+    iY -= (int32_t)m_yHot;
+
+    if (iX < 0)
+        iX = 0;
+    if (iY < 0)
+        iY = 0;
 
     if (   m_Shape.Pos.x == (uint32_t)iX
         && m_Shape.Pos.y == (uint32_t)iY)
@@ -241,8 +281,8 @@ protected:
 
     int onLimitReached(uint32_t uScreen, int vrc);
 
-    int processCommonData(RecordingBlockMap &mapCommon, RTMSINTERVAL msTimeout);
-    int writeCommonData(RecordingBlockMap &mapCommon, PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, uint64_t msTimestamp, uint32_t uFlags);
+    int processCommonData(RTMSINTERVAL msTimeout);
+    int writeCommonData(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, uint64_t msTimestamp, uint32_t uFlags);
 
     void updateInternal(void);
 
@@ -259,7 +299,6 @@ protected:
 
     static DECLCALLBACK(void) progressCancelCallback(void *pvUser);
     static DECLCALLBACK(void) stateChangedCallback(RECORDINGSTS enmSts, uint32_t uScreen, int vrc, void *pvUser);
-    static DECLCALLBACK(int)  audioCodecWriteDataCallback(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, uint64_t msAbsPTS, uint32_t uFlags, void *pvUser);
 
 protected:
 
@@ -269,7 +308,16 @@ protected:
 
 protected:
 
-    int audioInit(const ComPtr<IRecordingScreenSettings> &ScreenSettings);
+#ifdef VBOX_WITH_AUDIO_RECORDING
+    static DECLCALLBACK(int)  audioCodecWriteDataCallback(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData, uint64_t msAbsPTS, uint32_t uFlags, void *pvUser);
+
+    int initAudio(const ComPtr<IRecordingScreenSettings> &ScreenSettings);
+    int uninitAudio(void);
+# ifdef VBOX_WITH_RECORDING_STATS
+    void statsAudioPoolSample(void);
+    void statsAudioPoolLog(const char *pszPrefix) const;
+# endif
+#endif
 
 protected:
 
@@ -301,6 +349,8 @@ protected:
     RecordingStreams             m_vecStreams;
     /** Number of streams in vecStreams which currently are enabled for recording. */
     uint16_t                     m_cStreamsEnabled;
+    /** Scheduling hint (in ms). */
+    RTMSINTERVAL                 m_schedulingHintMs;
     /** Timestamp (in ms) of when recording has been started.
      *  Set to 0 if not started (yet). */
     uint64_t                     m_tsStartMs;
@@ -312,6 +362,22 @@ protected:
      *  all audio data of a VM will be the same for each stream at a given
      *  point in time. */
     RECORDINGCODEC               m_CodecAudio;
+    /** The common frame pools for raw (i.e. not yet encoded) frame data.
+     *  Used to avoid re-allocation. Only used by this context and the codec(s) involved. */
+    RECORDINGFRAMEPOOL           m_aPoolsCommonRaw[RECORDINGFRAME_TYPE_AUDIO + 1 /* To be able to use RECORDINGFRAME_TYPE_AUDIO as index. */ ];
+    /** The common frame pools for encoded frame data (i.e. processed by the codec(s)).
+     *  Used to avoid re-allocation. This data gets multiplexed to all configured streams (= readers). */
+    RECORDINGFRAMEPOOL           m_aPoolsCommonEnc[RECORDINGFRAME_TYPE_AUDIO + 1 /* Ditto. */ ];
+# ifdef VBOX_WITH_RECORDING_STATS
+    /** Internal, non-STAM context audio pool pressure statistics. */
+    struct
+    {
+        /** Generic pressure stats for the raw audio pool. */
+        RECORDINGPOOLPRESSURESTATS RawPressure;
+        /** Generic pressure stats for the encoded audio pool. */
+        RECORDINGPOOLPRESSURESTATS EncPressure;
+    } m_AudioStats;
+# endif /* VBOX_WITH_RECORDING_STATS */
 #endif /* VBOX_WITH_AUDIO_RECORDING */
 #ifdef VBOX_WITH_STATISTICS
     /** STAM values. */
@@ -324,24 +390,14 @@ protected:
         STAMCOUNTER              cCommonFramesEncoded;
     } m_STAM;
 #endif /* VBOX_WITH_STATISTICS */
-    /** Block map of raw common data blocks which need to get encoded first. */
-    RecordingBlockMap            m_mapBlocksRaw;
-    /** Block map of encoded common blocks.
-     *
-     *  Only do the encoding of common data blocks only once and then multiplex
-     *  the encoded data to all affected recording streams.
-     *
-     *  This avoids doing the (expensive) encoding + multiplexing work in other
-     *  threads like EMT / audio async I/O.
-     *
-     *  For now this only affects audio, e.g. all recording streams
-     *  need to have the same audio data at a specific point in time. */
-    RecordingBlockMap            m_mapBlocksEncoded;
     /** The state mouse cursor state.
      *  We currently only support one mouse cursor at a time. */
     RecordingCursorState         m_Cursor;
 };
 
+/**
+ * Recording context implementation constructor.
+ */
 RecordingContextImpl::RecordingContextImpl(RecordingContext *pParent)
     : m_pParent(pParent)
     , m_enmState(RECORDINGSTS_UNINITIALIZED)
@@ -353,11 +409,21 @@ RecordingContextImpl::RecordingContextImpl(RecordingContext *pParent)
     , m_cStreamsEnabled(0)
     , m_tsStartMs(0)
 {
+#ifdef VBOX_WITH_AUDIO_RECORDING
+    RT_ZERO(m_CodecAudio);
+# ifdef VBOX_WITH_RECORDING_STATS
+    RT_ZERO(m_AudioStats);
+# endif
+#endif
+
     int vrc = RTCritSectInit(&m_CritSect);
     if (RT_FAILURE(vrc))
         throw vrc;
 }
 
+/**
+ * Recording context implementation destructor.
+ */
 RecordingContextImpl::~RecordingContextImpl(void)
 {
     destroyInternal();
@@ -581,7 +647,7 @@ int RecordingContext::SetError(int rc, const com::Utf8Str &strText)
 }
 
 /**
- * Worker thread for all streams of a recording context.
+ * Worker thread for common recording data of a recording context.
  */
 DECLCALLBACK(int) RecordingContextImpl::threadMain(RTTHREAD hThreadSelf, void *pvUser)
 {
@@ -594,7 +660,23 @@ DECLCALLBACK(int) RecordingContextImpl::threadMain(RTTHREAD hThreadSelf, void *p
 
     for (;;)
     {
-        int vrcWait = RTSemEventWait(pThis->m_WaitEvent, RT_MS_1SEC);
+        RTMSINTERVAL msTimeout = pThis->m_schedulingHintMs;
+
+#ifdef VBOX_WITH_AUDIO_RECORDING
+        if (recordingCodecIsInitialized(&pThis->m_CodecAudio))
+        {
+            PRECORDINGFRAMEPOOL pPoolAudio = &pThis->m_aPoolsCommonRaw[RECORDINGFRAME_TYPE_AUDIO];
+            if (RecordingFramePoolReadable(pPoolAudio, 0 /* Context reader */))
+            {
+                uint64_t const   msNowPts          = pThis->m_pParent->GetCurrentPTS();
+                RTMSINTERVAL const msAudioDeadline = recordingCodecGetDeadlineMs(&pThis->m_CodecAudio, msNowPts);
+                if (msAudioDeadline < msTimeout)
+                    msTimeout = msAudioDeadline;
+            }
+        }
+#endif
+
+        RTSemEventWait(pThis->m_WaitEvent, msTimeout);
 
         if (ASMAtomicReadBool(&pThis->m_fShutdown))
         {
@@ -602,46 +684,21 @@ DECLCALLBACK(int) RecordingContextImpl::threadMain(RTTHREAD hThreadSelf, void *p
             break;
         }
 
-        Log2Func(("Processing %zu streams (wait = %Rrc)\n", pThis->m_vecStreams.size(), vrcWait));
-
         uint64_t const msTimestamp = pThis->m_pParent->GetCurrentPTS();
 
         /* Set the overall progress. */
         int vrc = pThis->progressSet(msTimestamp);
         AssertRC(vrc);
 
-        STAM_PROFILE_START(&pThis->m_STAT.profileDataCommon, common);
+        STAM_PROFILE_START(&pThis->m_STAM.profileDataCommon, common);
 
-        /* Process common raw blocks (data which not has been encoded yet). */
-        vrc = pThis->processCommonData(pThis->m_mapBlocksRaw, 100 /* ms timeout */);
+        /* Process common raw frames (i.e. frames which have not been encoded yet). */
+        vrc = pThis->processCommonData(pThis->m_schedulingHintMs);
 
         STAM_PROFILE_STOP(&pThis->m_STAM.profileDataCommon, common);
 
-        STAM_PROFILE_START(&pThis->m_STAM.profileDataStreams, streams);
-
-        /** @todo r=andy This is inefficient -- as we already wake up this thread
-         *               for every screen from Main, we here go again (on every wake up) through
-         *               all screens.  */
-        RecordingStreams::iterator itStream = pThis->m_vecStreams.begin();
-        while (itStream != pThis->m_vecStreams.end())
-        {
-            RecordingStream *pStream = (*itStream);
-
-            /* Hand-in common encoded blocks. */
-            vrc = pStream->ThreadMain(vrcWait, msTimestamp, pThis->m_mapBlocksEncoded);
-            if (RT_FAILURE(vrc))
-            {
-                LogRel(("Recording: Processing stream #%RU16 failed (%Rrc)\n", pStream->GetID(), vrc));
-                break;
-            }
-
-            ++itStream;
-        }
-
-        STAM_PROFILE_STOP(&pThis->m_STAM.profileDataStreams, streams);
-
         if (RT_FAILURE(vrc))
-            LogRel(("Recording: Encoding thread failed (%Rrc)\n", vrc));
+            LogRel(("Recording: Common recording processing failed (%Rrc)\n", vrc));
 
         /* Keep going in case of errors. */
 
@@ -658,85 +715,140 @@ DECLCALLBACK(int) RecordingContextImpl::threadMain(RTTHREAD hThreadSelf, void *p
  */
 int RecordingContextImpl::threadNotify(void)
 {
-    return RTSemEventSignal(m_WaitEvent);
-}
+    int vrc = RTSemEventSignal(m_WaitEvent);
 
-/**
- * Worker function for processing common block data.
- *
- * @returns VBox status code.
- * @param   mapCommon           Common block map to handle.
- * @param   msTimeout           Timeout to use for maximum time spending to process data.
- *                              Use RT_INDEFINITE_WAIT for processing all data.
- *
- * @note    Runs in recording thread.
- */
-int RecordingContextImpl::processCommonData(RecordingBlockMap &mapCommon, RTMSINTERVAL msTimeout)
-{
-    Log2Func(("Processing %zu common blocks (%RU32ms timeout)\n", mapCommon.size(), msTimeout));
-
-    int vrc = VINF_SUCCESS;
-
-    uint64_t const msStart = RTTimeMilliTS();
-    RecordingBlockMap::iterator itCommonBlocks = mapCommon.begin();
-    while (itCommonBlocks != mapCommon.end())
+    RecordingStreams::const_iterator itStream = m_vecStreams.begin();
+    while (itStream != m_vecStreams.end())
     {
-        RecordingBlockList::iterator itBlock = itCommonBlocks->second->List.begin();
-        while (itBlock != itCommonBlocks->second->List.end())
-        {
-            RecordingBlock *pBlockCommon = (RecordingBlock *)(*itBlock);
-            PRECORDINGFRAME pFrame = (PRECORDINGFRAME)pBlockCommon->pvData;
-            AssertPtr(pFrame);
-            switch (pFrame->enmType)
-            {
-#ifdef VBOX_WITH_AUDIO_RECORDING
-                case RECORDINGFRAME_TYPE_AUDIO:
-                {
-                    vrc = recordingCodecEncodeFrame(&m_CodecAudio, pFrame, pFrame->msTimestamp, NULL /* pvUser */);
-# ifdef VBOX_WITH_STATISTICS
-                    if (RT_SUCCESS(vrc))
-                    {
-                        STAM_COUNTER_INC(&m_STAM.cCommonFramesEncoded);
-                        STAM_COUNTER_DEC(&m_STAM.cCommonFramesToEncode);
-                    }
-# endif
-                    break;
-                }
-#endif /* VBOX_WITH_AUDIO_RECORDING */
-                default:
-                    AssertFailedBreakStmt(vrc = VERR_NOT_IMPLEMENTED);
-                    break;
-            }
-
-            itCommonBlocks->second->List.erase(itBlock);
-            if (pBlockCommon->Release() == 0)
-                pBlockCommon->Destroy();
-            delete pBlockCommon;
-            itBlock = itCommonBlocks->second->List.begin();
-
-            if (RT_FAILURE(vrc) || RTTimeMilliTS() > msStart + msTimeout)
-                break;
-        }
-
-        /* If no entries are left over in the block map, remove it altogether. */
-        if (itCommonBlocks->second->List.empty())
-        {
-            delete itCommonBlocks->second;
-            mapCommon.erase(itCommonBlocks);
-            itCommonBlocks = mapCommon.begin();
-        }
-        else
-            ++itCommonBlocks;
-
-        if (RT_FAILURE(vrc))
-            break;
+        int const vrc2 = (*itStream)->Notify();
+        if (RT_SUCCESS(vrc))
+            vrc = vrc2;
+        ++itStream;
     }
 
     return vrc;
 }
 
+#if defined(VBOX_WITH_AUDIO_RECORDING) && defined(VBOX_WITH_RECORDING_STATS)
 /**
- * Writes common block data (i.e. shared / the same) in all streams.
+ * Samples context audio pool pressure and updates bucket counters.
+ */
+void RecordingContextImpl::statsAudioPoolSample(void)
+{
+    PRECORDINGFRAMEPOOL pPoolRaw = &m_aPoolsCommonRaw[RECORDINGFRAME_TYPE_AUDIO];
+    PRECORDINGFRAMEPOOL pPoolEnc = &m_aPoolsCommonEnc[RECORDINGFRAME_TYPE_AUDIO];
+
+    size_t const cRawSize = RecordingFramePoolSize(pPoolRaw);
+    size_t const cRawUsed = RecordingFramePoolUsed(pPoolRaw);
+    size_t const cEncSize = RecordingFramePoolSize(pPoolEnc);
+    size_t const cEncUsed = RecordingFramePoolUsed(pPoolEnc);
+
+    RecordingStatsPoolPressureSample(&m_AudioStats.RawPressure, cRawUsed, cRawSize);
+    RecordingStatsPoolPressureSample(&m_AudioStats.EncPressure, cEncUsed, cEncSize);
+
+    if (   m_AudioStats.RawPressure.cSamples
+        && (m_AudioStats.RawPressure.cSamples % 64 /* Back off a little */) == 0)
+        statsAudioPoolLog("Stats");
+}
+
+/**
+ * Logs accumulated context audio pool pressure statistics.
+ */
+void RecordingContextImpl::statsAudioPoolLog(const char *pszPrefix) const
+{
+    PRECORDINGFRAMEPOOL pPoolRaw = (PRECORDINGFRAMEPOOL)&m_aPoolsCommonRaw[RECORDINGFRAME_TYPE_AUDIO];
+    PRECORDINGFRAMEPOOL pPoolEnc = (PRECORDINGFRAMEPOOL)&m_aPoolsCommonEnc[RECORDINGFRAME_TYPE_AUDIO];
+
+    size_t const cRawSize = RecordingFramePoolSize(pPoolRaw);
+    size_t const cRawUsed = RecordingFramePoolUsed(pPoolRaw);
+    size_t const cEncSize = RecordingFramePoolSize(pPoolEnc);
+    size_t const cEncUsed = RecordingFramePoolUsed(pPoolEnc);
+
+    RecordingStatsPoolPressureLog(pszPrefix, "Audio (raw)",
+                                  &m_AudioStats.RawPressure,
+                                  cRawUsed, cRawSize);
+
+    RecordingStatsPoolPressureLog(pszPrefix, "Audio (enc)",
+                                  &m_AudioStats.EncPressure,
+                                  cEncUsed, cEncSize);
+}
+#endif /* VBOX_WITH_AUDIO_RECORDING && VBOX_WITH_RECORDING_STATS */
+
+/**
+ * Worker function for processing common (raw) data.
+ *
+ * @returns VBox status code.
+ * @param   msTimeout           Timeout to use for maximum time spending to process data.
+ *                              Use RT_INDEFINITE_WAIT for processing all data.
+ *
+ * @note    Runs in recording thread.
+ */
+int RecordingContextImpl::processCommonData(RTMSINTERVAL msTimeout)
+{
+    int vrc = VINF_SUCCESS;
+
+#ifndef VBOX_WITH_AUDIO_RECORDING
+    RT_NOREF(msTimeout);
+#else
+    uint64_t const msStart = RTTimeMilliTS();
+
+    /* Keep it simply, as we only use for this audio data right now. */
+    PRECORDINGFRAMEPOOL pPool = &m_aPoolsCommonRaw[RECORDINGFRAME_TYPE_AUDIO];
+    uint32_t const      idRdr = 0; /* The only reader, hence always 0. */
+
+    PRECORDINGFRAME pFrame;
+    while ((pFrame = RecordingFramePoolAcquireRead(pPool, idRdr)))
+    {
+        switch (pFrame->enmType)
+        {
+            case RECORDINGFRAME_TYPE_AUDIO:
+            {
+                vrc = recordingCodecEncode(&m_CodecAudio, pFrame, pFrame->msTimestamp, NULL /* pvUser */);
+                if (RT_SUCCESS(vrc))
+                {
+                    STAM_COUNTER_INC(&m_STAM.cCommonFramesEncoded);
+                    STAM_COUNTER_DEC(&m_STAM.cCommonFramesToEncode);
+
+# ifdef VBOX_WITH_RECORDING_STATS
+                    statsAudioPoolSample();
+# endif
+                }
+                break;
+            }
+
+            default:
+                AssertFailedBreakStmt(vrc = VERR_NOT_IMPLEMENTED);
+                break;
+        }
+
+        RecordingFramePoolReleaseRead(pPool, idRdr);
+
+        if (   RTTimeMilliTS() > msStart + msTimeout
+            || RT_FAILURE(vrc))
+            break;
+    }
+
+    /*
+     * Reclaim encoded common-audio pool space even when no new writes arrive.
+     *
+     * Reclaim is writer-thread-only, and this context worker thread is the writer
+     * for m_aPoolsCommonEnc[AUDIO] via audioCodecWriteDataCallback().
+     */
+    PRECORDINGFRAMEPOOL pPoolEnc = &m_aPoolsCommonEnc[RECORDINGFRAME_TYPE_AUDIO];
+    if (RecordingFramePoolIsInitialized(pPoolEnc))
+    {
+        int const vrc2 = RecordingFramePoolReclaim(pPoolEnc);
+        AssertRC(vrc2);
+        if (RT_SUCCESS(vrc))
+            vrc = vrc2;
+    }
+#endif /* VBOX_WITH_AUDIO_RECORDING */
+
+    return vrc;
+}
+
+/**
+ * Writes (raw) common frame data (i.e. shared / the same) to all streams.
  *
  * The multiplexing is needed to supply all recorded (enabled) screens with the same
  * data at the same given point in time.
@@ -744,105 +856,71 @@ int RecordingContextImpl::processCommonData(RecordingBlockMap &mapCommon, RTMSIN
  * Currently this only is being used for audio data.
  *
  * @returns VBox status code.
- * @param   mapCommon       Common block map to write data to.
  * @param   pCodec          Pointer to codec instance which has written the data.
- * @param   pvData          Pointer to written data (encoded).
+ * @param   pvData          Pointer to (raw) frame data.
  * @param   cbData          Size (in bytes) of \a pvData.
  * @param   msTimestamp     Absolute PTS (in ms) of the written data.
  * @param   uFlags          Encoding flags of type RECORDINGCODEC_ENC_F_XXX.
+ *
+ * @thread  EMT or async I/O audio mixing threads (i.e. MixAIO-X).
  */
-int RecordingContextImpl::writeCommonData(RecordingBlockMap &mapCommon, PRECORDINGCODEC pCodec, const void *pvData, size_t cbData,
+int RecordingContextImpl::writeCommonData(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData,
                                           uint64_t msTimestamp, uint32_t uFlags)
 {
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
+
+    RT_NOREF(uFlags);
 
     LogFlowFunc(("pCodec=%p, cbData=%zu, msTimestamp=%zu, uFlags=%#x\n",
                  pCodec, cbData, msTimestamp, uFlags));
 
     RECORDINGFRAME_TYPE const enmType = pCodec->Parms.enmType == RECORDINGCODECTYPE_AUDIO
                                       ? RECORDINGFRAME_TYPE_AUDIO : RECORDINGFRAME_TYPE_INVALID;
-
     AssertReturn(enmType != RECORDINGFRAME_TYPE_INVALID, VERR_NOT_SUPPORTED);
-
-    PRECORDINGFRAME pFrame = NULL;
 
     switch (enmType)
     {
 #ifdef VBOX_WITH_AUDIO_RECORDING
         case RECORDINGFRAME_TYPE_AUDIO:
         {
-            pFrame = (PRECORDINGFRAME)RTMemAlloc(sizeof(RECORDINGFRAME));
-            AssertPtrReturn(pFrame, VERR_NO_MEMORY);
-            pFrame->enmType     = RECORDINGFRAME_TYPE_AUDIO;
-            pFrame->msTimestamp = msTimestamp;
+            const PRECORDINGFRAMEPOOL pPool = &this->m_aPoolsCommonRaw[RECORDINGFRAME_TYPE_AUDIO];
 
-            PRECORDINGAUDIOFRAME pAudioFrame = &pFrame->u.Audio;
-            pAudioFrame->pvBuf = (uint8_t *)RTMemDup(pvData, cbData);
-            AssertPtrReturn(pAudioFrame->pvBuf, VERR_NO_MEMORY);
-            pAudioFrame->cbBuf = cbData;
+            PRECORDINGFRAME pFrame = RecordingFramePoolAcquireWrite(pPool);
+            if (pFrame)
+            {
+                pFrame->enmType      = RECORDINGFRAME_TYPE_AUDIO;
+                pFrame->msTimestamp  = msTimestamp;
+                pFrame->Enc.uFlags   = uFlags;
+
+                void *pvBuf = (PRTUINTPTR)pFrame + RT_OFFSETOF(RECORDINGFRAME, abData);
+                Assert(cbData <= pPool->cbFrame);
+
+                pFrame->u.Audio.pvBuf = (uint8_t *)pvBuf;
+                pFrame->u.Audio.cbBuf = cbData;
+
+                memcpy(pFrame->u.Audio.pvBuf, pvData, cbData);
+
+                RecordingFramePoolReleaseWrite(pPool);
+
+                STAM_COUNTER_INC(&m_STAM.cCommonFramesAdded);
+            }
+            else
+            {
+# ifdef VBOX_WITH_RECORDING_STATS
+                m_AudioStats.RawPressure.cDrops++;
+# endif
+                LogRelMax(64, ("Recording: Warning: Audio frame pool full, dropping data\n"));
+            }
             break;
         }
-#endif
+#endif /* VBOX_WITH_AUDIO_RECORDING */
         default:
             AssertFailed();
             break;
     }
 
-    if (!pFrame)
-        return VINF_SUCCESS;
-
-    lock();
-
-    int vrc;
-
-    RecordingBlock *pBlock = NULL;
-    try
-    {
-        pBlock = new RecordingBlock();
-
-        pBlock->pvData      = pFrame;
-        pBlock->cbData      = sizeof(RECORDINGFRAME);
-        pBlock->cRefs       = m_cStreamsEnabled;
-        Assert(pBlock->cRefs); /* Paranoia. */
-        pBlock->msTimestamp = msTimestamp;
-        pBlock->uFlags      = uFlags;
-
-        RecordingBlockMap::iterator itBlocks = mapCommon.find(msTimestamp);
-        if (itBlocks == mapCommon.end())
-        {
-            RecordingBlocks *pRecordingBlocks = new RecordingBlocks();
-            pRecordingBlocks->List.push_back(pBlock);
-
-            mapCommon.insert(std::make_pair(msTimestamp, pRecordingBlocks));
-        }
-        else
-            itBlocks->second->List.push_back(pBlock);
-
-        STAM_COUNTER_INC(&m_STAM.cCommonFramesAdded);
-        STAM_COUNTER_INC(&m_STAM.cCommonFramesToEncode);
-
-        vrc = VINF_SUCCESS;
-    }
-    catch (const std::exception &)
-    {
-        vrc = VERR_NO_MEMORY;
-    }
-
-    unlock();
-
-    if (RT_SUCCESS(vrc))
-    {
-        vrc = threadNotify();
-    }
-    else
-    {
-        if (pBlock)
-            delete pBlock;
-        RecordingFrameFree(pFrame);
-    }
-
-    return vrc;
+    return threadNotify();
 }
 
 /**
@@ -857,7 +935,7 @@ void RecordingContextImpl::updateInternal(void)
 
 #ifdef VBOX_WITH_AUDIO_RECORDING
 /**
- * Callback function for writing encoded audio data into the common encoded block map.
+ * Callback function for writing encoded audio data into the recording context.
  *
  * This is called by the audio codec when finishing encoding audio data.
  *
@@ -867,8 +945,40 @@ void RecordingContextImpl::updateInternal(void)
 DECLCALLBACK(int) RecordingContextImpl::audioCodecWriteDataCallback(PRECORDINGCODEC pCodec, const void *pvData, size_t cbData,
                                                                     uint64_t msAbsPTS, uint32_t uFlags, void *pvUser)
 {
+    RT_NOREF(pCodec);
+
     RecordingContextImpl *pThis = (RecordingContextImpl *)pvUser;
-    return pThis->writeCommonData(pThis->m_mapBlocksEncoded, pCodec, pvData, cbData, msAbsPTS, uFlags);
+    AssertPtr(pThis);
+
+    /* Write the encoded frame data to the common encoded frame pool. */
+    const PRECORDINGFRAMEPOOL pPool = &pThis->m_aPoolsCommonEnc[RECORDINGFRAME_TYPE_AUDIO];
+
+    PRECORDINGFRAME pFrame = RecordingFramePoolAcquireWrite(pPool);
+    if (pFrame)
+    {
+        pFrame->enmType      = RECORDINGFRAME_TYPE_AUDIO;
+        pFrame->msTimestamp  = msAbsPTS;
+        pFrame->Enc.uFlags   = uFlags;
+
+        void *pvBuf = (PRTUINTPTR)pFrame + RT_OFFSETOF(RECORDINGFRAME, abData);
+        Assert(cbData <= pPool->cbFrame);
+
+        pFrame->u.Audio.pvBuf = (uint8_t *)pvBuf;
+        pFrame->u.Audio.cbBuf = cbData;
+
+        memcpy(pFrame->u.Audio.pvBuf, pvData, cbData);
+
+        RecordingFramePoolReleaseWrite(pPool);
+    }
+    else
+    {
+# ifdef VBOX_WITH_RECORDING_STATS
+        pThis->m_AudioStats.EncPressure.cDrops++;
+# endif
+        LogRelMax(64, ("Recording: Warning: Audio encoded frame pool full, dropping data\n"));
+    }
+
+    return 0;
 }
 
 /**
@@ -877,10 +987,10 @@ DECLCALLBACK(int) RecordingContextImpl::audioCodecWriteDataCallback(PRECORDINGCO
  * @returns VBox status code.
  * @param   ScreenSettings      Reference to recording screen settings to use for initialization.
  */
-int RecordingContextImpl::audioInit(const ComPtr<IRecordingScreenSettings> &ScreenSettings)
+int RecordingContextImpl::initAudio(const ComPtr<IRecordingScreenSettings> &ScreenSettings)
 {
     RecordingAudioCodec_T enmCodec;
-    HRESULT const hrc = ScreenSettings->COMGETTER(AudioCodec)(&enmCodec);
+    HRESULT hrc = ScreenSettings->COMGETTER(AudioCodec)(&enmCodec);
     AssertComRCReturn(hrc, VERR_RECORDING_INIT_FAILED);
 
     if (enmCodec == RecordingAudioCodec_None)
@@ -897,6 +1007,63 @@ int RecordingContextImpl::audioInit(const ComPtr<IRecordingScreenSettings> &Scre
     int vrc = recordingCodecCreateAudio(&m_CodecAudio, enmCodec);
     if (RT_SUCCESS(vrc))
         vrc = recordingCodecInit(&m_CodecAudio, &Callbacks, ScreenSettings);
+
+    if (RT_SUCCESS(vrc))
+    {
+        size_t const msPerFrame = VBOX_RECORDING_VORBIS_FRAME_MS_DEFAULT; /* Only codec we support right now. */
+        size_t const cFrames    = RecordingUtilsCalcCapacityFromLatency(m_schedulingHintMs, msPerFrame,
+                                                                        8 /* cMin */, 512 /* cMax */);
+
+        /*
+         * Init raw frame pool.
+         * This hold the raw frames from the connected audio driver, so we have to use the maximum we support here.
+         */
+        size_t const cbFrameRaw =   sizeof(RECORDINGFRAME)
+                                  + (48000 /* Hz */ * msPerFrame / RT_MS_1SEC) * (24 /* Bit */ / 8) * 2 /* Channels */;
+        vrc = RecordingFramePoolInit(&m_aPoolsCommonRaw[RECORDINGFRAME_TYPE_AUDIO], RECORDINGFRAME_TYPE_AUDIO,
+                                     cbFrameRaw, cFrames);
+        AssertRCReturn(vrc, vrc);
+
+        /*
+         * Init encoded frame pool.
+         * This hold the encoded audio frames we multiplex to all streams.
+         */
+        ULONG uBits;
+        hrc = ScreenSettings->COMGETTER(AudioBits)(&uBits);
+        AssertComRC(hrc);
+        ULONG cChannels;
+        hrc = ScreenSettings->COMGETTER(AudioChannels)(&cChannels);
+        AssertComRC(hrc);
+        ULONG uHz;
+        hrc = ScreenSettings->COMGETTER(AudioHz)(&uHz);
+        AssertComRC(hrc);
+
+        size_t const cbFrameEnc =   sizeof(RECORDINGFRAME)
+                                  + (uHz * msPerFrame / RT_MS_1SEC) * (uBits / 8) * cChannels;
+
+        vrc = RecordingFramePoolInit(&m_aPoolsCommonEnc[RECORDINGFRAME_TYPE_AUDIO], RECORDINGFRAME_TYPE_AUDIO,
+                                     cbFrameEnc, cFrames);
+        AssertRCReturn(vrc, vrc);
+
+        LogRel2(("Recording: Allocated %zu bytes for audio pools\n", (cbFrameRaw + cbFrameEnc) * cFrames));
+    }
+
+    return vrc;
+}
+
+/**
+ * Uninitializes the audio codec.
+ *
+ * @returns VBox status code.
+ */
+int RecordingContextImpl::uninitAudio(void)
+{
+    if (!recordingCodecIsInitialized(&m_CodecAudio))
+        return VINF_SUCCESS;
+
+    int vrc = recordingCodecFinalize(&m_CodecAudio);
+    if (RT_SUCCESS(vrc))
+        vrc = recordingCodecDestroy(&m_CodecAudio);
 
     return vrc;
 }
@@ -981,15 +1148,22 @@ int RecordingContextImpl::createInternal(ComPtr<IProgress> &ProgressOut)
     SafeIfaceArray<IRecordingScreenSettings> RecScreens;
     hrc = m_Settings->COMGETTER(Screens)(ComSafeArrayAsOutParam(RecScreens));
     AssertComRCReturn(hrc, VERR_RECORDING_INIT_FAILED);
+    AssertReturn(RecScreens.size() <= RECORDINGCIRCBUF_MAX_READERS, VERR_INVALID_PARAMETER);
+
+    m_schedulingHintMs = 250; /* Trade-off between smoothness and memory use. */
+    LogRel2(("Recording: Scheduling is set to %RU32ms\n", m_schedulingHintMs));
 
 #ifdef VBOX_WITH_AUDIO_RECORDING
+    RT_ZERO(m_aPoolsCommonRaw); /* Only used for audio so far. */
+    RT_ZERO(m_aPoolsCommonEnc); /* Ditto. */
+
     BOOL fEnableAudio;
     hrc = RecScreens[0]->IsFeatureEnabled(RecordingFeature_Audio, &fEnableAudio);
     AssertComRCReturn(hrc, VERR_RECORDING_INIT_FAILED);
     if (fEnableAudio)
     {
         /* We always use the audio settings from screen 0, as we multiplex the audio data anyway. */
-        vrc = audioInit(RecScreens[0]);
+        vrc = initAudio(RecScreens[0]);
         if (RT_FAILURE(vrc))
             return vrc;
     }
@@ -999,7 +1173,6 @@ int RecordingContextImpl::createInternal(ComPtr<IProgress> &ProgressOut)
     {
         ComPtr<IRecordingScreenSettings> ScreenSettings = RecScreens[i];
         Assert(ScreenSettings.isNotNull());
-
         RecordingStream *pStream = NULL;
         try
         {
@@ -1008,15 +1181,31 @@ int RecordingContextImpl::createInternal(ComPtr<IProgress> &ProgressOut)
             AssertComRCReturn(hrc, VERR_RECORDING_INIT_FAILED);
             if (fEnabled)
             {
-                PRECORDINGCODEC pCodecAudio = NULL;
+                pStream = new RecordingStream(m_pParent, (uint32_t)i /* Screen ID */, ScreenSettings,
 #ifdef VBOX_WITH_AUDIO_RECORDING
-                pCodecAudio  = &m_CodecAudio;
+                                              m_aPoolsCommonEnc);
+#else
+                                              NULL);
 #endif
-                pStream = new RecordingStream(m_pParent, (uint32_t)i /* Screen ID */, ScreenSettings, pCodecAudio);
+
+               vrc = pStream ->InitVideo(ScreenSettings);
+
+#ifdef VBOX_WITH_AUDIO_RECORDING
+                if (RT_SUCCESS(vrc))
+                    vrc = pStream->InitAudio(ScreenSettings, &m_CodecAudio);
+
+                /* Add the stream to the commonly encoded frame pools. */
+                for (size_t p = 0; p < RT_ELEMENTS(m_aPoolsCommonEnc); p++)
+                {
+                    uint32_t idRdr;
+                    vrc = RecordingFramePoolAddReader(&m_aPoolsCommonEnc[p], &idRdr);
+                    AssertRCBreak(vrc);
+                    AssertBreakStmt(idRdr == i /* Screen ID */, vrc = VERR_INTERNAL_ERROR);
+                }
+#endif
 
                 m_vecStreams.push_back(pStream);
                 m_cStreamsEnabled++;
-                LogFlowFunc(("pStream=%p\n", pStream));
             }
         }
         catch (std::bad_alloc &)
@@ -1030,6 +1219,9 @@ int RecordingContextImpl::createInternal(ComPtr<IProgress> &ProgressOut)
             break;
         }
     }
+
+    if (RT_FAILURE(vrc))
+        return vrc;
 
     ComObjPtr<Progress> pThisProgress;
     vrc = progressCreate(m_Settings, pThisProgress);
@@ -1083,6 +1275,10 @@ void RecordingContextImpl::reset(void)
     m_enmState        = RECORDINGSTS_CREATED;
     m_fShutdown       = false;
     m_cStreamsEnabled = 0;
+
+#if defined(VBOX_WITH_AUDIO_RECORDING) && defined(VBOX_WITH_RECORDING_STATS)
+    RT_ZERO(m_AudioStats);
+#endif
 
     unconst(m_pProgress).setNull();
 }
@@ -1215,6 +1411,11 @@ int RecordingContextImpl::stopInternal(void)
         if (m_pProgress.isNotNull())
             progressNotifyComplete();
 
+#if defined(VBOX_WITH_AUDIO_RECORDING) && defined(VBOX_WITH_RECORDING_STATS)
+        if (m_AudioStats.RawPressure.cSamples)
+            statsAudioPoolLog("Stats (final)");
+#endif
+
         LogRel(("Recording: Stopped\n"));
 
         reset();
@@ -1248,6 +1449,10 @@ void RecordingContextImpl::destroyInternal(void)
 
     lock();
 
+#ifdef VBOX_WITH_AUDIO_RECORDING
+    uninitAudio();
+#endif
+
     vrc = RTSemEventDestroy(m_WaitEvent);
     AssertRCReturnVoid(vrc);
 
@@ -1258,15 +1463,19 @@ void RecordingContextImpl::destroyInternal(void)
     {
         RecordingStream *pStream = (*it);
 
-        vrc = pStream->Uninit();
-        AssertRC(vrc);
-
         delete pStream;
         pStream = NULL;
 
         m_vecStreams.erase(it);
         it = m_vecStreams.begin();
     }
+
+#ifdef VBOX_WITH_AUDIO_RECORDING
+    for (size_t i = 0; i < RT_ELEMENTS(m_aPoolsCommonRaw); i++)
+        RecordingFramePoolDestroy(&m_aPoolsCommonRaw[i]);
+    for (size_t i = 0; i < RT_ELEMENTS(m_aPoolsCommonEnc); i++)
+        RecordingFramePoolDestroy(&m_aPoolsCommonEnc[i]);
+#endif
 
 #ifdef VBOX_WITH_STATISTICS
     Console::SafeVMPtrQuiet ptrVM(m_pParent->m_pConsole);
@@ -1283,8 +1492,6 @@ void RecordingContextImpl::destroyInternal(void)
 
     /* Sanity. */
     Assert(m_vecStreams.empty());
-    Assert(m_mapBlocksRaw.size() == 0);
-    Assert(m_mapBlocksEncoded.size() == 0);
 
     m_enmState = RECORDINGSTS_UNINITIALIZED;
 
@@ -1426,6 +1633,14 @@ uint64_t RecordingContext::GetCurrentPTS(void) const
         return 0;
 
     return RTTimeMilliTS() - m->m_tsStartMs;
+}
+
+/**
+ * Returns scheduling hint for recording worker threads.
+ */
+RTMSINTERVAL RecordingContext::GetSchedulingHintMs(void) const
+{
+    return m->m_schedulingHintMs;
 }
 
 /**
@@ -1679,7 +1894,7 @@ int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t
 
     m->updateInternal();
 
-    int const vrc = m->writeCommonData(m->m_mapBlocksRaw, &m->m_CodecAudio,
+    int const vrc = m->writeCommonData(&m->m_CodecAudio,
                                        pvData, cbData, msTimestamp, RECORDINGCODEC_ENC_F_BLOCK_IS_KEY);
     m->unlock();
 
@@ -1697,7 +1912,7 @@ int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t
  * @param   uScreen             Screen number to send video frame to.
  * @param   uWidth              With (in pixels) of the video frame.
  * @param   uHeight             Height (in pixels) of the video frame.
- * @param   enmPixelFmt         Pixel format of the video frame.
+ * @param   uBPP                Bits per pixel.
  * @param   uBytesPerLine       Bytes per line of the video frame.
  * @param   pvData              Pointer to video frame data.
  * @param   cbData              Size (in bytes) of \a pvData.
@@ -1707,23 +1922,18 @@ int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t
  *
  * @thread  EMT
  */
-int RecordingContext::SendVideoFrame(uint32_t uScreen, uint32_t uWidth, uint32_t uHeight, RECORDINGPIXELFMT enmPixelFmt,
-                                     uint32_t uBytesPerLine, const void *pvData, size_t cbData, uint32_t uPosX, uint32_t uPosY,
+int RecordingContext::SendVideoFrame(uint32_t uScreen, uint32_t uWidth, uint32_t uHeight,
+                                     uint8_t uBPP, uint32_t uBytesPerLine,
+                                     const void *pvData, size_t cbData, uint32_t uPosX, uint32_t uPosY,
                                      uint64_t msTimestamp)
 {
-    LogFlowFunc(("uScreen=%RU32, offX=%RU32, offY=%RU32, w=%RU32, h=%RU32, fmt=%#x (%zu bytes), ts=%RU64\n",
-                 uScreen, uPosX, uPosY, uWidth, uHeight, enmPixelFmt,
-                 size_t(uHeight * uWidth * 4 /* 32 BPP */), msTimestamp));
+    RT_NOREF(uBPP); /* We internally always work with 32-bit framebuffers. */
+
+    LogFlowFunc(("uScreen=%RU32, pos=%RU32,%RU32, buf=%RU32x%RU32x%RU32, bpl=%RU32, ts=%RU64\n",
+                 uScreen, uPosX, uPosY, uWidth, uHeight, uBPP, uBytesPerLine, msTimestamp));
 
     if (!pvData) /* Empty / invalid frame, skip. */
         return VINF_SUCCESS;
-
-#ifdef VBOX_STRICT
-    /* Sanity. */
-    AssertReturn(enmPixelFmt == RECORDINGPIXELFMT_BRGA32 /* Only format we support for now */, VERR_INVALID_PARAMETER);
-    AssertReturn(cbData, VERR_INVALID_PARAMETER);
-    AssertReturn(uWidth  * uHeight * 4 /* 32 BPP */ <= cbData, VERR_INVALID_PARAMETER);
-#endif
 
     m->lock();
 
@@ -1738,9 +1948,10 @@ int RecordingContext::SendVideoFrame(uint32_t uScreen, uint32_t uWidth, uint32_t
 
     m->unlock();
 
+    /* Note: We need uBytesPerLine to know the geometry of the source video frame. */
     RECORDINGVIDEOFRAME Frame =
     {
-        { uWidth, uHeight, 32 /* BPP */, enmPixelFmt, uBytesPerLine },
+        { uWidth, uHeight, uBPP, RECORDINGPIXELFMT_BRGA32, uBytesPerLine },
         (uint8_t *)pvData, cbData,
         { uPosX, uPosY }
     };
@@ -1749,9 +1960,8 @@ int RecordingContext::SendVideoFrame(uint32_t uScreen, uint32_t uWidth, uint32_t
     if (vrc == VINF_SUCCESS) /* Might be VINF_RECORDING_THROTTLED or VINF_RECORDING_LIMIT_REACHED. */
         m->threadNotify();
 
-#if 0
-    RecordingUtilsDbgDumpImageData(pauFramebuffer + offFrame, cbFramebuffer,
-                                   "/tmp/recording", "display-screen-update", w, h, uBytesPerLine, 32 /* BPP */);
+#ifdef VBOX_RECORDING_DEBUG_DUMP_FRAMES
+    RecordingDbgDumpVideoFrame(&Frame, "display-screen-update", msTimestamp);
 #endif
 
     return vrc;
@@ -1829,7 +2039,7 @@ int RecordingContext::SendCursorShapeChange(bool fVisible, bool fAlpha, uint32_t
 
     m->lock();
 
-    int vrc = m->m_Cursor.CreateOrUpdate(fAlpha, uWidth, uHeight, pu8Shape, cbShape);
+    int vrc = m->m_Cursor.CreateOrUpdate(fAlpha, xHot, yHot, uWidth, uHeight, pu8Shape, cbShape);
 
     RecordingStreams::iterator it = m->m_vecStreams.begin();
     while (it != m->m_vecStreams.end())
@@ -1864,15 +2074,15 @@ int RecordingContext::SendCursorShapeChange(bool fVisible, bool fAlpha, uint32_t
  * @param   uScreen             Screen number.
  * @param   uWidth              Screen width (in pixels).
  * @param   uHeight             Screen height (in pixels).
- * @param   enmPixelFmt         Screen pixel format.
+ * @param   uBPP                Bits per pixel.
  * @param   uBytesPerLine       Screen bytes per line (stride).
  * @param   msTimestamp         Timestamp (PTS, in ms).
  */
-int RecordingContext::SendScreenChange(uint32_t uScreen, uint32_t uWidth, uint32_t uHeight, RECORDINGPIXELFMT enmPixelFmt,
+int RecordingContext::SendScreenChange(uint32_t uScreen, uint32_t uWidth, uint32_t uHeight, uint8_t uBPP,
                                        uint32_t uBytesPerLine, uint64_t msTimestamp)
 {
-    LogFlowFunc(("uScreen=%RU32, w=%RU32, h=%RU32, fmt=%#x, bytesPerLine=%RU32, ts=%RU64\n",
-                 uScreen, uWidth, uHeight, enmPixelFmt, uBytesPerLine, msTimestamp));
+    LogFlowFunc(("uScreen=%RU32, w=%RU32, h=%RU32, bpp=%RU8, bytesPerLine=%RU32, ts=%RU64\n",
+                 uScreen, uWidth, uHeight, uBPP, uBytesPerLine, msTimestamp));
 
     m->lock();
 
@@ -1890,10 +2100,9 @@ int RecordingContext::SendScreenChange(uint32_t uScreen, uint32_t uWidth, uint32
     RECORDINGSURFACEINFO Info;
     Info.uWidth        = uWidth;
     Info.uHeight       = uHeight;
-    /* We always operate with BRGA32 internally. */
-    Info.uBPP          = 32;
+    Info.uBPP          = uBPP;
     Info.uBytesPerLine = uBytesPerLine;
-    Info.enmPixelFmt   = enmPixelFmt;
+    Info.enmPixelFmt   = RECORDINGPIXELFMT_BRGA32; /* We always operate with BRGA32 internally. */
 
     int const vrc = pStream->SendScreenChange(&Info, msTimestamp);
     if (vrc == VINF_SUCCESS) /* Might be VINF_RECORDING_THROTTLED or VINF_RECORDING_LIMIT_REACHED. */

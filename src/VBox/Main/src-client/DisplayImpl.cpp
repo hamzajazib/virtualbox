@@ -1,4 +1,4 @@
-/* $Id: DisplayImpl.cpp 113234 2026-03-03 18:10:34Z andreas.loeffler@oracle.com $ */
+/* $Id: DisplayImpl.cpp 113380 2026-03-13 10:01:45Z andreas.loeffler@oracle.com $ */
 /** @file
  * VirtualBox COM class implementation
  */
@@ -955,28 +955,33 @@ void Display::i_handleDisplayUpdate(unsigned uScreenId, int x, int y, int w, int
                     if (   w != 0
                         && h != 0)
                     {
-                        unsigned const uBytesPerPixel = ulBitsPerPixel / 8;
+                        unsigned const uDstBytesPerPixel = ulBitsPerPixel / 8;
+                        unsigned const uDstBytesPerLine  = w * uDstBytesPerPixel;
 
-                        const size_t cbData = w * h * uBytesPerPixel;
-                        com::SafeArray<BYTE> image(cbData);
-
-                        uint8_t *pu8Dst = image.raw();
-                        const uint8_t *pu8Src = pbAddress + ulBytesPerLine * y + x * uBytesPerPixel;
-
-                        for (int i = 0; i < h; ++i)
+                        const size_t cbData = h * uDstBytesPerLine;
+                        com::SafeArray<BYTE> image;
+                        if (image.resize(cbData)) /** @todo r=andy Improve this -- this is slow! */
                         {
-                            memcpy(pu8Dst, pu8Src, w * uBytesPerPixel);
-                            pu8Dst += w * uBytesPerPixel;
-                            pu8Src += ulBytesPerLine;
-                        }
+                            uint8_t *pu8Dst = image.raw();
+                            const uint8_t *pu8Src = pbAddress + ulBytesPerLine * y + x * ulBitsPerPixel;
 
-                        pFramebuffer->NotifyUpdateImage(x, y, w, h, ComSafeArrayAsInParam(image));
+                            for (int i = 0; i < h; ++i)
+                            {
+                                memcpy(pu8Dst, pu8Src, w * uDstBytesPerPixel);
+                                pu8Dst += uDstBytesPerLine;
+                                pu8Src += ulBytesPerLine;
+                            }
+
+                            pFramebuffer->NotifyUpdateImage(x, y, w, h, ComSafeArrayAsInParam(image));
 
 #ifdef VBOX_WITH_RECORDING
-                        i_recordingScreenUpdate(uScreenId,
-                                                image.raw(), ulBytesPerLine * h,
-                                                x, y, w, h, ulBytesPerLine);
+                            i_recordingScreenUpdate(uScreenId,
+                                                    image.raw(), uDstBytesPerLine * h,
+                                                    x, y, w, h, uDstBytesPerLine);
 #endif
+                        }
+                        else
+                            AssertFailedStmt(hr = E_OUTOFMEMORY); /* Currently unhandled. */
                     }
                 }
             }
@@ -2184,7 +2189,7 @@ int Display::i_recordingScreenChanged(unsigned uScreenId, const DISPLAYFBINFO *p
 
     uint64_t const tsNowMs = pCtx->GetCurrentPTS();
 
-    int vrc = pCtx->SendScreenChange(uScreenId, pFBInfo->w, pFBInfo->h, RECORDINGPIXELFMT_BRGA32, pFBInfo->w * 4 /* Bytes */,
+    int vrc = pCtx->SendScreenChange(uScreenId, pFBInfo->w, pFBInfo->h, 32 /* Bit */, pFBInfo->w * 4 /* Bytes */,
                                      tsNowMs);
     if (RT_SUCCESS(vrc))
     {
@@ -2247,9 +2252,18 @@ int Display::i_recordingScreenUpdate(unsigned uScreenId, uint8_t *pauFramebuffer
 
     uint8_t const uBytesPerPixel = 4 /* 32 BPP */;
     size_t  const offFrame = (y * uBytesPerLine) + (x * uBytesPerPixel);
-    size_t  const cbFrame  = w * h * uBytesPerPixel;
+    AssertReturn(offFrame < cbFramebuffer, VERR_INVALID_PARAMETER);
 
-    int const vrc = pCtx->SendVideoFrame(uScreenId, w, h, RECORDINGPIXELFMT_BRGA32, uBytesPerLine,
+    /*
+     * Pass available source bytes from the update origin onward, not only dirty payload size.
+     *
+     * RecordingStream tiles use uBytesPerLine for source row stepping. If we pass only
+     * w*h*bpp here, strided source reads can look like out-of-bounds by a few bytes,
+     * causing subtle row corruption / one-byte overruns at tile edges.
+     */
+    size_t  const cbFrame = cbFramebuffer - offFrame;
+
+    int const vrc = pCtx->SendVideoFrame(uScreenId, w, h, 32 /* BPP */, uBytesPerLine,
                                          pauFramebuffer + offFrame, cbFrame, x, y, tsNowMs);
 
     STAM_PROFILE_STOP(&Stats.Monitor[uScreenId].Recording.profileRecording, a);
@@ -2259,7 +2273,7 @@ int Display::i_recordingScreenUpdate(unsigned uScreenId, uint8_t *pauFramebuffer
 }
 
 /**
- * Sends a screen upate to the recording facility using the current framebuffer.
+ * Sends a screen update to the recording facility using the current framebuffer.
  *
  * @returns VBox status code.
  * @param   uScreenId           ID of screen.

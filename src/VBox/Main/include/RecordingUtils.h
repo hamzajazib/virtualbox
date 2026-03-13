@@ -1,4 +1,4 @@
-/* $Id: RecordingUtils.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: RecordingUtils.h 113380 2026-03-13 10:01:45Z andreas.loeffler@oracle.com $ */
 /** @file
  * Recording utility header.
  */
@@ -45,13 +45,17 @@ const char *RecordingUtilsRecordingFrameTypeToStr(RECORDINGFRAME_TYPE enmType);
 const char *RecordingUtilsAudioCodecToStr(RecordingAudioCodec_T enmCodec);
 const char *RecordingUtilsVideoCodecToStr(RecordingVideoCodec_T enmCodec);
 
+size_t RecordingUtilsCalcCapacityFromLatency(RTMSINTERVAL msLatencyBudget, size_t msPerFrame, size_t cMin, size_t cMax);
+size_t RecordingUtilsCalcCapacityFromFpsAndLatency(size_t uFPS, RTMSINTERVAL msLatencyBudget, size_t uMinFPS, size_t uMaxFPS);
+
 #ifndef IN_VBOXSVC /* Code only used in VBoxC. */
 
 #ifdef DEBUG
-int RecordingUtilsDbgDumpImageData(const uint8_t *pu8RGBBuf, size_t cbRGBBuf, const char *pszPath, const char *pszWhat, uint32_t uX, uint32_t uY, uint32_t uWidth, uint32_t uHeight, uint32_t uBytesPerLine, uint8_t uBPP);
-int RecordingUtilsDbgDumpVideoFrameEx(const PRECORDINGVIDEOFRAME pFrame, const char *pszPath, const char *pszWhat);
-int RecordingUtilsDbgDumpVideoFrame(const PRECORDINGVIDEOFRAME pFrame, const char *pszWhat);
-void RecordingUtilsDbgLogFrame(PRECORDINGFRAME pFrame);
+int RecordingDbgDumpImageData(const uint8_t *pu8RGBBuf, size_t cbRGBBuf, const char *pszPath, const char *pszWhat, uint32_t uX, uint32_t uY, uint32_t uWidth, uint32_t uHeight, uint32_t uBytesPerLine, uint8_t uBPP, uint64_t msTimestamp = UINT64_MAX);
+int RecordingDbgDumpVideoFrameEx(const PRECORDINGVIDEOFRAME pFrame, const char *pszPath, const char *pszWhat, uint64_t msTimestamp);
+int RecordingDbgDumpVideoFrame(const PRECORDINGVIDEOFRAME pFrame, const char *pszWhat, uint64_t msTimestamp);
+void RecordingDbgLogFrame(PRECORDINGFRAME pFrame);
+void RecordingDbgAddVideoFrameBorder(PRECORDINGVIDEOFRAME pFrame);
 #endif
 #endif
 

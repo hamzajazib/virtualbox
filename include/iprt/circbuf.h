@@ -157,6 +157,34 @@ RTDECL(void) RTCircBufAcquireWriteBlock(PRTCIRCBUF pBuf, size_t cbReqSize, void 
  */
 RTDECL(void) RTCircBufReleaseWriteBlock(PRTCIRCBUF pBuf, size_t cbSize);
 
+/**
+ * Peeks for readable data.
+ *
+ * The returned block starts at current read position + @a offRead bytes and is contiguous
+ * up to either:
+ *   - the requested size (@a cbReq),
+ *   - the amount of available readable data (cbUsed - offRead),
+ *   - or the end of the ring buffer (wrap boundary),
+ * whichever comes first.
+ *
+ *  @note Use with caution! Only use when really needed, as this does not make
+ *        use of the internal locking mechanisms. This is not the function you're
+ *        looking for (tm).
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS on success (even if copying 0 bytes when cbToCopy == 0).
+ * @retval  VERR_INVALID_HANDLE if @a hCircBuf is invalid.
+ * @retval  VERR_INVALID_POINTER if @a pvDst or @a pcbCopied is invalid.
+ * @retval  VERR_INVALID_PARAMETER if @a offRead is beyond the readable range.
+ *
+ * @param   pBuf        The buffer handle.
+ * @param   offRead     Offset from the current read position to start peeking at.
+ * @param   pvDst       Where to store the peeked bytes.
+ * @param   cbToCopy    How many bytes to try to copy.
+ * @param   pcbCopied   Where to return how many bytes were copied.
+ */
+RTDECL(int) RTCircBufPeek(PRTCIRCBUF pBuf, size_t offRead, size_t cbReq, const void **ppv, size_t *pcbAvail);
+
 RT_C_DECLS_END
 
 /** @} */

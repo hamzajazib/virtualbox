@@ -1,4 +1,4 @@
-/* $Id: RecordingUtils.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: RecordingUtils.cpp 113380 2026-03-13 10:01:45Z andreas.loeffler@oracle.com $ */
 /** @file
  * Recording utility code.
  */
@@ -386,6 +386,55 @@ const char *RecordingUtilsRecordingFrameTypeToStr(RECORDINGFRAME_TYPE enmType)
     AssertFailedReturn("Unknown");
 }
 
+/**
+ * Calculates frame/queue capacity from FPS and latency budget.
+ *
+ * @returns Number of frame slots to allocate, clamped to [uMinFPS, uMaxFPS].
+ * @param   uFPS                Target frame rate in frames per second.
+ *                              If 0, a default of 25 FPS is assumed.
+ * @param   msLatencyBudget     Target latency budget (in ms).
+ * @param   uMinFPS             Minimum number of frame slots.
+ * @param   uMaxFPS             Maximum number of frame slots.
+ */
+size_t RecordingUtilsCalcCapacityFromFpsAndLatency(size_t uFPS, RTMSINTERVAL msLatencyBudget,
+                                                   size_t uMinFPS, size_t uMaxFPS)
+{
+    if (uFPS == 0)
+        uFPS = 25;
+
+    uint64_t const msBudget = RT_MAX((uint64_t)msLatencyBudget, UINT64_C(1));
+    uint64_t       cFrames  = (uFPS * (msBudget * 2) + 999) / 1000; /* ~2x latency budget. */
+    cFrames += 2;           /* Scheduling jitter headroom. */
+    cFrames  = cFrames * 3; /* Safety factor 3x. */
+
+    cFrames = RT_MAX(cFrames, (uint64_t)uMinFPS);
+    cFrames = RT_MIN(cFrames, (uint64_t)uMaxFPS);
+    return (size_t)cFrames;
+}
+
+/**
+ * Calculates a frame pool slot count from a latency budget.
+ *
+ * @returns Number of frame slots to allocate, clamped to [cMin, cMax].
+ * @param   msLatencyBudget     Target latency budget (in ms).
+ * @param   msPerFrame          Expected frame duration (in ms).
+ * @param   cMin                Minimum number of frame slots.
+ * @param   cMax                Maximum number of frame slots.
+ */
+size_t RecordingCalcCapacityFromLatency(RTMSINTERVAL msLatencyBudget, size_t msPerFrame, size_t cMin, size_t cMax)
+{
+    AssertReturn(msPerFrame > 0, cMin);
+
+    uint64_t const msBudget = RT_MAX((uint64_t)msLatencyBudget, UINT64_C(1));
+    uint64_t       cFrames  = (msBudget * 2 + msPerFrame - 1) / msPerFrame; /* Buffer at least ~2x budget. */
+    cFrames += 2; /* Wake-up / scheduling jitter. */
+    cFrames *= 3; /* Safety factor. */
+
+    cFrames = RT_MAX(cFrames, (uint64_t)cMin);
+    cFrames = RT_MIN(cFrames, (uint64_t)cMax);
+    return (size_t)cFrames;
+}
+
 # ifdef DEBUG
 /**
  * Dumps image data to a bitmap (BMP) file, inline version.
@@ -404,20 +453,20 @@ const char *RecordingUtilsRecordingFrameTypeToStr(RECORDINGFRAME_TYPE enmType)
  * @param   uHeight             Height (in pixel) to write.
  * @param   uBytesPerLine       Bytes per line (stride).
  * @param   uBPP                Bits in pixel.
+ * @param   msTimestamp         Timestamp (PTS, absolute) of the frame.
  */
 DECLINLINE(int) recordingUtilsDbgDumpImageData(const uint8_t *pu8RGBBuf, size_t cbRGBBuf, const char *pszPath, const char *pszWhat,
-                                               uint32_t uX, uint32_t uY, uint32_t uWidth, uint32_t uHeight, uint32_t uBytesPerLine, uint8_t uBPP)
+                                               uint32_t uX, uint32_t uY, uint32_t uWidth, uint32_t uHeight, uint32_t uBytesPerLine,
+                                               uint8_t uBPP, uint64_t msTimestamp)
 {
     const uint8_t uBytesPerPixel = uBPP / 8 /* Bits */;
     const size_t  cbData         = uWidth * uHeight * uBytesPerPixel;
 
-    Log3Func(("pu8RGBBuf=%p, cbRGBBuf=%zu, uX=%RU32, uY=%RU32, uWidth=%RU32, uHeight=%RU32, uBytesPerLine=%RU32, uBPP=%RU8\n",
-              pu8RGBBuf, cbRGBBuf, uX, uY, uWidth, uHeight, uBytesPerLine, uBPP));
+    Log3Func(("pu8RGBBuf=%p, cbRGBBuf=%zu, uX=%RU32, uY=%RU32, uWidth=%RU32, uHeight=%RU32, uBytesPerLine=%RU32, uBPP=%RU8, ts=%RU64\n",
+              pu8RGBBuf, cbRGBBuf, uX, uY, uWidth, uHeight, uBytesPerLine, uBPP, msTimestamp));
 
     if (!cbData) /* No data to write? Bail out early. */
         return VINF_SUCCESS;
-
-    AssertReturn(cbData <= cbRGBBuf, VERR_INVALID_PARAMETER);
 
     BMPFILEHDR fileHdr;
     RT_ZERO(fileHdr);
@@ -457,8 +506,9 @@ DECLINLINE(int) recordingUtilsDbgDumpImageData(const uint8_t *pu8RGBBuf, size_t 
     }
 
     char szFileName[RTPATH_MAX];
-    if (RTStrPrintf2(szFileName, sizeof(szFileName), "%s/RecDump-%04RU64-%s-w%RU32h%RU32bpp%RU8.bmp",
-                     pszPath ? pszPath : szPath, s_cRecordingUtilsBmpsDumped, pszWhat ? pszWhat : "Frame", uWidth, uHeight, uBPP) <= 0)
+    if (RTStrPrintf2(szFileName, sizeof(szFileName), "%s/RecDump-%06RU64-%06RU64-%s-w%RU32h%RU32bpp%RU8.bmp",
+                     pszPath ? pszPath : szPath, s_cRecordingUtilsBmpsDumped, msTimestamp,
+                     pszWhat ? pszWhat : "Frame", uWidth, uHeight, uBPP) <= 0)
         return VERR_BUFFER_OVERFLOW;
 
     s_cRecordingUtilsBmpsDumped++;
@@ -482,9 +532,7 @@ DECLINLINE(int) recordingUtilsDbgDumpImageData(const uint8_t *pu8RGBBuf, size_t 
             vrc = RTFileWrite(fh, pu8RGBBuf + offSrc, cbDstStride, NULL);
             AssertRCBreak(vrc);
             offSrc += cbSrcStride;
-            AssertBreak(offSrc <= cbRGBBuf);
             offDst += cbDstStride;
-            AssertBreak(offDst <= cbData);
         }
         Assert(offDst == cbData);
 
@@ -513,11 +561,14 @@ DECLINLINE(int) recordingUtilsDbgDumpImageData(const uint8_t *pu8RGBBuf, size_t 
  * @param   uHeight             Height (in pixel) to write.
  * @param   uBytesPerLine       Bytes per line (stride).
  * @param   uBPP                Bits in pixel.
+ * @param   msTimestamp         Timestamp (PTS, absolute) of the frame.
  */
-int RecordingUtilsDbgDumpImageData(const uint8_t *pu8RGBBuf, size_t cbRGBBuf, const char *pszPath, const char *pszWhat,
-                                   uint32_t uX, uint32_t uY, uint32_t uWidth, uint32_t uHeight, uint32_t uBytesPerLine, uint8_t uBPP)
+int RecordingDbgDumpImageData(const uint8_t *pu8RGBBuf, size_t cbRGBBuf, const char *pszPath, const char *pszWhat,
+                                   uint32_t uX, uint32_t uY, uint32_t uWidth, uint32_t uHeight, uint32_t uBytesPerLine,
+                                   uint8_t uBPP, uint64_t msTimestamp)
 {
-    return recordingUtilsDbgDumpImageData(pu8RGBBuf, cbRGBBuf, pszPath, pszWhat, uX, uY, uWidth, uHeight, uBytesPerLine, uBPP);
+    return recordingUtilsDbgDumpImageData(pu8RGBBuf, cbRGBBuf, pszPath, pszWhat,
+                                          uX, uY, uWidth, uHeight, uBytesPerLine, uBPP, msTimestamp);
 }
 
 /**
@@ -526,13 +577,16 @@ int RecordingUtilsDbgDumpImageData(const uint8_t *pu8RGBBuf, size_t cbRGBBuf, co
  * @returns VBox status code.
  * @param   pFrame              Video frame to dump.
  * @param   pszPath             Output directory.
+ *                              Specify NULL to use the system's temp directory as output directory.
  * @param   pszWhat             Hint of what to dump. Optional and can be NULL.
+ * @param   msTimestamp         Timestamp (PTS, absolute) of the frame.
  */
-int RecordingUtilsDbgDumpVideoFrameEx(const PRECORDINGVIDEOFRAME pFrame, const char *pszPath, const char *pszWhat)
+int RecordingDbgDumpVideoFrameEx(const PRECORDINGVIDEOFRAME pFrame, const char *pszPath, const char *pszWhat, uint64_t msTimestamp)
 {
     return recordingUtilsDbgDumpImageData(pFrame->pau8Buf, pFrame->cbBuf,
                                           pszPath, pszWhat,
-                                          0, 0, pFrame->Info.uWidth, pFrame->Info.uHeight, pFrame->Info.uBytesPerLine, pFrame->Info.uBPP);
+                                          0, 0, pFrame->Info.uWidth, pFrame->Info.uHeight,
+                                          pFrame->Info.uBytesPerLine, pFrame->Info.uBPP, msTimestamp);
 }
 
 /**
@@ -541,12 +595,14 @@ int RecordingUtilsDbgDumpVideoFrameEx(const PRECORDINGVIDEOFRAME pFrame, const c
  * @returns VBox status code.
  * @param   pFrame              Video frame to dump.
  * @param   pszWhat             Hint of what to dump. Optional and can be NULL.
+ * @param   msTimestamp         Timestamp (PTS, absolute) of the frame.
  */
-int RecordingUtilsDbgDumpVideoFrame(const PRECORDINGVIDEOFRAME pFrame, const char *pszWhat)
+int RecordingDbgDumpVideoFrame(const PRECORDINGVIDEOFRAME pFrame, const char *pszWhat, uint64_t msTimestamp)
 {
     return recordingUtilsDbgDumpImageData(pFrame->pau8Buf, pFrame->cbBuf,
                                           NULL /* Use temp directory */, pszWhat,
-                                          0, 0, pFrame->Info.uWidth, pFrame->Info.uHeight, pFrame->Info.uBytesPerLine, pFrame->Info.uBPP);
+                                          0, 0, pFrame->Info.uWidth, pFrame->Info.uHeight,
+                                          pFrame->Info.uBytesPerLine, pFrame->Info.uBPP, msTimestamp);
 }
 
 /**
@@ -554,7 +610,7 @@ int RecordingUtilsDbgDumpVideoFrame(const PRECORDINGVIDEOFRAME pFrame, const cha
  *
  * @param   pFrame              Recording frame to log.
  */
-void RecordingUtilsDbgLogFrame(PRECORDINGFRAME pFrame)
+void RecordingDbgLogFrame(PRECORDINGFRAME pFrame)
 {
     Log3(("id=%RU16, type=%s (%#x), ts=%RU64", pFrame->idStream,
           RecordingUtilsRecordingFrameTypeToStr(pFrame->enmType), pFrame->enmType, pFrame->msTimestamp));
@@ -575,6 +631,55 @@ void RecordingUtilsDbgLogFrame(PRECORDINGFRAME pFrame)
         default:
             Log3(("\n"));
             break;
+    }
+}
+
+/**
+ * Draws a thick red border into a tile buffer for visual debugging.
+ */
+void RecordingDbgAddVideoFrameBorder(PRECORDINGVIDEOFRAME pFrame)
+{
+    AssertPtrReturnVoid(pFrame);
+    AssertPtrReturnVoid(pFrame->pau8Buf);
+
+    uint32_t const cx = pFrame->Info.uWidth;
+    uint32_t const cy = pFrame->Info.uHeight;
+    if (!cx || !cy)
+        return;
+
+    uint32_t const cbBytesPerPixel = RT_MAX((uint32_t)(pFrame->Info.uBPP / 8), (uint32_t)1);
+    if (cbBytesPerPixel < 3)
+        return;
+
+    uint32_t const cbStrideMin = cx * cbBytesPerPixel;
+    uint32_t const cbStride = pFrame->Info.uBytesPerLine ? pFrame->Info.uBytesPerLine : cbStrideMin;
+    if (cbStride < cbStrideMin)
+        return;
+
+    uint32_t const cBorder = RT_MIN((uint32_t)1 /* Thickness */,
+                                    RT_MIN(cx, cy));
+
+    for (uint32_t y = 0; y < cy; y++)
+    {
+        bool const fBorderY = y < cBorder || y >= cy - cBorder;
+        uint8_t *pu8Line = pFrame->pau8Buf + (size_t)y * cbStride;
+
+        for (uint32_t x = 0; x < cx; x++)
+        {
+            if (   fBorderY
+                || x < cBorder
+                || x >= cx - cBorder)
+            {
+                uint8_t *pu8Pixel = pu8Line + (size_t)x * cbBytesPerPixel;
+
+                /* BGRA: pure opaque red. */
+                pu8Pixel[0] = 0x00;
+                pu8Pixel[1] = 0x00;
+                pu8Pixel[2] = 0xFF;
+                if (cbBytesPerPixel >= 4)
+                    pu8Pixel[3] = 0xFF;
+            }
+        }
     }
 }
 # endif /* DEBUG */
