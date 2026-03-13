@@ -1,4 +1,4 @@
-/* $Id: VirtualBoxClientImpl.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: VirtualBoxClientImpl.cpp 113404 2026-03-13 23:58:06Z knut.osmundsen@oracle.com $ */
 /** @file
  * VirtualBox COM class implementation
  */
@@ -335,13 +335,12 @@ HRESULT VirtualBoxClient::init()
  */
 HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT hrcCaller)
 {
-    HRESULT hrc;
+    WCHAR wszBuffer[6144]; /* not too large, please, or it'll trip up MSC /analyze */
 
 # ifdef VBOX_WITH_SDS
     /*
      * Check that the VBoxSDS service is configured to run as LocalSystem and is enabled.
      */
-    WCHAR    wszBuffer[256];
     uint32_t uStartType;
     int vrc = i_getServiceAccountAndStartType(L"VBoxSDS", wszBuffer, RT_ELEMENTS(wszBuffer), &uStartType);
     if (RT_SUCCESS(vrc))
@@ -377,7 +376,7 @@ HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT h
      * registration is partially broken (though that's unlikely to happen these days).
      */
     IUnknown *pUnknown = NULL;
-    hrc = CoCreateInstance(CLSID_VirtualBox, NULL, CLSCTX_LOCAL_SERVER, IID_IUnknown, (void **)&pUnknown);
+    HRESULT hrc = CoCreateInstance(CLSID_VirtualBox, NULL, CLSCTX_LOCAL_SERVER, IID_IUnknown, (void **)&pUnknown);
     if (FAILED(hrc))
     {
         if (hrc == hrcCaller)
@@ -407,13 +406,12 @@ HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT h
                                 0 /*fFlags*/, KEY_QUERY_VALUE | KEY_ENUMERATE_SUB_KEYS | STANDARD_RIGHTS_READ, &hKey);
     if (lrc == ERROR_SUCCESS)
     {
-        wchar_t wszBuf[8192];
-        DWORD   cbBuf  = sizeof(wszBuf) - sizeof(wchar_t);
+        DWORD   cbBuf  = sizeof(wszBuffer) - sizeof(wszBuffer[0]);
         DWORD   dwType = 0;
-        lrc = RegQueryValueExW(hKey, L"InprocServer32", NULL /*pvReserved*/, &dwType, (BYTE *)&wszBuf[0], &cbBuf);
+        lrc = RegQueryValueExW(hKey, L"InprocServer32", NULL /*pvReserved*/, &dwType, (BYTE *)&wszBuffer[0], &cbBuf);
         if (lrc == ERROR_SUCCESS)
         {
-            wszBuf[cbBuf / sizeof(wchar_t)] = '\0';
+            wszBuffer[cbBuf / sizeof(wszBuffer[0])] = '\0';
             bool fSetError = false;
 
             /*
@@ -434,7 +432,7 @@ HRESULT VirtualBoxClient::i_investigateVirtualBoxObjectCreationFailure(HRESULT h
                 wchar_t wszFeatureId[RTUUID_STR_LENGTH + 2 + 16]     = { 0 };
                 wchar_t wszComponentCode[RTUUID_STR_LENGTH + 2 + 16] = { 0 };
                 DWORD   offArguments = ~(DWORD)0;
-                UINT uRc = pfnMsiDecomposeDescriptorW(wszBuf, wszProductCode, wszFeatureId, wszComponentCode, &offArguments);
+                UINT uRc = pfnMsiDecomposeDescriptorW(wszBuffer, wszProductCode, wszFeatureId, wszComponentCode, &offArguments);
                 if (uRc == 0)
                 {
                     /*
