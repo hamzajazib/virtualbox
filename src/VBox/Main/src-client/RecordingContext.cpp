@@ -1,4 +1,4 @@
-/* $Id: RecordingContext.cpp 113380 2026-03-13 10:01:45Z andreas.loeffler@oracle.com $ */
+/* $Id: RecordingContext.cpp 113388 2026-03-13 14:24:11Z andreas.loeffler@oracle.com $ */
 /** @file
  * Recording context code.
  */
@@ -172,6 +172,8 @@ void RecordingCursorState::Destroy(void)
  *
  * @returns VBox status code.
  * @param   fAlpha              Whether the pixel data contains alpha channel information or not.
+ * @param   xHot                X offset within the frame of the "hot" (i.e. clicking) point of the shape.
+ * @param   yHot                Y offset within the frame of the "hot" (i.e. clicking) point of the shape.
  * @param   uWidth              Width (in pixel) of new cursor shape.
  * @param   uHeight             Height (in pixel) of new cursor shape.
  * @param   pu8Shape            Pixel data of new cursor shape.

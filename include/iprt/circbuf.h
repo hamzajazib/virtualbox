@@ -179,9 +179,9 @@ RTDECL(void) RTCircBufReleaseWriteBlock(PRTCIRCBUF pBuf, size_t cbSize);
  *
  * @param   pBuf        The buffer handle.
  * @param   offRead     Offset from the current read position to start peeking at.
- * @param   pvDst       Where to store the peeked bytes.
- * @param   cbToCopy    How many bytes to try to copy.
- * @param   pcbCopied   Where to return how many bytes were copied.
+ * @param   cbReq       How many bytes we want to peek for.
+ * @param   ppv         Where to store return the pointer of the data on a successful peek.
+ * @param   pcbAvail    Where to return the available bytes of \a ppv on a successful peek.
  */
 RTDECL(int) RTCircBufPeek(PRTCIRCBUF pBuf, size_t offRead, size_t cbReq, const void **ppv, size_t *pcbAvail);
 
