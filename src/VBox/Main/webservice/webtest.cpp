@@ -1,4 +1,4 @@
-/* $Id: webtest.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: webtest.cpp 113397 2026-03-13 23:36:33Z knut.osmundsen@oracle.com $ */
 /** @file
  * webtest.cpp:
  *      demo webservice client in C++. This mimics some of the
@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
         soap_ssl_init();
 #endif /* WITH_OPENSSL */
 
-    struct soap soap; // gSOAP runtime environment
+    static struct soap soap; // gSOAP runtime environment - place it in the data seg, it's big and probably growing...
     soap_init(&soap); // initialize runtime environment (only once)
 #ifdef WITH_OPENSSL
     // Use SOAP_SSL_NO_AUTHENTICATION here to accept broken server configs.

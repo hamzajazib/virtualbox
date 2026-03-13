@@ -1,4 +1,4 @@
-/* $Id: vboxweb.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: vboxweb.cpp 113397 2026-03-13 23:36:33Z knut.osmundsen@oracle.com $ */
 /** @file
  * vboxweb.cpp:
  *      hand-coded parts of the webservice server. This is linked with the
@@ -889,6 +889,11 @@ static void CRYPTO_thread_cleanup()
  *
  ****************************************************************************/
 
+/** This is a bit on the large side and probably growing, so put it in the
+ *  data segment rather than on the stack. ASUMES that there is only one queue
+ *  pumper thread! */
+static struct soap g_Soap;
+
 static void doQueuesLoop()
 {
 #if defined(WITH_OPENSSL) && (OPENSSL_VERSION_NUMBER < 0x10100000 || defined(LIBRESSL_VERSION_NUMBER))
@@ -900,30 +905,29 @@ static void doQueuesLoop()
 #endif
 
     // set up gSOAP
-    struct soap soap;
-    soap_init(&soap);
+    soap_init(&g_Soap);
 
 #ifdef WITH_OPENSSL
-    if (g_fSSL && soap_ssl_server_context(&soap, SOAP_SSL_REQUIRE_SERVER_AUTHENTICATION | SOAP_TLSv1, g_pcszKeyFile,
+    if (g_fSSL && soap_ssl_server_context(&g_Soap, SOAP_SSL_REQUIRE_SERVER_AUTHENTICATION | SOAP_TLSv1, g_pcszKeyFile,
                                          g_pcszPassword, g_pcszCACert, g_pcszCAPath,
                                          g_pcszDHFile, g_pcszRandFile, g_pcszSID))
     {
-        WebLogSoapError(&soap);
+        WebLogSoapError(&g_Soap);
         exit(RTEXITCODE_FAILURE);
     }
 #endif /* WITH_OPENSSL */
 
-    soap.accept_timeout = 1;
-    soap.bind_flags |= SO_REUSEADDR;
+    g_Soap.accept_timeout = 1;
+    g_Soap.bind_flags |= SO_REUSEADDR;
             // avoid EADDRINUSE on bind()
 
     SOAP_SOCKET m, s; // master and slave sockets
-    m = soap_bind(&soap,
+    m = soap_bind(&g_Soap,
                   g_pcszBindToHost ? g_pcszBindToHost : "localhost",    // safe default host
                   g_uBindToPort,    // port
                   g_uBacklog);      // backlog = max queue size for connections
     if (m == SOAP_INVALID_SOCKET)
-        WebLogSoapError(&soap);
+        WebLogSoapError(&g_Soap);
     else
     {
 #ifdef WITH_OPENSSL
@@ -941,21 +945,21 @@ static void doQueuesLoop()
         uint64_t cAccepted = 1;
         while (g_fKeepRunning)
         {
-            s = soap_accept(&soap);
+            s = soap_accept(&g_Soap);
             if (!soap_valid_socket(s))
             {
-                if (   soap.errnum != SOAP_EINTR
-                    && (   soap.error != SOAP_TCP_ERROR
-                        || soap_fault_string(&soap) == NULL
-                        || strcmp(soap_fault_string(&soap), "Timeout") != 0)
+                if (   g_Soap.errnum != SOAP_EINTR
+                    && (   g_Soap.error != SOAP_TCP_ERROR
+                        || soap_fault_string(&g_Soap) == NULL
+                        || strcmp(soap_fault_string(&g_Soap), "Timeout") != 0)
                    )
-                    WebLogSoapError(&soap);
+                    WebLogSoapError(&g_Soap);
                 continue;
             }
 
             // add the connection to the queue and tell worker threads to
             // pick up the job
-            size_t cItemsOnQ = g_pSoapQ->add(&soap);
+            size_t cItemsOnQ = g_pSoapQ->add(&g_Soap);
             LogRel(("Connection %llu on socket %d queued for processing (%d items on Q)\n", cAccepted, s, cItemsOnQ));
             cAccepted++;
         }
@@ -966,7 +970,7 @@ static void doQueuesLoop()
         LogRel(("Ending SOAP connection handling\n"));
 
     }
-    soap_done(&soap); // close master socket and detach environment
+    soap_done(&g_Soap); // close master socket and detach environment
 
 #if defined(WITH_OPENSSL) && (OPENSSL_VERSION_NUMBER < 0x10100000 || defined(LIBRESSL_VERSION_NUMBER))
     if (g_fSSL)
