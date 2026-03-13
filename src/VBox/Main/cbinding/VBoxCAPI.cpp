@@ -1,4 +1,4 @@
-/* $Id: VBoxCAPI.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: VBoxCAPI.cpp 113402 2026-03-13 23:53:35Z knut.osmundsen@oracle.com $ */
 /** @file VBoxCAPI.cpp
  * Utility functions to use with the C API binding.
  */
@@ -766,7 +766,10 @@ VBoxVersion(void)
 static unsigned int
 VBoxAPIVersion(void)
 {
-    return VBOX_VERSION_MAJOR * 1000 + VBOX_VERSION_MINOR + (VBOX_VERSION_BUILD > 50 ? 1 : 0);
+    RT_NO_WARN_MSC_PREFAST_BEGIN(6326); /*warning C6326: Potential comparison of a constant with another constant.*/
+    unsigned const uVer = VBOX_VERSION_MAJOR * 1000 + VBOX_VERSION_MINOR + (VBOX_VERSION_BUILD > 50 ? 1 : 0);
+    RT_NO_WARN_MSC_PREFAST_END();
+    return uVer;
 }
 
 VBOXCAPI_DECL(PCVBOXCAPI)
