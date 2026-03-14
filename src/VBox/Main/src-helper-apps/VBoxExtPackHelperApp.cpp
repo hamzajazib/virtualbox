@@ -1,4 +1,4 @@
-/* $Id: VBoxExtPackHelperApp.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: VBoxExtPackHelperApp.cpp 113409 2026-03-14 00:14:02Z knut.osmundsen@oracle.com $ */
 /** @file
  * VirtualBox Main - Extension Pack Helper Application, usually set-uid-to-root.
  */
@@ -1282,7 +1282,7 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
 
     MSG Msg;
     PeekMessage(&Msg, NULL, 0, 0, PM_NOREMOVE);
-    CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    (void)CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
     SHELLEXECUTEINFOW   Info;
 
