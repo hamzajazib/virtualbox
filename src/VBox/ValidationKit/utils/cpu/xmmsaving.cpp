@@ -1,4 +1,4 @@
-/* $Id: xmmsaving.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: xmmsaving.cpp 113412 2026-03-14 20:57:50Z knut.osmundsen@oracle.com $ */
 /** @file
  * xmmsaving - Test that all XMM register state is handled correctly and
  *             not corrupted the VMM.
@@ -39,6 +39,10 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include <iprt/buildconfig.h>
+#include <iprt/getopt.h>
+#include <iprt/process.h>
+#include <iprt/stream.h>
 #include <iprt/test.h>
 #include <iprt/x86.h>
 
@@ -50,6 +54,12 @@ typedef struct MYXMMREGSET
 {
     RTUINT128U  aRegs[16];
 } MYXMMREGSET;
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+static uint64_t g_cMaxIterations = 1000000;
 
 
 DECLASM(int) XmmSavingTestLoadSet(const MYXMMREGSET *pSet, const MYXMMREGSET *pPrevSet, PRTUINT128U pBadVal);
@@ -76,9 +86,9 @@ static void XmmSavingTest(void)
     /* Do the actual testing. */
     const MYXMMREGSET *pPrev2 = NULL;
     const MYXMMREGSET *pPrev = NULL;
-    for (int i = 0; i < 1000000; i++)
+    for (uint64_t i = 1; i <= g_cMaxIterations; i++)
     {
-        if ((i % 50000) == 0)
+        if ((i & 0xffff) == 0)
         {
             RTTestIPrintf(RTTESTLVL_ALWAYS, ".");
             pPrev = pPrev2 = NULL; /* May be trashed by the above call. */
@@ -90,7 +100,7 @@ static void XmmSavingTest(void)
             int r = XmmSavingTestLoadSet(pSet, pPrev, &BadVal);
             if (r-- != 0)
             {
-                RTTestIFailed("i=%d s=%d r=%d", i, s, r);
+                RTTestIFailed("i=%llu s=%d r=%d", i, s, r);
                 RTTestIFailureDetails("XMM%-2d  = %08x,%08x,%08x,%08x\n",
                                       r,
                                       BadVal.au32[0],
@@ -118,13 +128,45 @@ static void XmmSavingTest(void)
 }
 
 
-int main()
+int main(int argc, char **argv)
 {
     RTTEST hTest;
-    int rc = RTTestInitAndCreate("xmmsaving", &hTest);
+    int rc = RTTestInitExAndCreate(argc, &argv, 0, "xmmsaving", &hTest);
     if (rc)
         return rc;
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--iterations",       'i', RTGETOPT_REQ_UINT64 },
+        { "--infinite",         'I', RTGETOPT_REQ_NOTHING },
+    };
+
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (rc)
+        {
+            case 'i':
+                g_cMaxIterations = ValueUnion.u64;
+                break;
+            case 'I':
+                g_cMaxIterations = UINT64_MAX;
+                break;
+            case 'h':
+                RTPrintf("usage: %s [--iterations|-i <n>] [--infinite|-I]\n", RTProcShortName());
+                return RTEXITCODE_SUCCESS;
+            case 'V':
+                RTPrintf("%s_r%u\n", RTBldCfgVersion(), RTBldCfgRevision());
+                return RTEXITCODE_SUCCESS;
+            default:
+                return RTGetOptPrintError(rc, &ValueUnion);
+        }
+    }
+
     XmmSavingTest();
+
     return RTTestSummaryAndDestroy(hTest);
 }
 
