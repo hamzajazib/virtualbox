@@ -1,4 +1,4 @@
-/* $Id: UsbWebcamInterface.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UsbWebcamInterface.cpp 113406 2026-03-14 00:10:28Z knut.osmundsen@oracle.com $ */
 /** @file
  * UsbWebcamInterface - Driver Interface for USB Webcam emulation.
  */
@@ -325,38 +325,20 @@ int EmWebcam::SendControl(EMWEBCAMDRV *pDrv, void *pvUser, uint64_t u64DeviceId,
 {
     AssertReturn(pDrv == mpDrv, VERR_NOT_SUPPORTED);
 
-    int vrc = VINF_SUCCESS;
-
-    EMWEBCAMREQCTX *pCtx = NULL;
-
     /* Verify that there is a remote device. */
     if (   !mpRemote
         || mpRemote->u64DeviceId != u64DeviceId)
-    {
-        vrc = VERR_NOT_SUPPORTED;
-    }
+        return VERR_NOT_SUPPORTED;
 
-    if (RT_SUCCESS(vrc))
-    {
-        pCtx = (EMWEBCAMREQCTX *)RTMemAlloc(sizeof(EMWEBCAMREQCTX));
-        if (!pCtx)
-        {
-            vrc = VERR_NO_MEMORY;
-        }
-    }
+    EMWEBCAMREQCTX *pCtx = (EMWEBCAMREQCTX *)RTMemAlloc(sizeof(EMWEBCAMREQCTX));
+    AssertReturn(pCtx, VERR_NO_MEMORY);
 
-    if (RT_SUCCESS(vrc))
-    {
-        pCtx->pRemote = mpRemote;
-        pCtx->pvUser = pvUser;
+    pCtx->pRemote = mpRemote;
+    pCtx->pvUser = pvUser;
 
-        vrc = mParent->VideoInControl(pCtx, &mpRemote->deviceHandle, pControl, cbControl);
-
-        if (RT_FAILURE(vrc))
-        {
-            RTMemFree(pCtx);
-        }
-    }
+    int vrc = mParent->VideoInControl(pCtx, &mpRemote->deviceHandle, pControl, cbControl);
+    if (RT_FAILURE(vrc))
+        RTMemFree(pCtx);
 
     return vrc;
 }
