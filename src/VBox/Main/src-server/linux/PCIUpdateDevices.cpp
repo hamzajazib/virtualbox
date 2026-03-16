@@ -1,4 +1,4 @@
-/* $Id: PCIUpdateDevices.cpp 113422 2026-03-16 14:28:47Z alexander.eichner@oracle.com $ */
+/* $Id: PCIUpdateDevices.cpp 113433 2026-03-16 15:27:26Z alexander.eichner@oracle.com $ */
 /** @file
  * VirtualBox host PCI device enumeration.
  */
@@ -232,10 +232,10 @@ DECLHIDDEN(int) PCIUpdateDevices(PRTLISTANCHOR pLst)
             /* Set the state. */
             PCIDEVICESTATE enmState = kPciDeviceState_Invalid;
             if (   (pIt->u32DeviceClass >> 16) == VBOX_PCI_CLASS_BRIDGE
-                || !pIt->pszDriver
                 || pIt->idIommuDomain == UINT32_MAX)
                 enmState = kPciDeviceState_NotSupported;
-            else if (strcmp(pIt->pszDriver, "vfio-pci"))
+            else if (   !pIt->pszDriver
+                     || strcmp(pIt->pszDriver, "vfio-pci"))
                 enmState = kPciDeviceState_InUseByHost;
             else
             {
