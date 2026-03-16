@@ -1,4 +1,4 @@
-/* $Id: PCIUpdateDevices.cpp 113433 2026-03-16 15:27:26Z alexander.eichner@oracle.com $ */
+/* $Id: PCIUpdateDevices.cpp 113434 2026-03-16 15:32:03Z alexander.eichner@oracle.com $ */
 /** @file
  * VirtualBox host PCI device enumeration.
  */
@@ -349,7 +349,7 @@ DECLHIDDEN(int) PCIUpdateDevices(PRTLISTANCHOR pLst)
 /**
  * This file can optionally be compiled into a testcase, this is the main function.
  * To build:
- *      g++ -I ../../../../include -D STANDALONE_TESTCASE -D IN_RING3 PCIUpdateDevices.cpp  
+ *      g++ -I ../../../../include -D STANDALONE_TESTCASE -D IN_RING3 PCIUpdateDevices.cpp
  *          ../../../../out/linux.amd64/debug/lib/RuntimeR3.a
  *          ../../../../out/linux.amd64/debug/lib/SUPR3.a
  */
