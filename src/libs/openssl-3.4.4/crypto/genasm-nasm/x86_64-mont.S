@@ -891,7 +891,7 @@ $L$inner4x:
 	mov	rdi,QWORD[32+r9*8+rsp]
 	lea	r15,[((-4))+r9]
 	mov	rax,QWORD[16+rsp]
-	mov	rdx,QWORD[8+rsp]
+	mov	rdx,QWORD[24+rsp]
 	shr	r15,2
 	lea	rsi,[16+rsp]
 	xor	r14,r14

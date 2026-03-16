@@ -424,7 +424,7 @@ $code.=<<___;
 	mov	%rax,(%rsp)	# tp[-2]=%rsp
 .cfi_cfa_expression	%rsp+0,deref,+8
 .cfi_endprolog
-	mov	$rp,`16+16`(%rsp,$num,8)	# tp[num+2]=$rp
+	mov	$rp,`+16+16`(%rsp,$num,8)	# tp[num+2]=$rp
 	mov	%rdx,%r12		# reassign $bp
 ___
 		$bp="%r12";
@@ -731,7 +731,7 @@ $code.=<<___;
 	mov	`+16+16`(%rsp,$num,8),$rp	# restore $rp
 	lea	-4($num),$j
 	mov	`+16+0`(%rsp),@ri[0]		# tp[0]
-	mov	8(%rsp),@ri[1]		# tp[1]
+	mov	`+16+8`(%rsp),@ri[1]		# tp[1]
 	shr	\$2,$j			# j=num/4-1
 	lea	`+16+0`(%rsp),$ap	# borrow ap for tp
 	xor	$i,$i			# i=0 and clear CF!
