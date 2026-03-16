@@ -1,4 +1,4 @@
-/* $Id: bldprog-strtab-template.cpp.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: bldprog-strtab-template.cpp.h 113419 2026-03-16 12:33:57Z knut.osmundsen@oracle.com $ */
 /** @file
  * IPRT - Build Program - String Table Generator.
  */
@@ -1153,7 +1153,16 @@ static void BldProgStrTab_PrintCStringLitteral(PBLDPROGSTRTAB pThis, PBLDPROGSTR
                 abort();
 #endif
             if (uch != '\'' && uch != '\\')
+            {
                 fputc((char)uch, pOut);
+                if (uch != '*' || *psz != '/')
+                { /* likely */ }
+                else
+                {
+                    fputc('\x2f', pOut); /* '/' - Avoid outputting closing comment sequence. */
+                    psz++;
+                }
+            }
             else
             {
                 fputc('\\', pOut);
