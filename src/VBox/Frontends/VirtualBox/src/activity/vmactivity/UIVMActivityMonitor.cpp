@@ -1,4 +1,4 @@
-/* $Id: UIVMActivityMonitor.cpp 113389 2026-03-13 15:26:03Z serkan.bayraktar@oracle.com $ */
+/* $Id: UIVMActivityMonitor.cpp 113435 2026-03-16 16:58:55Z serkan.bayraktar@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIVMActivityMonitor class implementation.
  */
@@ -86,7 +86,7 @@ public:
     void setTitle(const QString &strTitle);
     void setRowText(int i, const QString &strLabel, const QString &strValue, QColor color = QColor());
     void setTopMargin(int iMarginTop);
-
+    QFont labelFont() const;
 private:
 
     QGridLayout *m_pGridLayout;
@@ -282,6 +282,13 @@ void UIInfoLabelContainer::setTopMargin(int iMarginTop)
 {
     if (m_pGridLayout)
         m_pGridLayout->setContentsMargins(0, iMarginTop, 0, 0);
+}
+
+QFont UIInfoLabelContainer::labelFont() const
+{
+    if (!m_rows.isEmpty() || m_rows[0].first)
+        return m_rows[0].first->font();
+    return QFont();
 }
 
 /*********************************************************************************************************************************
@@ -1287,19 +1294,17 @@ void UIVMActivityMonitor::sltCreateContextMenu(const QPoint &point)
     menu.exec(mapToGlobal(point));
 }
 
-void UIVMActivityMonitor::prepareActions()
-{
-}
-
 void UIVMActivityMonitor::resetRAMInfoLabel()
 {
-    if (m_infoLabels.contains(Metric_Type_RAM)  && m_infoLabels[Metric_Type_RAM])
+    if (m_infoLabelContainers.contains(Metric_Type_RAM) && m_infoLabelContainers[Metric_Type_RAM])
     {
-        QString strInfo = QString("<b>%1</b><br/>%2: %3<br/>%4: %5<br/>%6: %7").
-            arg(m_strRAMInfoLabelTitle).arg(m_strRAMInfoLabelTotal).arg("--")
-            .arg(m_strRAMInfoLabelFree).arg("--")
-            .arg(m_strRAMInfoLabelUsed).arg("--");
-        m_infoLabels[Metric_Type_RAM]->setText(strInfo);
+        m_infoLabelContainers[Metric_Type_RAM]->setTitle(m_strRAMInfoLabelTitle);
+        m_infoLabelContainers[Metric_Type_RAM]->setRowText(1, m_strRAMInfoLabelTotal,
+                                                           "--", dataColorString(Metric_Type_RAM, 1));
+        m_infoLabelContainers[Metric_Type_RAM]->setRowText(2, m_strRAMInfoLabelFree,
+                                                           "--", dataColorString(Metric_Type_RAM, 1));
+        m_infoLabelContainers[Metric_Type_RAM]->setRowText(3, m_strRAMInfoLabelUsed,
+                                                           "--", dataColorString(Metric_Type_RAM, 0));
     }
 }
 
@@ -1328,15 +1333,16 @@ void UIVMActivityMonitor::setInfoLabelWidth()
     /* Compute the maximum label string length and set it as a fixed width to labels to prevent always changing widths: */
     /* Add m_iDecimalCount plus 4 characters for the number and 3 for unit string: */
     m_iMaximumLabelLength += (g_iDecimalCount + 7);
-    if (!m_infoLabels.isEmpty())
+    // if (!m_infoLabels.isEmpty())
+    if (!m_infoLabelContainers.isEmpty())
     {
-        QLabel *pLabel = m_infoLabels.begin().value();
-        if (pLabel)
+        UIInfoLabelContainer *pContainer = m_infoLabelContainers.begin().value();
+        if (pContainer)
         {
-            const QFontMetrics labelFontMetric(pLabel->font());
+            const QFontMetrics labelFontMetric(pContainer->font());
             const int iWidth = m_iMaximumLabelLength * labelFontMetric.horizontalAdvance('X');
-            foreach (QLabel *pInfoLabel, m_infoLabels)
-                pInfoLabel->setFixedWidth(iWidth);
+            foreach (UIInfoLabelContainer *pContainer, m_infoLabelContainers)
+                pContainer->setFixedWidth(iWidth);
         }
     }
 }
@@ -1365,7 +1371,6 @@ UIVMActivityMonitorLocal::UIVMActivityMonitorLocal(EmbedTo enmEmbedding, QWidget
     prepareMetrics();
     prepareWidgets();
     sltRetranslateUI();
-    prepareActions();
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange, this, &UIVMActivityMonitorLocal::sltMachineStateChange);
     connect(&uiCommon(), &UICommon::sigAskToDetachCOM, this, &UIVMActivityMonitorLocal::sltClearCOMData);
     connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI, this, &UIVMActivityMonitorLocal::sltRetranslateUI);
@@ -1851,9 +1856,9 @@ void UIVMActivityMonitorLocal::updateVMExitMetric(quint64 uTotalVMExits)
     {
         m_infoLabelContainers[Metric_Type_VM_Exits]->setTitle(m_strVMExitInfoLabelTitle);
         m_infoLabelContainers[Metric_Type_VM_Exits]->setRowText(1, m_strVMExitLabelCurrent,
-            QString("%1%2").arg(UITranslator::addMetricSuffixToNumber(iRate)).arg(VMExitMetric.unit()), dataColorString(Metric_Type_CPU, 0));
+            QString("%1 %2").arg(UITranslator::addMetricSuffixToNumber(iRate)).arg(VMExitMetric.unit()), dataColorString(Metric_Type_CPU, 0));
         m_infoLabelContainers[Metric_Type_VM_Exits]->setRowText(2, m_strVMExitLabelTotal,
-            QString("%1%2").arg(UITranslator::addMetricSuffixToNumber(uTotalVMExits)).arg(VMExitMetric.unit()), dataColorString(Metric_Type_CPU, 1));
+            QString("%1 %2").arg(UITranslator::addMetricSuffixToNumber(uTotalVMExits)).arg(VMExitMetric.unit()), dataColorString(Metric_Type_CPU, 1));
     }
     if (m_charts.contains(Metric_Type_VM_Exits))
         m_charts[Metric_Type_VM_Exits]->update();
@@ -1958,24 +1963,21 @@ void UIVMActivityMonitorLocal::updateUSBChart(quint64 uReceiveTotal, quint64 uTr
     USBMetric.addData(0, uReceiveRate);
     USBMetric.addData(1, uTransmitRate);
 
-    if (m_infoLabelContainers.contains(Metric_Type_Network_InOut)  && m_infoLabelContainers[Metric_Type_Network_InOut])
+    if (m_infoLabelContainers.contains(Metric_Type_Network_InOut) && m_infoLabelContainers[Metric_Type_Network_InOut])
     {
-        QString strInfo;
-        strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4<br/>%5: %6</font><br/><font color=\"%7\">%8: %9<br/>%10: %11</font>")
-            .arg(m_strUSBInfoLabelTitle)
-            .arg(dataColorString(Metric_Type_USB_InOut, 0)).arg(m_strUSBInfoLabelReceived).arg(UITranslator::formatSize(uReceiveRate, g_iDecimalCount))
-            .arg(m_strUSBInfoLabelReceivedTotal).arg(UITranslator::formatSize(uReceiveTotal, g_iDecimalCount))
-            .arg(dataColorString(Metric_Type_USB_InOut, 1)).arg(m_strUSBInfoLabelTransmitted).arg(UITranslator::formatSize(uTransmitRate, g_iDecimalCount))
-            .arg(m_strUSBInfoLabelTransmittedTotal).arg(UITranslator::formatSize(uTransmitTotal, g_iDecimalCount));
-            m_infoLabelContainers[Metric_Type_USB_InOut]->setTitle(m_strUSBInfoLabelTitle);
-            m_infoLabelContainers[Metric_Type_USB_InOut]->setRowText(1, m_strUSBInfoLabelReceived,
-                UITranslator::formatSize(uReceiveRate, g_iDecimalCount), dataColorString(Metric_Type_USB_InOut, 0));
-            m_infoLabelContainers[Metric_Type_USB_InOut]->setRowText(2, m_strUSBInfoLabelReceivedTotal,
-                UITranslator::formatSize(uReceiveTotal, g_iDecimalCount), dataColorString(Metric_Type_USB_InOut, 0));
-            m_infoLabelContainers[Metric_Type_USB_InOut]->setRowText(3, m_strUSBInfoLabelTransmitted,
-                UITranslator::formatSize(uTransmitRate, g_iDecimalCount), dataColorString(Metric_Type_USB_InOut, 1));
-            m_infoLabelContainers[Metric_Type_USB_InOut]->setRowText(4, m_strUSBInfoLabelTransmittedTotal,
-                UITranslator::formatSize(uTransmitTotal, g_iDecimalCount), dataColorString(Metric_Type_USB_InOut, 1));
+        m_infoLabelContainers[Metric_Type_USB_InOut]->setTitle(m_strUSBInfoLabelTitle);
+        m_infoLabelContainers[Metric_Type_USB_InOut]->setRowText(1, m_strUSBInfoLabelReceived,
+                                                                 UITranslator::formatSize(uReceiveRate, g_iDecimalCount),
+                                                                 dataColorString(Metric_Type_USB_InOut, 0));
+        m_infoLabelContainers[Metric_Type_USB_InOut]->setRowText(2, m_strUSBInfoLabelReceivedTotal,
+                                                                 UITranslator::formatSize(uReceiveTotal, g_iDecimalCount),
+                                                                 dataColorString(Metric_Type_USB_InOut, 0));
+        m_infoLabelContainers[Metric_Type_USB_InOut]->setRowText(3, m_strUSBInfoLabelTransmitted,
+                                                                 UITranslator::formatSize(uTransmitRate, g_iDecimalCount),
+                                                                 dataColorString(Metric_Type_USB_InOut, 1));
+        m_infoLabelContainers[Metric_Type_USB_InOut]->setRowText(4, m_strUSBInfoLabelTransmittedTotal,
+                                                                 UITranslator::formatSize(uTransmitTotal, g_iDecimalCount),
+                                                                 dataColorString(Metric_Type_USB_InOut, 1));
     }
     if (m_charts.contains(Metric_Type_USB_InOut))
         m_charts[Metric_Type_USB_InOut]->update();
@@ -2017,69 +2019,71 @@ void UIVMActivityMonitorLocal::updateDiskIOChart(quint64 uDiskIOTotalWritten, qu
 
 void UIVMActivityMonitorLocal::resetVMExitInfoLabel()
 {
-    if (m_infoLabels.contains(Metric_Type_VM_Exits)  && m_infoLabels[Metric_Type_VM_Exits])
+    if (m_infoLabelContainers.contains(Metric_Type_VM_Exits) && m_infoLabelContainers[Metric_Type_VM_Exits])
     {
-        QString strInfo;
-        strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4: %5")
-            .arg(m_strVMExitInfoLabelTitle)
-            .arg(m_strVMExitLabelCurrent).arg("--")
-            .arg(m_strVMExitLabelTotal).arg("--");
-
-        m_infoLabels[Metric_Type_VM_Exits]->setText(strInfo);
+        m_infoLabelContainers[Metric_Type_VM_Exits]->setTitle(m_strVMExitInfoLabelTitle);
+        m_infoLabelContainers[Metric_Type_VM_Exits]->setRowText(1, m_strVMExitLabelCurrent,
+                                                                "--", dataColorString(Metric_Type_CPU, 0));
+        m_infoLabelContainers[Metric_Type_VM_Exits]->setRowText(2, m_strVMExitLabelTotal,
+                                                                "--", dataColorString(Metric_Type_CPU, 1));
     }
 }
 
 void UIVMActivityMonitorLocal::resetCPUInfoLabel()
 {
-    if (m_infoLabels.contains(Metric_Type_CPU)  && m_infoLabels[Metric_Type_CPU])
+    if (m_infoLabelContainers.contains(Metric_Type_CPU)  && m_infoLabelContainers[Metric_Type_CPU])
     {
-        QString strInfo =QString("<b>%1</b></b><br/>%2: %3<br/>%4: %5")
-            .arg(m_strCPUInfoLabelTitle)
-            .arg(m_strCPUInfoLabelGuest).arg("--")
-            .arg(m_strCPUInfoLabelVMM).arg("--");
-        m_infoLabels[Metric_Type_CPU]->setText(strInfo);
+        m_infoLabelContainers[Metric_Type_CPU]->setTitle(m_strCPUInfoLabelTitle);
+        m_infoLabelContainers[Metric_Type_CPU]->setRowText(1, m_strCPUInfoLabelGuest, "--", dataColorString(Metric_Type_CPU, 0));
+        m_infoLabelContainers[Metric_Type_CPU]->setRowText(2, m_strCPUInfoLabelVMM, "--", dataColorString(Metric_Type_CPU, 1));
     }
 }
 
 void UIVMActivityMonitorLocal::resetNetworkInfoLabel()
 {
-    if (m_infoLabels.contains(Metric_Type_Network_InOut)  && m_infoLabels[Metric_Type_Network_InOut])
+    if (m_infoLabelContainers.contains(Metric_Type_Network_InOut)  && m_infoLabelContainers[Metric_Type_Network_InOut])
     {
-        QString strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4 %5<br/>%6: %7<br/>%8 %9")
-            .arg(m_strNetworkInfoLabelTitle)
-            .arg(m_strNetworkInfoLabelReceived).arg("--")
-            .arg(m_strNetworkInfoLabelReceivedTotal).arg("--")
-            .arg(m_strNetworkInfoLabelTransmitted).arg("--")
-            .arg(m_strNetworkInfoLabelTransmittedTotal).arg("--");
-        m_infoLabels[Metric_Type_Network_InOut]->setText(strInfo);
+        m_infoLabelContainers[Metric_Type_Network_InOut]->setTitle(m_strNetworkInfoLabelTitle);
+        m_infoLabelContainers[Metric_Type_Network_InOut]->setRowText(1, m_strNetworkInfoLabelReceived,
+            "--", dataColorString(Metric_Type_Network_InOut, 0));
+        m_infoLabelContainers[Metric_Type_Network_InOut]->setRowText(2, m_strNetworkInfoLabelReceivedTotal,
+            "--", dataColorString(Metric_Type_Network_InOut, 0));
+        m_infoLabelContainers[Metric_Type_Network_InOut]->setRowText(3, m_strNetworkInfoLabelTransmitted,
+            "--", dataColorString(Metric_Type_Network_InOut, 1));
+        m_infoLabelContainers[Metric_Type_Network_InOut]->setRowText(4, m_strNetworkInfoLabelTransmittedTotal,
+            "--", dataColorString(Metric_Type_Network_InOut, 1));
     }
 }
 
 void UIVMActivityMonitorLocal::resetUSBInfoLabel()
 {
-    if (m_infoLabels.contains(Metric_Type_USB_InOut)  && m_infoLabels[Metric_Type_USB_InOut])
+    if (m_infoLabelContainers.contains(Metric_Type_Network_InOut) && m_infoLabelContainers[Metric_Type_Network_InOut])
     {
-        QString strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4 %5<br/>%6: %7<br/>%8 %9")
-            .arg(m_strUSBInfoLabelTitle)
-            .arg(m_strUSBInfoLabelReceived).arg("--")
-            .arg(m_strUSBInfoLabelReceivedTotal).arg("--")
-            .arg(m_strUSBInfoLabelTransmitted).arg("--")
-            .arg(m_strUSBInfoLabelTransmittedTotal).arg("--");
-        m_infoLabels[Metric_Type_USB_InOut]->setText(strInfo);
+        m_infoLabelContainers[Metric_Type_USB_InOut]->setTitle(m_strUSBInfoLabelTitle);
+        m_infoLabelContainers[Metric_Type_USB_InOut]->setRowText(1, m_strUSBInfoLabelReceived,
+                                                                 "--", dataColorString(Metric_Type_USB_InOut, 0));
+        m_infoLabelContainers[Metric_Type_USB_InOut]->setRowText(2, m_strUSBInfoLabelReceivedTotal,
+                                                                 "--", dataColorString(Metric_Type_USB_InOut, 0));
+        m_infoLabelContainers[Metric_Type_USB_InOut]->setRowText(3, m_strUSBInfoLabelTransmitted,
+                                                                 "--", dataColorString(Metric_Type_USB_InOut, 1));
+        m_infoLabelContainers[Metric_Type_USB_InOut]->setRowText(4, m_strUSBInfoLabelTransmittedTotal,
+                                                                 "--", dataColorString(Metric_Type_USB_InOut, 1));
     }
 }
 
 void UIVMActivityMonitorLocal::resetDiskIOInfoLabel()
 {
-    if (m_infoLabels.contains(Metric_Type_Disk_InOut)  && m_infoLabels[Metric_Type_Disk_InOut])
+    if (m_infoLabelContainers.contains(Metric_Type_Network_InOut) && m_infoLabelContainers[Metric_Type_Network_InOut])
     {
-        QString strInfo = QString("<b>%1</b></b><br/>%2: %3<br/>%4 %5<br/>%6: %7<br/>%8 %9")
-            .arg(m_strDiskIOInfoLabelTitle)
-            .arg(m_strDiskIOInfoLabelWritten).arg("--")
-            .arg(m_strDiskIOInfoLabelWrittenTotal).arg("--")
-            .arg(m_strDiskIOInfoLabelRead).arg("--")
-            .arg(m_strDiskIOInfoLabelReadTotal).arg("--");
-        m_infoLabels[Metric_Type_Disk_InOut]->setText(strInfo);
+        m_infoLabelContainers[Metric_Type_Disk_InOut]->setTitle(m_strDiskIOInfoLabelTitle);
+        m_infoLabelContainers[Metric_Type_Disk_InOut]->setRowText(1, m_strDiskIOInfoLabelRead,
+                                                                  "--", dataColorString(Metric_Type_Network_InOut, 0));
+        m_infoLabelContainers[Metric_Type_Disk_InOut]->setRowText(2, m_strDiskIOInfoLabelReadTotal,
+                                                                  "--", dataColorString(Metric_Type_Network_InOut, 0));
+        m_infoLabelContainers[Metric_Type_Disk_InOut]->setRowText(3, m_strDiskIOInfoLabelWritten,
+                                                                  "--", dataColorString(Metric_Type_Network_InOut, 1));
+        m_infoLabelContainers[Metric_Type_Disk_InOut]->setRowText(4, m_strDiskIOInfoLabelWrittenTotal,
+                                                                  "--", dataColorString(Metric_Type_Network_InOut, 1));
     }
 }
 
@@ -2110,7 +2114,6 @@ UIVMActivityMonitorCloud::UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget
     prepareMetrics();
     prepareWidgets();
     sltRetranslateUI();
-    prepareActions();
     resetCPUInfoLabel();
     resetNetworkInInfoLabel();
     resetNetworkOutInfoLabel();
@@ -2400,7 +2403,6 @@ void UIVMActivityMonitorCloud::updateNetworkInChart(quint64 uReceiveRate, const 
         strInfo = QString("<b>%1</b></b><br/><font color=\"%2\">%3: %4</font><br/>")
             .arg(m_strNetworkInInfoLabelTitle)
             .arg(dataColorString(Metric_Type_Network_In, 0)).arg(m_strNetworkInfoLabelReceived).arg(UITranslator::formatSize(uReceiveRate, g_iDecimalCount));
-
         m_infoLabels[Metric_Type_Network_In]->setText(strInfo);
     }
     if (m_charts.contains(Metric_Type_Network_In))
