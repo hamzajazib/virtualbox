@@ -1,4 +1,4 @@
-/* $Id: bldprog-strtab-template.cpp.h 113419 2026-03-16 12:33:57Z knut.osmundsen@oracle.com $ */
+/* $Id: bldprog-strtab-template.cpp.h 113420 2026-03-16 13:03:18Z knut.osmundsen@oracle.com $ */
 /** @file
  * IPRT - Build Program - String Table Generator.
  */
@@ -1140,6 +1140,7 @@ static void BldProgStrTab_PrintCStringLitteral(PBLDPROGSTRTAB pThis, PBLDPROGSTR
 {
     const unsigned char *psz = (const unsigned char *)pString->pszString;
     unsigned char uch;
+    unsigned char uchPrev = 0;
     while ((uch = *psz++) != '\0')
     {
 #ifdef BLDPROG_STRTAB_WITH_COMPRESSION
@@ -1152,22 +1153,16 @@ static void BldProgStrTab_PrintCStringLitteral(PBLDPROGSTRTAB pThis, PBLDPROGSTR
             if (uch == 0xff)
                 abort();
 #endif
-            if (uch != '\'' && uch != '\\')
-            {
+            if (uch != '\'' && uch != '\\' && (uch != '/' || uchPrev != '*'))
                 fputc((char)uch, pOut);
-                if (uch != '*' || *psz != '/')
-                { /* likely */ }
-                else
-                {
-                    fputc('\x2f', pOut); /* '/' - Avoid outputting closing comment sequence. */
-                    psz++;
-                }
-            }
+            else if (uch == '/')
+                fputs("\\x2f", pOut); /* '/' - avoid comment closing sequence */
             else
             {
                 fputc('\\', pOut);
                 fputc((char)uch, pOut);
             }
+            uchPrev = uch;
         }
 #ifdef BLDPROG_STRTAB_WITH_COMPRESSION
 # ifndef BLDPROG_STRTAB_PURE_ASCII
@@ -1176,13 +1171,33 @@ static void BldProgStrTab_PrintCStringLitteral(PBLDPROGSTRTAB pThis, PBLDPROGSTR
             RTUNICP uc = RTStrGetCp((const char *)psz);
             psz += RTStrCpSize(uc);
             fprintf(pOut, "\\u%04x", uc);
+            uchPrev = 0;
         }
 # endif
         else
-            fputs(pThis->aCompDict[uch].pszString, pOut);
+        {
+            char const  *psz2 = pThis->aCompDict[uch].pszString;
+            size_t       cch2 = pThis->aCompDict[uch].cchString;
+            while (cch2-- > 0 && (uch = *(unsigned char const *)psz2++) != '\0')
+            {
+                if (uch != '\'' && uch != '\\' && (uch != '/' || uchPrev != '*'))
+                    fputc((char)uch, pOut);
+                else if (uch == '/')
+                    fputs("\\x2f", pOut); /* '/' - avoid comment closing sequence */
+                else
+                {
+                    fputc('\\', pOut);
+                    fputc((char)uch, pOut);
+                }
+                uchPrev = uch;
+            }
+        }
 #else
         else
+        {
             fprintf(pOut, "\\x%02x", (unsigned)uch);
+            uchPrev = 0;
+        }
         NOREF(pThis);
 #endif
     }
