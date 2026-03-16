@@ -1,4 +1,4 @@
-/* $Id: PCIIdDatabase.h 113422 2026-03-16 14:28:47Z alexander.eichner@oracle.com $ */
+/* $Id: PCIIdDatabase.h 113431 2026-03-16 15:12:00Z alexander.eichner@oracle.com $ */
 /** @file
  * PCI device vendor and product ID database.
  */
@@ -100,6 +100,7 @@ public:
     static RTCString returnString(PCRTBLDPROGSTRREF pStr)
     {
         char szTmp[PCI_ID_DATABASE_MAX_STRING * 2];
+        szTmp[0] = '\0'; /* gcc warns about possible use of uninitialized szTmp. */
         ssize_t cchTmp = RTBldProgStrTabQueryString(&s_StrTab, pStr->off, pStr->cch, szTmp, sizeof(szTmp));
         return RTCString(szTmp, (size_t)RT_MAX(cchTmp, 0));
     }
