@@ -814,7 +814,7 @@ struct PCIBusAddress
     uint32_t asLong() const
     {
         Assert(valid());
-        return ((uint32_t)mu16Domain << 16) | (miBus << 8) | (miDevice << 3) | miFn;
+        return ((uint32_t)mu16Domain << 16) | ((uint32_t)miBus << 8) | ((uint32_t)miDevice << 3) | (uint32_t)miFn;
     }
 
     PCIBusAddress& fromLong(uint32_t value)
