@@ -1,4 +1,4 @@
-/* $Id: MachineImpl.cpp 113338 2026-03-11 12:50:01Z knut.osmundsen@oracle.com $ */
+/* $Id: MachineImpl.cpp 113442 2026-03-17 09:21:49Z alexander.eichner@oracle.com $ */
 /** @file
  * Implementation of IMachine in VBoxSVC.
  */
@@ -6390,7 +6390,7 @@ HRESULT Machine::readLog(ULONG aIdx, LONG64 aOffset, LONG64 aSize, std::vector<B
  * Currently this method doesn't attach device to the running VM,
  * just makes sure it's plugged on next VM start.
  */
-HRESULT Machine::attachHostPCIDevice(LONG aHostAddress, LONG aDesiredGuestAddress, BOOL /* aTryToUnbind */)
+HRESULT Machine::attachHostPCIDevice(ULONG aHostAddress, ULONG aDesiredGuestAddress, BOOL /* aTryToUnbind */)
 {
     // lock scope
     {
@@ -6415,11 +6415,11 @@ HRESULT Machine::attachHostPCIDevice(LONG aHostAddress, LONG aDesiredGuestAddres
              it != mHWData->mPCIDeviceAssignments.end();
              ++it)
         {
-            LONG iHostAddress = -1;
+            ULONG uHostAddress = UINT32_MAX;
             ComPtr<PCIDeviceAttachment> pAttach;
             pAttach = *it;
-            pAttach->COMGETTER(HostAddress)(&iHostAddress);
-            if (iHostAddress == aHostAddress)
+            pAttach->COMGETTER(HostAddress)(&uHostAddress);
+            if (uHostAddress == aHostAddress)
                 return setError(E_INVALIDARG,
                                 tr("Device with host PCI address already attached to this VM"));
         }
@@ -6427,7 +6427,7 @@ HRESULT Machine::attachHostPCIDevice(LONG aHostAddress, LONG aDesiredGuestAddres
         ComObjPtr<PCIDeviceAttachment> pda;
         char name[32];
 
-        RTStrPrintf(name, sizeof(name), "host%02x:%02x.%x", (aHostAddress>>8) & 0xff,
+        RTStrPrintf(name, sizeof(name), "host%04x:%02x:%02x.%x", aHostAddress >> 16, (aHostAddress>>8) & 0xff,
                     (aHostAddress & 0xf8) >> 3, aHostAddress & 7);
         pda.createObject();
         pda->init(this, name, aHostAddress, aDesiredGuestAddress, TRUE);
@@ -6443,7 +6443,7 @@ HRESULT Machine::attachHostPCIDevice(LONG aHostAddress, LONG aDesiredGuestAddres
  * Currently this method doesn't detach device from the running VM,
  * just makes sure it's not plugged on next VM start.
  */
-HRESULT Machine::detachHostPCIDevice(LONG aHostAddress)
+HRESULT Machine::detachHostPCIDevice(ULONG aHostAddress)
 {
     ComObjPtr<PCIDeviceAttachment> pAttach;
     bool fRemoved = false;
@@ -6461,10 +6461,10 @@ HRESULT Machine::detachHostPCIDevice(LONG aHostAddress)
              it != mHWData->mPCIDeviceAssignments.end();
              ++it)
         {
-            LONG iHostAddress = -1;
+            ULONG uHostAddress = UINT32_MAX;
             pAttach = *it;
-            pAttach->COMGETTER(HostAddress)(&iHostAddress);
-            if (iHostAddress  != -1  && iHostAddress == aHostAddress)
+            pAttach->COMGETTER(HostAddress)(&uHostAddress);
+            if (uHostAddress != UINT32_MAX  && uHostAddress == aHostAddress)
             {
                 i_setModified(IsModified_MachineData);
                 mHWData.backup();

@@ -1,4 +1,4 @@
-/* $Id: MachineImpl.h 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: MachineImpl.h 113442 2026-03-17 09:21:49Z alexander.eichner@oracle.com $ */
 /** @file
  * Implementation of IMachine in VBoxSVC - Header.
  */
@@ -1111,10 +1111,10 @@ private:
                                 LONG aControllerPort,
                                 LONG aDevice,
                                 ComPtr<IMediumAttachment> &aAttachment);
-    HRESULT attachHostPCIDevice(LONG aHostAddress,
-                                LONG aDesiredGuestAddress,
+    HRESULT attachHostPCIDevice(ULONG aHostAddress,
+                                ULONG aDesiredGuestAddress,
                                 BOOL aTryToUnbind);
-    HRESULT detachHostPCIDevice(LONG aHostAddress);
+    HRESULT detachHostPCIDevice(ULONG aHostAddress);
     HRESULT getNetworkAdapter(ULONG aSlot,
                               ComPtr<INetworkAdapter> &aAdapter);
     HRESULT addStorageController(const com::Utf8Str &aName,

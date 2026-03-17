@@ -1,4 +1,4 @@
-/* $Id: ConsoleImplConfigCommon.cpp 113422 2026-03-16 14:28:47Z alexander.eichner@oracle.com $ */
+/* $Id: ConsoleImplConfigCommon.cpp 113442 2026-03-17 09:21:49Z alexander.eichner@oracle.com $ */
 /** @file
  * VBox Console COM Class implementation - VM Configuration Bits.
  *
@@ -4792,7 +4792,7 @@ int Console::i_configNetworkCtrls(ComPtr<IMachine> pMachine, ComPtr<IPlatformPro
             else /* Platforms other than x86 just use the auto assignment, no slot swap hack there. */
                 iPCIDeviceNo = -1;
 
-            PCIBusAddress PCIAddr = PCIBusAddress(0, iPCIDeviceNo, 0);
+            PCIBusAddress PCIAddr = PCIBusAddress(0, 0, iPCIDeviceNo, 0);
             hrc = pBusMgr->assignPCIDevice(pszAdapterName, pInst, PCIAddr);                 H();
 
             InsertConfigNode(pInst, "Config", &pCfg);

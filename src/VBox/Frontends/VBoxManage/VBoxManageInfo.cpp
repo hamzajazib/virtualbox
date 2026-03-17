@@ -1,4 +1,4 @@
-/* $Id: VBoxManageInfo.cpp 113423 2026-03-16 14:29:32Z alexander.eichner@oracle.com $ */
+/* $Id: VBoxManageInfo.cpp 113442 2026-03-17 09:21:49Z alexander.eichner@oracle.com $ */
 /** @file
  * VBoxManage - The 'showvminfo' command and helper routines.
  */
@@ -2761,14 +2761,14 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
              {
                  ComPtr<IPCIDeviceAttachment> Assignment = assignments[index];
                  char szHostPCIAddress[32], szGuestPCIAddress[32];
-                 LONG iHostPCIAddress = -1, iGuestPCIAddress = -1;
+                 ULONG uHostPCIAddress = UINT32_MAX, uGuestPCIAddress = UINT32_MAX;
                  Bstr DevName;
 
                  Assignment->COMGETTER(Name)(DevName.asOutParam());
-                 Assignment->COMGETTER(HostAddress)(&iHostPCIAddress);
-                 Assignment->COMGETTER(GuestAddress)(&iGuestPCIAddress);
-                 PCIBusAddress().fromLong(iHostPCIAddress).format(szHostPCIAddress, sizeof(szHostPCIAddress));
-                 PCIBusAddress().fromLong(iGuestPCIAddress).format(szGuestPCIAddress, sizeof(szGuestPCIAddress));
+                 Assignment->COMGETTER(HostAddress)(&uHostPCIAddress);
+                 Assignment->COMGETTER(GuestAddress)(&uGuestPCIAddress);
+                 PCIBusAddress().fromLong(uHostPCIAddress).format(szHostPCIAddress, sizeof(szHostPCIAddress));
+                 PCIBusAddress().fromLong(uGuestPCIAddress).format(szGuestPCIAddress, sizeof(szGuestPCIAddress));
 
                  if (details == VMINFO_MACHINEREADABLE)
                      RTPrintf("AttachedHostPCI=%s,%s\n", szHostPCIAddress, szGuestPCIAddress);

@@ -1,4 +1,4 @@
-/* $Id: ConsoleImplConfigX86.cpp 113430 2026-03-16 15:02:00Z alexander.eichner@oracle.com $ */
+/* $Id: ConsoleImplConfigX86.cpp 113442 2026-03-17 09:21:49Z alexander.eichner@oracle.com $ */
 /** @file
  * VBox Console COM Class implementation - VM Configuration Bits.
  *
@@ -282,9 +282,9 @@ HRESULT Console::i_attachRawPCIDevices(PUVM pUVM, PCVMMR3VTABLE pVMM, BusAssignm
     {
         ComPtr<IPCIDeviceAttachment> const assignment = assignments[i];
 
-        LONG host;
+        ULONG host;
         hrc = assignment->COMGETTER(HostAddress)(&host);            H();
-        LONG guest;
+        ULONG guest;
         hrc = assignment->COMGETTER(GuestAddress)(&guest);          H();
 
         PCIBusAddress HostPCIAddress(host);
@@ -320,7 +320,8 @@ HRESULT Console::i_attachRawPCIDevices(PUVM pUVM, PCVMMR3VTABLE pVMM, BusAssignm
         }
 
         char szHostAddr[32]; /* Format is xxxx:xx:xx.x */
-        RTStrPrintf(szHostAddr, sizeof(szHostAddr), "0000:%02x:%02x.%u", hostAddress.miBus, hostAddress.miDevice, hostAddress.miFn);
+        RTStrPrintf(szHostAddr, sizeof(szHostAddr), "%04x:%02x:%02x.%u",
+                    hostAddress.mu16Domain, hostAddress.miBus, hostAddress.miDevice, hostAddress.miFn);
 
         PCFGMNODE pCfgFun = NULL;
         InsertConfigNodeF(pCfg, &pCfgFun, "Fun%u", hostAddress.miFn);
@@ -1222,7 +1223,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
                                                      N_("Failed to find PCI address of the assigned IOMMU device!"));
                 }
 
-                PCIBusAddress PCIAddr = PCIBusAddress((int32_t)uIoApicPciAddress);
+                PCIBusAddress PCIAddr = PCIBusAddress(uIoApicPciAddress);
                 hrc = pBusMgr->assignPCIDevice("sb-ioapic", NULL /* pCfg */, PCIAddr, true /*fGuestAddressRequired*/);  H();
             }
             else if (enmIommuType == IommuType_Intel)
@@ -1234,7 +1235,7 @@ int Console::i_configConstructorX86(PUVM pUVM, PVM pVM, PCVMMR3VTABLE pVMM, Auto
                 InsertConfigNode(pInst,    "Config", &pCfg);
                 hrc = pBusMgr->assignPCIDevice("iommu-intel", pInst);                       H();
 
-                PCIBusAddress PCIAddr = PCIBusAddress((int32_t)uIoApicPciAddress);
+                PCIBusAddress PCIAddr = PCIBusAddress(uIoApicPciAddress);
                 hrc = pBusMgr->assignPCIDevice("sb-ioapic", NULL /* pCfg */, PCIAddr, true /*fGuestAddressRequired*/);  H();
             }
         }

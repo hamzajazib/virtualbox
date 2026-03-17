@@ -6644,7 +6644,7 @@
 
   <interface
     name="IPCIDeviceAttachment" extends="$unknown"
-    uuid="91f33d6f-e621-4f70-a77e-15f0e3c714d5"
+    uuid="989d0e07-fac7-42ed-9709-8fbe2a52bd64"
     wsmap="struct"
     rest="managed"
     >
@@ -6665,13 +6665,13 @@
       </desc>
     </attribute>
 
-    <attribute name="hostAddress" type="long" readonly="yes">
+    <attribute name="hostAddress" type="unsigned long" readonly="yes">
       <desc>
         Address of device on the host, applicable only to host devices.
       </desc>
     </attribute>
 
-    <attribute name="guestAddress" type="long" readonly="yes">
+    <attribute name="guestAddress" type="unsigned long" readonly="yes">
       <desc>
         Address of device in the guest.
       </desc>
@@ -9483,10 +9483,10 @@
           Hardware or host OS doesn't allow PCI device passthrough.
         </result>
       </desc>
-      <param name="hostAddress" type="long" dir="in">
+      <param name="hostAddress" type="unsigned long" dir="in">
         <desc>Address of the host PCI device.</desc>
       </param>
-      <param name="desiredGuestAddress" type="long" dir="in">
+      <param name="desiredGuestAddress" type="unsigned long" dir="in">
         <desc>Desired position of this device on guest PCI bus.</desc>
       </param>
       <param name="tryToUnbind" type="boolean" dir="in">
@@ -9517,7 +9517,7 @@
           Hardware or host OS doesn't allow PCI device passthrough.
         </result>
       </desc>
-      <param name="hostAddress" type="long" dir="in">
+      <param name="hostAddress" type="unsigned long" dir="in">
         <desc>Address of the host PCI device.</desc>
       </param>
     </method>

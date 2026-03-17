@@ -1,4 +1,4 @@
-/* $Id: VBoxManageModifyVM.cpp 113423 2026-03-16 14:29:32Z alexander.eichner@oracle.com $ */
+/* $Id: VBoxManageModifyVM.cpp 113442 2026-03-17 09:21:49Z alexander.eichner@oracle.com $ */
 /** @file
  * VBoxManage - Implementation of modifyvm command.
  */
@@ -578,13 +578,18 @@ static HRESULT setExtraData(ComPtr<IMachine> &rSessionMachine, const char *pszVa
 }
 
 
-/** Parse PCI address in format 01:02.03 and convert it to the numeric representation. */
-static int32_t parsePci(const char *pszPciAddr)
+/** Parse PCI address in format 0000:01:02.03 and convert it to the numeric representation. */
+static uint32_t parsePci(const char *pszPciAddr)
 {
+    uint16_t u16Domain = UINT16_MAX;
     uint8_t aVals[3] = {0, 0, 0};
 
     char *pszNext = (char *)pszPciAddr;
-    int vrc = RTStrToUInt8Ex(pszNext, &pszNext, 16, &aVals[0]);
+    int vrc = RTStrToUInt16Ex(pszNext, &pszNext, 16, &u16Domain);
+    if (RT_FAILURE(vrc) || pszNext == NULL || *pszNext != ':')
+        return -1;
+
+    vrc = RTStrToUInt8Ex(pszNext, &pszNext, 16, &aVals[0]);
     if (RT_FAILURE(vrc) || pszNext == NULL || *pszNext != ':')
         return -1;
 
@@ -596,7 +601,7 @@ static int32_t parsePci(const char *pszPciAddr)
     if (RT_FAILURE(vrc) || pszNext == NULL)
         return -1;
 
-    return (aVals[0] << 8) | (aVals[1] << 3) | (aVals[2] << 0);
+    return ((uint32_t)u16Domain << 16) | (aVals[0] << 8) | (aVals[1] << 3) | (aVals[2] << 0);
 }
 
 
