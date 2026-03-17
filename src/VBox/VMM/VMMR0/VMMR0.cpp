@@ -1,4 +1,4 @@
-/* $Id: VMMR0.cpp 113159 2026-02-25 12:40:41Z knut.osmundsen@oracle.com $ */
+/* $Id: VMMR0.cpp 113451 2026-03-17 21:18:24Z knut.osmundsen@oracle.com $ */
 /** @file
  * VMM - Host Context Ring 0.
  */
@@ -1422,7 +1422,7 @@ VMMR0DECL(void) VMMR0EntryFast(PGVM pGVM, PVMCC pVMIgnored, VMCPUID idCpu, VMMR0
             {
                 /*
                  * Disable ring-3 calls & blocking till we've successfully entered HM.
-                 * Otherwise we sometimes end up blocking at the finall Log4 statement
+                 * Otherwise we sometimes end up blocking at the final Log4 statement
                  * in VMXR0Enter, while still in a somewhat inbetween state.
                  */
                 VMMRZCallRing3Disable(pGVCpu);

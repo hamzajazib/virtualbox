@@ -1,4 +1,4 @@
-/* $Id: GMMR0.cpp 113056 2026-02-17 10:38:41Z alexander.eichner@oracle.com $ */
+/* $Id: GMMR0.cpp 113451 2026-03-17 21:18:24Z knut.osmundsen@oracle.com $ */
 /** @file
  * GMM - Global Memory Manager.
  */
@@ -2459,7 +2459,6 @@ static int gmmR0AllocateChunkNew(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, ui
     int rc2 = gmmR0MutexAcquire(pGMM);
     AssertRCReturn(rc2, RT_FAILURE(rc) ? rc : rc2);
     return rc;
-
 }
 
 
