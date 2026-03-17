@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# $Id: tdAddBasic1.py 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $
+# $Id: tdAddBasic1.py 113447 2026-03-17 15:19:02Z vadim.galitsyn@oracle.com $
 
 """
 VirtualBox Validation Kit - Additions Basics #1.
@@ -37,7 +37,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 112403 $"
+__version__ = "$Revision: 113447 $"
 
 # Standard Python imports.
 import os;
@@ -84,6 +84,9 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         # Wether to reboot guest after Guest Additions installation.
         self.fRebootAfterInstall = True;
 
+        # Adjust guest RAM size by given number of Mb.
+        self.iOptRamAdjust = 0;
+
         self.addSubTestDriver(SubTstDrvAddGuestCtrl(self));
         self.addSubTestDriver(SubTstDrvAddSharedFolders1(self));
 
@@ -101,6 +104,9 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         reporter.log('      Same as --virt-modes hwvirt --cpu-counts 1.');
         reporter.log('  --no-reboot-after-install');
         reporter.log('      Do not reboot guest after Guest Additions installation.');
+        reporter.log('  --ram-adjust   <MBs>');
+        reporter.log('      Adjust the VM ram size by the given delta.  Both negative and positive');
+        reporter.log('      values are accepted.');
         return rc;
 
     def parseOption(self, asArgs, iArg):                                  # pylint: disable=too-many-branches,too-many-statements
@@ -121,6 +127,11 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             self.fRebootAfterInstall = False;
             reporter.log('Guest will not be rebooted after Guest Additions installation, ' +
                          'kernel modules and user services should be reloaded automatically without reboot');
+
+        elif asArgs[iArg] == '--ram-adjust':
+            iArg += 1;
+            if iArg >= len(asArgs): raise base.InvalidOption('The "--ram-adjust" takes amount of MB to adjust guest RAM aan argument');
+            self.iOptRamAdjust = int(asArgs[iArg]);
 
         else:
             return vbox.TestDriver.parseOption(self, asArgs, iArg);
@@ -182,6 +193,30 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
     # Test execution helpers.
     #
 
+    def testAdjVMSettings(self, oTestVm):
+        """
+        Adjust VM settings if necessary.
+
+        Returns True on success, False otherwise.
+        """
+        fRc = True;
+
+        if self.iOptRamAdjust != 0:
+
+            oSession = self.openSession(oTestVm);
+            if oSession is None:
+                reporter.log('Cannot adjust VM settings: cannot open session');
+                return False;
+
+            try:    cMbRam = oSession.o.machine.memorySize;
+            except: fRc    = reporter.errorXcpt();
+            else:   oSession.setRamSize(cMbRam + self.iOptRamAdjust);
+
+            fRc = fRc and oSession.saveSettings();
+            fRc = fRc and oSession.close();
+
+        return fRc;
+
     def testOneCfg(self, oVM, oTestVm):
         """
         Runs the specified VM thru the tests.
@@ -189,6 +224,11 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         Returns a success indicator on the general test execution. This is not
         the actual test result.
         """
+        # We might need to adjust some VM settings such as amount of RAM (the only option supported currently).
+        fRc = self.testAdjVMSettings(oVM);
+        if not fRc:
+            reporter.log('VM settings were not adjusted due to error(s)');
+
         fRc = False;
 
         self.logVmInfo(oVM);
