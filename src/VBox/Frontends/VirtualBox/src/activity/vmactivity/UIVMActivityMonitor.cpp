@@ -1,4 +1,4 @@
-/* $Id: UIVMActivityMonitor.cpp 113439 2026-03-16 19:24:43Z serkan.bayraktar@oracle.com $ */
+/* $Id: UIVMActivityMonitor.cpp 113446 2026-03-17 14:39:50Z serkan.bayraktar@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIVMActivityMonitor class implementation.
  */
@@ -571,8 +571,8 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
     QSize chartSize(width() - (m_iMarginLeft + m_iMarginRight), height() - (m_iMarginTop + m_iMarginBottom));
 
     m_lineChartRect = QRect(chartTopLeft, chartSize);
-    QColor mainAxisColor(120, 120, 120);
-    QColor subAxisColor(200, 200, 200);
+    QColor mainAxisColor(150, 150, 150);
+    QColor subAxisColor(230, 230, 230);
     /* Draw the main axes: */
     painter.setPen(mainAxisColor);
     painter.drawRect(m_lineChartRect);
@@ -1331,8 +1331,8 @@ QColor UIVMActivityMonitor::dataColor(Metric_Type enmType, int iDataIndex)
 void UIVMActivityMonitor::setInfoLabelWidth()
 {
     /* Compute the maximum label string length and set it as a fixed width to labels to prevent always changing widths: */
-    /* Add m_iDecimalCount plus 4 characters for the number and 3 for unit string: */
-    m_iMaximumLabelLength += (g_iDecimalCount + 7);
+    /* Add m_iDecimalCount plus 3 characters for the number and 3 for unit string: */
+    m_iMaximumLabelLength += (g_iDecimalCount + 6);
     if (!m_infoLabelContainers.isEmpty())
     {
         UIInfoLabelContainer *pContainer = m_infoLabelContainers.begin().value();
