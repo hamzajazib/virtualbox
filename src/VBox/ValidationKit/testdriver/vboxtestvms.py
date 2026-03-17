@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# $Id: vboxtestvms.py 113145 2026-02-24 13:36:38Z serkan.bayraktar@oracle.com $
+# $Id: vboxtestvms.py 113449 2026-03-17 18:42:24Z vadim.galitsyn@oracle.com $
 
 """
 VirtualBox Test VMs
@@ -36,7 +36,7 @@ terms and conditions of either the GPL or the CDDL or both.
 
 SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
 """
-__version__ = "$Revision: 113145 $"
+__version__ = "$Revision: 113449 $"
 
 # Standard Python imports.
 import copy;
@@ -1074,6 +1074,7 @@ class TestVm(object):                                       # pylint: disable=to
                  fGrouping = 0,                             # type: int
                  oSet = None,                               # type: TestVmSet
                  sHd = None,                                # type: str
+                 cMbRam = None,                             # type: int
                  sKind = None,                              # type: str
                  acCpusSup = None,                          # type: List[int]
                  asVirtModesSup = None,                     # type: List[str]
@@ -1102,6 +1103,7 @@ class TestVm(object):                                       # pylint: disable=to
         self.sVmName                 = sVmName;
         self.fGrouping               = fGrouping;
         self.sHd                     = sHd;          # Relative to the testrsrc root.
+        self.cMbRam                  = cMbRam;
         self.acCpusSup               = acCpusSup;
         self.asVirtModesSup          = asVirtModesSup;
         self.asParavirtModesSup      = asParavirtModesSup;
@@ -1316,6 +1318,7 @@ class TestVm(object):                                       # pylint: disable=to
         return oTestDrv.createTestVM(self.sVmName,
                                      1,                 # iGroup
                                      sHd                = self.sHd,
+                                     cMbRam             = self.cMbRam,
                                      sKind              = self.sKind,
                                      fIoApic            = self.fIoApic,
                                      fNstHwVirt         = self.fNstHwVirt,
@@ -2370,7 +2373,7 @@ class TestVmManager(object):
 
         # W10
         TestVm('tst-win10-efi',             kfGrpStdSmoke,        sHd = '4.2/efi/win10-efi-x86-edited2.vdi',
-               sKind = 'Windows10', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi'),
+               sKind = 'Windows10', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi', cMbRam = 4096),
         TestVm('tst-win10-64-efi',          kfGrpStdSmoke,        sHd = '4.2/efi/t-win10-64-efi-2.vdi',
                sKind = 'Windows10_64', acCpusSup = range(1, 33), fIoApic = True, sFirmwareType = 'efi'),
         #TestVm('tst-win10-64-efi-ich9',     kfGrpStdSmoke,         sHd = '4.2/efi/win10-efi-amd64.vdi',
