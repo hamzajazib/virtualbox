@@ -1,4 +1,4 @@
-/* $Id: SUPDrv-linux.c 113450 2026-03-17 21:17:56Z knut.osmundsen@oracle.com $ */
+/* $Id: SUPDrv-linux.c 113457 2026-03-18 17:43:27Z knut.osmundsen@oracle.com $ */
 /** @file
  * VBoxDrv - The VirtualBox Support Driver - Linux specifics.
  */
@@ -2065,7 +2065,7 @@ SUPR0DECL(void) SUPR0FpuEnd(bool fCtxHook)
     local_irq_save(fSavedIrqs);
     if (!fCtxHook)
         fpregs_unlock();
-    kernel_fpu_begin();
+    kernel_fpu_end();
     local_irq_restore(fSavedIrqs);
 #  else
     preempt_disable();
