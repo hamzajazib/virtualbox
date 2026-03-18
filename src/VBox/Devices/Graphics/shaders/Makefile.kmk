@@ -1,4 +1,4 @@
-# $Id: Makefile.kmk 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $
+# $Id: Makefile.kmk 113455 2026-03-18 17:27:27Z vitali.pelenjow@oracle.com $
 ## @file
 # Makefile for D3D11 shader compilation.
 #
@@ -44,6 +44,13 @@ OTHERS_CLEAN  += \
 	$(PATH_SUB_CURRENT)/d3d11screen.hlsl.ps.h \
 	$(PATH_SUB_CURRENT)/d3d11screen.hlsl.ps_SRGB.h
 
+OTHERS        += \
+	$(PATH_SUB_CURRENT)/d3d11yuv.hlsl.cs_y.h \
+	$(PATH_SUB_CURRENT)/d3d11yuv.hlsl.cs_uv.h
+OTHERS_CLEAN  += \
+	$(PATH_SUB_CURRENT)/d3d11yuv.hlsl.cs_y.h \
+	$(PATH_SUB_CURRENT)/d3d11yuv.hlsl.cs_uv.h
+
 VBOX_FXC ?= $(PATH_SDK_$(VBOX_WINPSDK)_BIN)/fxc.exe
 
 $(PATH_SUB_CURRENT)/d3d11blitter.hlsl.vs.h: \
@@ -70,5 +77,15 @@ $(PATH_SUB_CURRENT)/d3d11screen.hlsl.ps_SRGB.h: \
 		$(PATH_SUB_CURRENT)/Makefile.kmk \
 		$(PATH_SUB_CURRENT)/d3d11screen.hlsl
 	$(VBOX_FXC) /nologo /Fhd3d11screen.hlsl.ps_SRGB.h /Eps_screen_SRGB /Tps_5_0 d3d11screen.hlsl
+
+$(PATH_SUB_CURRENT)/d3d11yuv.hlsl.cs_y.h: \
+		$(PATH_SUB_CURRENT)/Makefile.kmk \
+		$(PATH_SUB_CURRENT)/d3d11yuv.hlsl
+	$(VBOX_FXC) /nologo /Fhd3d11yuv.hlsl.cs_y.h /Ecs_y /Tcs_5_0 d3d11yuv.hlsl
+
+$(PATH_SUB_CURRENT)/d3d11yuv.hlsl.cs_uv.h: \
+		$(PATH_SUB_CURRENT)/Makefile.kmk \
+		$(PATH_SUB_CURRENT)/d3d11yuv.hlsl
+	$(VBOX_FXC) /nologo /Fhd3d11yuv.hlsl.cs_uv.h /Ecs_uv /Tcs_5_0 d3d11yuv.hlsl
 
 include $(FILE_KBUILD_SUB_FOOTER)
