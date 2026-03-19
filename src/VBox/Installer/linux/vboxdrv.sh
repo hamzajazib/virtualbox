@@ -723,6 +723,7 @@ setup()
     if ! myerr=`$BUILDINTMP \
         --save-module-symvers /tmp/vboxdrv-Module.symvers \
         --module-source "$MODULE_SRC/vboxdrv" \
+        --skip-depmod \
         --no-print-directory install 2>&1`; then
         "${INSTALL_DIR}/check_module_dependencies.sh" || exit 1
         log "Error building the module:"
@@ -733,6 +734,7 @@ setup()
     if ! myerr=`$BUILDINTMP \
         --use-module-symvers /tmp/vboxdrv-Module.symvers \
         --module-source "$MODULE_SRC/vboxnetflt" \
+        --skip-depmod \
         --no-print-directory install 2>&1`; then
         log "Error building the module:"
         module_build_log "$myerr"
@@ -742,6 +744,7 @@ setup()
     if ! myerr=`$BUILDINTMP \
         --use-module-symvers /tmp/vboxdrv-Module.symvers \
         --module-source "$MODULE_SRC/vboxnetadp" \
+        --skip-depmod \
         --no-print-directory install 2>&1`; then
         log "Error building the module:"
         module_build_log "$myerr"
@@ -752,6 +755,7 @@ setup()
         if ! myerr=`$BUILDINTMP \
             --use-module-symvers /tmp/vboxdrv-Module.symvers \
             --module-source "$MODULE_SRC/vboxpci" \
+            --skip-depmod \
             --no-print-directory install 2>&1`; then
             log "Error building the module:"
             module_build_log "$myerr"
