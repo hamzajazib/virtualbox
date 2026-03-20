@@ -11,7 +11,7 @@
 # pylint: disable=invalid-name
 # pylint: disable=multiple-statements
 # pylint: disable=line-too-long
-# $Id: configure.py 113103 2026-02-20 10:50:21Z andreas.loeffler@oracle.com $
+# $Id: configure.py 113488 2026-03-20 21:02:11Z klaus.espenlaub@oracle.com $
 #
 # The following checks for the right (i.e. most recent) Python binary available
 # and re-starts the script using that binary (like a shell wrapper).
@@ -90,7 +90,7 @@ SPDX-License-Identifier: GPL-3.0-only
 # External Python modules or other dependencies are not allowed!
 #
 
-__revision__ = "$Revision: 113103 $"
+__revision__ = "$Revision: 113488 $"
 
 import argparse
 import collections;
@@ -771,7 +771,7 @@ def compileAndRun(sName, asIncPaths, asLibPaths, asIncFiles, asLibFiles, \
                 # Try executing the compiled binary and capture stdout + stderr.
                 try:
                     printVerbose(2, f"Executing '{sFileImage}' ...");
-                    oProc = subprocess.run([ sFileImage ], env = oProcEnv.env, shell = True, stdout = subprocess.PIPE, stderr = subprocess.STDOUT, check = False, timeout = 10);
+                    oProc = subprocess.run([ sFileImage ], env = oProcEnv.env, stdout = subprocess.PIPE, stderr = subprocess.STDOUT, check = False, timeout = 10);
                     if oProc.returncode == 0:
                         printLog(f'Running test program for {sName} successful (exit code 0)');
                         sStdOut = oProc.stdout.decode('utf-8', 'replace').strip();
@@ -836,7 +836,7 @@ def getPackageLibs(sPackageName):
         if g_enmHostOS in [ BuildTarget.LINUX, BuildTarget.SOLARIS, BuildTarget.DARWIN ]:
             # Use pkg-config on Linux and macOS.
             sCmd = f"pkg-config --libs {shlex.quote(sPackageName)}"
-            oProc = subprocess.run([ sCmd ], shell = True, check = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True);
+            oProc = subprocess.run([ sCmd ], check = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True);
             if oProc \
             and oProc.returncode == 0:
                 asArg = shlex.split(oProc.stdout.strip());
@@ -924,7 +924,7 @@ def getPackageVar(sPackageName, enmPkgMgrVar : PkgMgrVar):
             raise RuntimeError('Unsupported OS');
 
         if asCmd:
-            oProc = subprocess.run(asCmd, shell = True, check = False, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True);
+            oProc = subprocess.run(asCmd, check = False, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True);
             if  oProc.returncode == 0 \
             and oProc.stdout:
                 sRet = oProc.stdout.strip();
@@ -939,7 +939,7 @@ def getPackageVar(sPackageName, enmPkgMgrVar : PkgMgrVar):
             asCmd = [ PkgMgr.BREW,
                       enmPkgMgrVar[PkgMgr.BREW],
                       sPackageName ];
-            oProc = subprocess.run(asCmd, shell = True, check = False, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True);
+            oProc = subprocess.run(asCmd, check = False, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True);
             if  oProc.returncode == 0 \
             and oProc.stdout:
                 sRet = oProc.stdout.strip();
