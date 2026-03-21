@@ -1,4 +1,4 @@
-# $Id: Makefile.kmk 113310 2026-03-10 21:09:59Z knut.osmundsen@oracle.com $
+# $Id: Makefile.kmk 113489 2026-03-21 22:44:14Z knut.osmundsen@oracle.com $
 ## @file
 # Sub-Makefile for the IPRT.
 #
@@ -4978,7 +4978,8 @@ if1of ($(LIBRARIES), RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 		| $(SED) \
 			-e 's/[[:space:]]\+/ /g' \
 			-e '/^  *[[:digit:]]\+:/!d' \
-			-e 's/^ \+[[:digit:]]\+: \+[[:xdigit:]]\+ \+[[:digit:]]\+ \+//' \
+			-e 's/^ \+[[:digit:]]\+: \+[[:xdigit:]]\+ \+[[:xdigit:]]\+ \+//' \
+			-e 's/^ \+[[:digit:]]\+: \+[[:xdigit:]]\+ \+0[xX][[:xdigit:]]\+ \+//' \
 			-e '/^SECTION/d' \
 			-e '/^FILE/d' \
 			-e 's/^[[:alpha:]]\+ \+//' \
