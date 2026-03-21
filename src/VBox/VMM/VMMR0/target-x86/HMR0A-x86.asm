@@ -1,4 +1,4 @@
-; $Id: HMR0A-x86.asm 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $
+; $Id: HMR0A-x86.asm 113493 2026-03-21 23:09:12Z knut.osmundsen@oracle.com $
 ;; @file
 ; HM - Ring-0 VMX, SVM world-switch and helper routines.
 ;
@@ -946,6 +946,9 @@ ALIGNCODE(8)
 
 ALIGNCODE(64)
 GLOBALNAME RT_CONCAT(hmR0VmxStartVmHostRIP,%1)
+%ifdef RT_OS_LINUX
+        IBT_ENDBRxx                     ; Shut up objtool warning.
+%endif
         RESTORE_STATE_VMX 0, %2, %3, %4
         mov     eax, VINF_SUCCESS
 
