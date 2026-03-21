@@ -2274,10 +2274,8 @@ typedef struct SUPLDRWRAPPEDMODULE
     /** SUPLDRWRAPPEDMODULE_F_XXX.   */
     uint16_t                    fFlags;
 
-    /** As close as possible to the start of the image. */
-    void                       *pvImageStart;
-    /** As close as possible to the end of the image. */
-    void                       *pvImageEnd;
+    /** Image section start+end address pairs. */
+    struct { void *pvStart, *pvEnd; } aImageSegs[7];
 
     /** @name Standar entry points
      * @{ */
@@ -2309,7 +2307,7 @@ typedef SUPLDRWRAPPEDMODULE const *PCSUPLDRWRAPPEDMODULE;
 /** Magic value for the wrapped module structure (Doris lessing). */
 #define SUPLDRWRAPPEDMODULE_MAGIC       UINT32_C(0x19191117)
 /** Current SUPLDRWRAPPEDMODULE structure version. */
-#define SUPLDRWRAPPEDMODULE_VERSION     UINT16_C(0x0001)
+#define SUPLDRWRAPPEDMODULE_VERSION     UINT16_C(0x0002)
 
 /** Set if this is the VMMR0 module.   */
 #define SUPLDRWRAPPEDMODULE_F_VMMR0     UINT16_C(0x0001)

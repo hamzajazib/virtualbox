@@ -1,4 +1,4 @@
-/* $Id: SUPDrv.cpp 113490 2026-03-21 22:54:32Z knut.osmundsen@oracle.com $ */
+/* $Id: SUPDrv.cpp 113492 2026-03-21 23:03:40Z knut.osmundsen@oracle.com $ */
 /** @file
  * VBoxDrv - The VirtualBox Support Driver - Common code.
  */
@@ -5908,6 +5908,7 @@ int VBOXCALL supdrvLdrRegisterWrappedModule(PSUPDRVDEVEXT pDevExt, PCSUPLDRWRAPP
     PCSUPLDRWRAPMODSYMBOL   paSymbols;
     uint32_t                idx;
     const char             *pszPrevSymbol;
+    uintptr_t               uImageMinPtr, uImageMaxPtr;
     int                     rc;
     SUPDRV_CHECK_SMAP_SETUP();
     SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
@@ -5939,9 +5940,25 @@ int VBOXCALL supdrvLdrRegisterWrappedModule(PSUPDRVDEVEXT pDevExt, PCSUPLDRWRAPP
     cchName = strlen(pWrappedModInfo->szName);
 
     /* Image range: */
-    AssertPtrReturn(pWrappedModInfo->pvImageStart, VERR_INVALID_POINTER);
-    AssertPtrReturn(pWrappedModInfo->pvImageEnd, VERR_INVALID_POINTER);
-    AssertReturn((uintptr_t)pWrappedModInfo->pvImageEnd > (uintptr_t)pWrappedModInfo->pvImageStart, VERR_INVALID_PARAMETER);
+    uImageMinPtr = ~(uintptr_t)0;
+    uImageMaxPtr = 0;
+    for (idx = 0; idx < RT_ELEMENTS(pWrappedModInfo->aImageSegs); idx++)
+    {
+        SUPR0Printf("seg[%u]: %p..%p\n", idx, pWrappedModInfo->aImageSegs[idx].pvStart, pWrappedModInfo->aImageSegs[idx].pvEnd);
+        if (pWrappedModInfo->aImageSegs[idx].pvStart)
+        {
+            AssertPtrReturn(pWrappedModInfo->aImageSegs[idx].pvStart, VERR_INVALID_POINTER);
+            AssertPtrReturn(pWrappedModInfo->aImageSegs[idx].pvEnd, VERR_INVALID_POINTER);
+            AssertReturn(   (uintptr_t)pWrappedModInfo->aImageSegs[idx].pvStart
+                         <= (uintptr_t)pWrappedModInfo->aImageSegs[idx].pvEnd, VERR_INVALID_PARAMETER);
+            uImageMinPtr = RT_MIN((uintptr_t)pWrappedModInfo->aImageSegs[idx].pvStart, uImageMinPtr);
+            uImageMaxPtr = RT_MAX((uintptr_t)pWrappedModInfo->aImageSegs[idx].pvEnd, uImageMaxPtr);
+        }
+        else
+            AssertReturn(pWrappedModInfo->aImageSegs[idx].pvEnd == NULL, VERR_INVALID_PARAMETER);
+    }
+    AssertReturn(uImageMinPtr < uImageMaxPtr, VERR_INVALID_PARAMETER);
+    AssertReturn(uImageMaxPtr - uImageMinPtr < _1G, VERR_OUT_OF_RANGE);
 
     /* Symbol table: */
     AssertMsgReturn(pWrappedModInfo->cSymbols <= _8K, ("Too many symbols: %u, max 8192\n", pWrappedModInfo->cSymbols),
@@ -6031,10 +6048,10 @@ int VBOXCALL supdrvLdrRegisterWrappedModule(PSUPDRVDEVEXT pDevExt, PCSUPLDRWRAPP
     /*
      * Setup and link in the LDR stuff.
      */
-    pImage->pvImage         = (void *)pWrappedModInfo->pvImageStart;
+    pImage->pvImage         = (void *)uImageMinPtr;
+    pImage->cbImageWithEverything = (uint32_t)(uImageMaxPtr - uImageMinPtr);
+    pImage->cbImageBits     = pImage->cbImageWithEverything;
     pImage->hMemObjImage    = NIL_RTR0MEMOBJ;
-    pImage->cbImageWithEverything
-        = pImage->cbImageBits = (uint32_t)((uintptr_t)pWrappedModInfo->pvImageEnd - (uintptr_t)pWrappedModInfo->pvImageStart);
     pImage->cSymbols        = 0;
     pImage->paSymbols       = NULL;
     pImage->pachStrTab      = NULL;
@@ -6114,7 +6131,7 @@ int VBOXCALL supdrvLdrRegisterWrappedModule(PSUPDRVDEVEXT pDevExt, PCSUPLDRWRAPP
 
     supdrvLdrUnlock(pDevExt);
     SUPDRV_CHECK_SMAP_CHECK(pDevExt, RT_NOTHING);
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -6261,6 +6278,8 @@ int VBOXCALL supdrvLdrDeregisterWrappedModule(PSUPDRVDEVEXT pDevExt, PCSUPLDRWRA
 {
     PSUPDRVLDRIMAGE pImage;
     uint32_t        cSleeps;
+    uint32_t        idx;
+    uintptr_t       uImageMinPtr;
 
     /*
      * Validate input.
@@ -6280,9 +6299,13 @@ int VBOXCALL supdrvLdrDeregisterWrappedModule(PSUPDRVDEVEXT pDevExt, PCSUPLDRWRA
     AssertPtrReturn(pImage, VERR_INVALID_POINTER);
     AssertMsgReturn(pImage->uMagic == SUPDRVLDRIMAGE_MAGIC, ("pImage=%p uMagic=%#x\n", pImage, pImage->uMagic),
                     VERR_INVALID_MAGIC);
-    AssertMsgReturn(pImage->pvImage == pWrappedModInfo->pvImageStart,
-                    ("pWrappedModInfo(%p)->pvImageStart=%p vs. pImage(=%p)->pvImage=%p\n",
-                     pWrappedModInfo, pWrappedModInfo->pvImageStart, pImage, pImage->pvImage),
+    uImageMinPtr = ~(uintptr_t)0;
+    for (idx = 0; idx < RT_ELEMENTS(pWrappedModInfo->aImageSegs); idx++)
+        if (pWrappedModInfo->aImageSegs[idx].pvStart && (uintptr_t)pWrappedModInfo->aImageSegs[idx].pvStart < uImageMinPtr)
+            uImageMinPtr = (uintptr_t)pWrappedModInfo->aImageSegs[idx].pvStart;
+    AssertMsgReturn(pImage->pvImage == (void *)uImageMinPtr,
+                    ("pWrappedModInfo(%p)->MIN(aImageSegs.pvStart)=%p vs. pImage(=%p)->pvImage=%p\n",
+                     pWrappedModInfo, uImageMinPtr, pImage, pImage->pvImage),
                     VERR_MISMATCH);
 
     AssertPtrReturn(pDevExt, VERR_INVALID_POINTER);

@@ -1,4 +1,4 @@
-# $Id: Config.kmk 113422 2026-03-16 14:28:47Z alexander.eichner@oracle.com $
+# $Id: Config.kmk 113492 2026-03-21 23:03:40Z knut.osmundsen@oracle.com $
 ## @file
 # The global build configuration file for VBox.
 #
@@ -5713,16 +5713,26 @@ ifeq ($(VBOX_LDR_FMT),elf)
   TEMPLATE_VBoxR0_CXXFLAGS.amd64   += -mcmodel=kernel
  endif
  ifdef VBOX_WITH_KMOD_WRAPPED_R0_MODS # For BTF/pahold issue we use -g1
+  TEMPLATE_VBoxR0_LDFLAGS           = -nostdlib --force-group-allocation
+  TEMPLATE_VBoxR0_LD_DEBUG          = nosplit
   TEMPLATE_VBoxR0_DEFS             += VBOX_WITH_KMOD_WRAPPED_R0_MODS
-  TEMPLATE_VBoxR0_LDFLAGS.linux    += $(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/VBoxR0-wrapped.lds
-  TEMPLATE_VBoxR0_LNK_DEPS.linux   += $(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/VBoxR0-wrapped.lds
-  TEMPLATE_VBoxR0_CFLAGS.linux     += -g1
-  TEMPLATE_VBoxR0_CXXFLAGS.linux   += -g1
+  TEMPLATE_VBoxR0_LDFLAGS.amd64    += -T $(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/VBoxR0-wrapped.lds
+  TEMPLATE_VBoxR0_LNK_DEPS.amd64   += $(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/VBoxR0-wrapped.lds
+  TEMPLATE_VBoxR0_CFLAGS.amd64     += -g1 -fno-asynchronous-unwind-tables
+  TEMPLATE_VBoxR0_CXXFLAGS.amd64   += -g1 -fno-asynchronous-unwind-tables
+  if 1
+   TEMPLATE_VBoxR0_CFLAGS.amd64     += -g1 -fno-asynchronous-unwind-tables \
+   	-mindirect-branch-register -mindirect-branch-cs-prefix -mfunction-return=thunk-extern -mharden-sls=all
+   TEMPLATE_VBoxR0_CXXFLAGS.amd64   += -g1 -fno-asynchronous-unwind-tables -mindirect-branch=thunk-extern \
+   	-mindirect-branch-register -mindirect-branch-cs-prefix -mfunction-return=thunk-extern -mharden-sls=all
+  endif
  endif
  ifdef VBOX_WITH_R0_MOD_IBT_BRANCH_PROTECTION
   TEMPLATE_VBoxR0_CFLAGS           += $(VBOX_GCC_fcf-protection_branch) -fno-jump-tables
   TEMPLATE_VBoxR0_CXXFLAGS         += $(VBOX_GCC_fcf-protection_branch) -fno-jump-tables
-  TEMPLATE_VBoxR0_LDFLAGS          += $(VBOX_GCC_fcf-protection_branch) $(VBOX_GCC_fcf-protection_check)
+  ifndef VBOX_WITH_KMOD_WRAPPED_R0_MODS # For BTF/pahold issue we use -g1
+   TEMPLATE_VBoxR0_LDFLAGS         += $(VBOX_GCC_fcf-protection_branch) $(VBOX_GCC_fcf-protection_check)
+  endif
   ifeq ($(VBOX_GCC_fcf-protection_branch),)
    $(warning VBox: VBOX_WITH_R0_MOD_IBT_BRANCH_PROTECTION is set but gcc doesn't support branch protection)
   endif
@@ -9525,7 +9535,7 @@ SVN                    ?= svn$(HOSTSUFF_EXE)
 GIT                    ?= git$(HOSTSUFF_EXE)
 VBOX_SVN_REV_KMK        = $(PATH_OUT)/revision.kmk
 ifndef VBOX_SVN_REV
- VBOX_SVN_REV_CONFIG_FALLBACK := $(patsubst %:,,  $Rev: 113422 $  )
+ VBOX_SVN_REV_CONFIG_FALLBACK := $(patsubst %:,,  $Rev: 113492 $  )
  VBOX_SVN_REV_FALLBACK := $(if-expr $(VBOX_SVN_REV_CONFIG_FALLBACK) > $(VBOX_SVN_REV_VERSION_FALLBACK),$(VBOX_SVN_REV_CONFIG_FALLBACK),$(VBOX_SVN_REV_VERSION_FALLBACK))
  VBOX_SVN_DEP          := $(firstword $(wildcard $(PATH_ROOT)/.svn/wc.db $(abspath $(PATH_ROOT)/../.svn/wc.db) $(abspath $(PATH_ROOT)/../../.svn/wc.db) $(PATH_ROOT)/.svn/entries))
  VBOX_GIT_DEP          := $(firstword $(wildcard $(PATH_ROOT)/.git/config $(abspath $(PATH_ROOT)/../.git/config) $(abspath $(PATH_ROOT)/../../.git/config)))
@@ -9539,7 +9549,7 @@ ifndef VBOX_SVN_REV
  ifneq ($(VBOX_GIT_DEP),)
   #
   # VBOX_SVN_REV_CONFIG_FALLBACK is not properly populated for a git checkout,
-  # as the $Rev: 113422 $ is not expanded, so we have to set it based on the information in the repo.
+  # as the $Rev: 113492 $ is not expanded, so we have to set it based on the information in the repo.
   #
   VBOX_SVN_REV_FALLBACK := $(shell $(GIT) log -1 $(PATH_ROOT)/Config.kmk | $(SED) -e 's/^[ \t]*//' -e '/svn:sync-xref-src-repo-rev\: r/!d' -e 's/svn:sync-xref-src-repo-rev\: r*//; t a; :a q')
  endif

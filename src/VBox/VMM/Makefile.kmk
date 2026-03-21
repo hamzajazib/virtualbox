@@ -1,4 +1,4 @@
-# $Id: Makefile.kmk 113056 2026-02-17 10:38:41Z alexander.eichner@oracle.com $
+# $Id: Makefile.kmk 113492 2026-03-21 23:03:40Z knut.osmundsen@oracle.com $
 ## @file
 # Top-level makefile for the VMM.
 #
@@ -1163,8 +1163,7 @@ if defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_BUILD)
   	Makefile-wrapper.gmk=>../common/Makefile-wrapper.gmk
   vbox_vmmr0-src_SOURCES = \
   	$(PATH_ROOT)/src/VBox/HostDrivers/Support/linux/Makefile-vbox_vmmr0.gmk=>Makefile \
-  	$(VMMR0_0_OUTDIR)/VMMR0.r0=>VMMR0.r0 \
-  	$(VMMR0_0_OUTDIR)/VMMR0.debug=>VMMR0.debug
+  	$(VMMR0_0_OUTDIR)/VMMR0.r0=>VMMR0.r0
  endif
 
 endif # defined(VBOX_WITH_R0_MODULES) && !defined(VBOX_ONLY_BUILD)

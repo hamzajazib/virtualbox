@@ -1,4 +1,4 @@
-/* $Id: VBoxR0-wrapped.lds 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: VBoxR0-wrapped.lds 113492 2026-03-21 23:03:40Z knut.osmundsen@oracle.com $ */
 /** @file
  * Linker script augmentations for wrapped .r0.
  */
@@ -34,16 +34,76 @@
  * SPDX-License-Identifier: GPL-3.0-only OR CDDL-1.0
  */
 
-
-/* Define a symbol up close to the start of the module: */
+/*
+ * The --force-group-allocation option needs a little assistance.
+ *
+ * We also wish to combine the unlikely and cold text sections
+ * with the other text sections to simplify text section tracking
+ * in SUPDrv.
+ *
+ * Finally, all (important) sections should and vboxr0mod_section_start
+ * and vboxr0mod_section_end symbols so we can more correctly calculate
+ * the module span (for probe validation and such).
+ */
 SECTIONS
 {
-    vboxr0mod_start = .;
-} INSERT BEFORE .text;
+    .text :
+    {
+        vboxr0mod_text_start = .;
+        *(.text.hot)
+        *(.text .text._*)
+        *(.text.unlikely)
+        *(.text.cold)
+        vboxr0mod_text_end   = .;
+    }
 
-/* Define a symbol up close to the end of the module: */
+    .rodata :
+    {
+        vboxr0mod_rodata_start = .;
+        *(.rodata .rodata._*)
+        vboxr0mod_rodata_end = .;
+    }
+    .rodata.str8 :
+    {
+        vboxr0mod_rodata_str8_start = .;
+        *(.rodata.str8 .rodata.str8.*)
+        vboxr0mod_rodata_str8_end = .;
+    }
+    .rodata.str1 :
+    {
+        vboxr0mod_rodata_str1_start = .;
+        *(.rodata.str1 .rodata.str1.*)
+        vboxr0mod_rodata_str1_end = .;
+    }
+    .rodata.cst2 :
+    {
+        vboxr0mod_rodata_cst2_start = .;
+        *(.rodata.cst2 .rodata.cst2.*)
+        vboxr0mod_rodata_cst2_end = .;
+    }
+}
+
+/*
+ * Combine the VBoxTpG sections into .data.
+ */
 SECTIONS
 {
-    vboxr0mod_end = .;
-} INSERT AFTER .bss;
+    .data :
+    {
+        vboxr0mod_data_start = .;
+        *(.VTGData)
+        *(.VTGPrLc.Begin)
+        *(.VTGPrLc)
+        *(.VTGPrLc.End)
+        *(.data)
+        vboxr0mod_data_end = .;
+    }
+
+    .bss :
+    {
+        vboxr0mod_bss_start = .;
+        *(.bss)
+        vboxr0mod_bss_end = .;
+    }
+}
 
