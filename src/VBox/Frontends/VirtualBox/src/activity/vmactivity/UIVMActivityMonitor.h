@@ -1,4 +1,4 @@
-/* $Id: UIVMActivityMonitor.h 113500 2026-03-23 10:12:18Z serkan.bayraktar@oracle.com $ */
+/* $Id: UIVMActivityMonitor.h 113506 2026-03-23 14:20:22Z serkan.bayraktar@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIVMActivityMonitor class declaration.
  */
@@ -203,6 +203,7 @@ protected:
     QTimer                 *m_pTimer;
     quint64                 m_iTimeStep;
     QVector<UIMetric> m_metrics;
+    QVector<UIMetric> m_frozenMetrics;
 
     /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
       * @{ */
