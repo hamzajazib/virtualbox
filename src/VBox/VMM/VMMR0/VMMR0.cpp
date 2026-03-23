@@ -1,4 +1,4 @@
-/* $Id: VMMR0.cpp 113496 2026-03-22 22:23:27Z knut.osmundsen@oracle.com $ */
+/* $Id: VMMR0.cpp 113502 2026-03-23 13:47:27Z knut.osmundsen@oracle.com $ */
 /** @file
  * VMM - Host Context Ring 0.
  */
@@ -1087,11 +1087,9 @@ VMMR0_INT_DECL(int) VMMR0ThreadCtxHookCreateForEmt(PVMCPUCC pVCpu)
         if (RT_SUCCESS(rc))
         {
             pVCpu->pGVM->vmm.s.fIsUsingContextHooks = true;
-SUPR0Printf("VMMR0: ctx hook\n");
             return rc;
         }
     }
-SUPR0Printf("VMMR0: no ctx hook!\n");
 # else
     RT_NOREF(vmmR0ThreadCtxCallback);
 # endif
