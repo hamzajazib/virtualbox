@@ -1,4 +1,4 @@
-/* $Id: DevVGA-SVGA-cmd.cpp 113461 2026-03-19 10:40:53Z vitali.pelenjow@oracle.com $ */
+/* $Id: DevVGA-SVGA-cmd.cpp 113508 2026-03-23 14:39:12Z vitali.pelenjow@oracle.com $ */
 /** @file
  * VMware SVGA device - implementation of VMSVGA commands.
  */
@@ -2567,7 +2567,6 @@ static void vmsvga3dCmdDefineGBScreenTarget(PVGASTATE pThis, PVGASTATECC pThisCC
         void *pvOldScreenBitmap = pScreen->pvScreenBitmap;
         pScreen->pvScreenBitmap = 0;
 #endif
-        RTListInit(&pScreen->listOutputTargets);
 
         if (RT_LIKELY(pThis->svga.f3DEnabled))
             vmsvga3dDefineScreen(pThis, pThisCC, pScreen);
@@ -8193,7 +8192,6 @@ void vmsvgaR3CmdDefineScreen(PVGASTATE pThis, PVGASTATECC pThisCC, SVGAFifoCmdDe
     if (pScreen->offVRAM == VMSVGA_VRAM_OFFSET_SCREEN_TARGET)
         pScreen->offVRAM = uScreenOffset;
 #endif
-    RTListInit(&pScreen->listOutputTargets);
 
     pScreen->fDefined  = true;
     pScreen->fModified = true;

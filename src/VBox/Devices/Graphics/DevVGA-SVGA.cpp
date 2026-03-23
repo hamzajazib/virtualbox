@@ -1,4 +1,4 @@
-/* $Id: DevVGA-SVGA.cpp 113464 2026-03-19 11:16:44Z vitali.pelenjow@oracle.com $ */
+/* $Id: DevVGA-SVGA.cpp 113508 2026-03-23 14:39:12Z vitali.pelenjow@oracle.com $ */
 /** @file
  * VMware SVGA device.
  *
@@ -1721,7 +1721,6 @@ int vmsvgaR3ChangeMode(PVGASTATE pThis, PVGASTATECC pThisCC)
         /* Set pvScreenBitmap to zero because if it is not, then vmsvgaR3VBVAResize uses it as VRAM address. */
         pScreen->pvScreenBitmap = 0;
 #endif
-        RTListInit(&pScreen->listOutputTargets);
 
         for (unsigned iScreen = 1; iScreen < RT_ELEMENTS(pSVGAState->aScreens); ++iScreen)
         {
@@ -7565,9 +7564,15 @@ static int vmsvgaR3StateInit(PPDMDEVINS pDevIns, PVGASTATE pThis, PVMSVGAR3STATE
     rc = RTCritSectInit(&pSVGAState->CritSectCmdBuf);
     AssertRCReturn(rc, rc);
 
-    /* Init screen ids which are constant and allow to use a pointer to aScreens element and know its index. */
+    /* Init screen ids which are constant and allow to use a pointer to aScreens element and know its index.
+     * Also init listOutputTargets to make sure that vmsvgaR3DestroyScreen works.
+     */
     for (uint32_t i = 0; i < RT_ELEMENTS(pSVGAState->aScreens); ++i)
-        pSVGAState->aScreens[i].idScreen = i;
+    {
+        VMSVGASCREENOBJECT *pScreen = &pSVGAState->aScreens[i];
+        pScreen->idScreen = i;
+        RTListInit(&pScreen->listOutputTargets);
+    }
 
     rc = RTCritSectInit(&pSVGAState->critSectOutputTargets);
     AssertRCReturn(rc, rc);
