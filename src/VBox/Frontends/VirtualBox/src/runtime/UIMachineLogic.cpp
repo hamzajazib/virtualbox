@@ -1,4 +1,4 @@
-/* $Id: UIMachineLogic.cpp 113507 2026-03-23 14:24:19Z sergey.dubov@oracle.com $ */
+/* $Id: UIMachineLogic.cpp 113510 2026-03-23 14:57:39Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMachineLogic class implementation.
  */
@@ -685,12 +685,12 @@ void UIMachineLogic::sltRuntimeError(bool fIsFatal, const QString &strErrorId, c
             uimachine()->pause();
     }
 
-    /* Should the default Warning type be overridden? */
-    NotificationType enmNotificationType = NotificationType_Warning;
+    /* Should the default Info type be overridden? */
+    NotificationType enmNotificationType = NotificationType_Info;
     if (fIsFatal)
         enmNotificationType = NotificationType_Critical;
     else if (fPaused)
-        enmNotificationType = NotificationType_Error;
+        enmNotificationType = NotificationType_Warning;
 
     /* Show runtime error: */
     UINotificationMessage::showRuntimeError(enmNotificationType, strErrorId, strMessage);

@@ -1,4 +1,4 @@
-/* $Id: UINotificationDefs.h 113507 2026-03-23 14:24:19Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationDefs.h 113510 2026-03-23 14:57:39Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINotificationCenter related definitions.
  */
@@ -38,7 +38,6 @@ enum NotificationType
     NotificationType_Info,
     NotificationType_Question,
     NotificationType_Warning,
-    NotificationType_Error,
     NotificationType_Critical,
     NotificationType_GuruMeditation
 };

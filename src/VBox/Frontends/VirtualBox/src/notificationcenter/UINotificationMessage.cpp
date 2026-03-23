@@ -1,4 +1,4 @@
-/* $Id: UINotificationMessage.cpp 113505 2026-03-23 14:18:19Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationMessage.cpp 113510 2026-03-23 14:57:39Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationMessage implementations.
  */
@@ -579,13 +579,13 @@ void UINotificationMessage::showRuntimeError(NotificationType emnNotificationTyp
     QByteArray autoConfimId = "showRuntimeError.";
     switch (emnNotificationType)
     {
-        case NotificationType_Warning:
+        case NotificationType_Info:
         {
             strSeverity = QApplication::translate("UIMessageCenter", "Warning", "runtime error info");
             autoConfimId += "warning.";
             break;
         }
-        case NotificationType_Error:
+        case NotificationType_Warning:
         {
             strSeverity = QApplication::translate("UIMessageCenter", "Non-Fatal Error", "runtime error info");
             autoConfimId += "error.";
@@ -623,7 +623,7 @@ void UINotificationMessage::showRuntimeError(NotificationType emnNotificationTyp
     /* Show the error: */
     switch (emnNotificationType)
     {
-        case NotificationType_Warning:
+        case NotificationType_Info:
         {
             createMessage(
                 strSeverity,
@@ -633,7 +633,7 @@ void UINotificationMessage::showRuntimeError(NotificationType emnNotificationTyp
                 autoConfimId.data());
             break;
         }
-        case NotificationType_Error:
+        case NotificationType_Warning:
         {
             createMessage(
                 strSeverity,
