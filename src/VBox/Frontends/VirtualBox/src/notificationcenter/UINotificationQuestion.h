@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.h 113375 2026-03-12 12:32:20Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.h 113515 2026-03-23 16:05:21Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion declarations.
  */
@@ -287,6 +287,17 @@ public:
 
 private:
 
+    /** Creates blocking question.
+      * @param  strName       Brings the question name.
+      * @param  strDetails    Brings the question details.
+      * @param  buttonNames   Brings the list of button names.
+      * @param  fOkByDefault  Brings whether Ok button should be default one.
+      * @param  pParent       Brings the local notification-center reference. */
+    static int createBlockingQuestion(const QString &strName,
+                                      const QString &strDetails,
+                                      const QStringList &buttonNames,
+                                      bool fOkByDefault,
+                                      QWidget *pParent);
     /** Creates blocking question.
       * @param  strName          Brings the question name.
       * @param  strDetails       Brings the question details.
