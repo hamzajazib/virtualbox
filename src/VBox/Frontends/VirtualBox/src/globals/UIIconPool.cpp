@@ -1,4 +1,4 @@
-/* $Id: UIIconPool.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIIconPool.cpp 113509 2026-03-23 14:53:58Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIIconPool class implementation.
  */
@@ -194,14 +194,7 @@ QIcon UIIconPool::defaultIcon(UIDefaultIconType defaultIconType, const QWidget *
         }
         case UIDefaultIconType_MessageBoxWarning:
         {
-#ifdef VBOX_WS_MAC
-            /* At least in Qt 4.3.4/4.4 RC1 SP_MessageBoxWarning is the application
-             * icon. So change this to the critical icon. (Maybe this would be
-             * fixed in a later Qt version) */
-            icon = pStyle->standardIcon(QStyle::SP_MessageBoxCritical, 0, pWidget);
-#else /* VBOX_WS_MAC */
             icon = pStyle->standardIcon(QStyle::SP_MessageBoxWarning, 0, pWidget);
-#endif /* !VBOX_WS_MAC */
             break;
         }
         case UIDefaultIconType_MessageBoxCritical:
