@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.cpp 113516 2026-03-23 16:20:03Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.cpp 113517 2026-03-23 17:34:10Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion implementations.
  */
@@ -927,6 +927,36 @@ bool UINotificationQuestion::confirmOverridingFiles(const QVector<QString> &strP
             pParent);
     else
         return true;
+}
+
+/* static */
+bool UINotificationQuestion::warnAboutGuruMeditation(const QString &strLogFolder)
+{
+    return createBlockingQuestion(
+        QApplication::translate("UIMessageCenter", "Fatal Error", "runtime error info"),
+        QApplication::translate("UIMessageCenter", "<p>A critical error has occurred while running the virtual "
+                                                   "machine and the machine execution has been stopped.</p>"
+                                                   ""
+                                                   "<p>For help, please see the Community section on "
+                                                   "<a href=https://www.virtualbox.org>https://www.virtualbox.org</a> "
+                                                   "or your support contract. Please provide the contents of the "
+                                                   "log file <tt>VBox.log</tt> and the image file <tt>VBox.png</tt>, "
+                                                   "which you can find in the <nobr><b>%1</b></nobr> directory, "
+                                                   "as well as a description of what you were doing when this error happened. "
+                                                   ""
+                                                   "Note that you can also access the above files by selecting <b>Show Log</b> "
+                                                   "from the <b>Machine</b> menu of the main VirtualBox window.</p>"
+                                                   ""
+                                                   "<p>Press <b>OK</b> if you want to power off the machine "
+                                                   "or press <b>Ignore</b> if you want to leave it as is for debugging. "
+                                                   "Please note that debugging requires special knowledge and tools, "
+                                                   "so it is recommended to press <b>OK</b> now.</p>")
+                                                   .arg(strLogFolder),
+        QStringList() << QApplication::translate("UIMessageCenter", "Ignore") /* cancel button text */
+                      << QString(),
+        true /* ok button by default? */,
+        QString(), QString(), QString(),
+        NotificationType_GuruMeditation);
 }
 
 /* static */

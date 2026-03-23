@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.h 113378 2026-03-12 13:36:06Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.h 113517 2026-03-23 17:34:10Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class declaration.
  */
@@ -249,11 +249,6 @@ public:
     /** @name VirtualBox Manager / Media Manager warnings.
       * @{ */
         bool confirmVisoDiscard(QWidget *pParent = 0) const;
-    /** @} */
-
-    /** @name Runtime UI warnings.
-      * @{ */
-        bool warnAboutGuruMeditation(const QString &strLogFolder);
     /** @} */
 
 public slots:

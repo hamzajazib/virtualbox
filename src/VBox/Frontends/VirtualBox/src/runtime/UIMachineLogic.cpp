@@ -1,4 +1,4 @@
-/* $Id: UIMachineLogic.cpp 113510 2026-03-23 14:57:39Z sergey.dubov@oracle.com $ */
+/* $Id: UIMachineLogic.cpp 113517 2026-03-23 17:34:10Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMachineLogic class implementation.
  */
@@ -70,7 +70,6 @@
 #include "UIMachineWindow.h"
 #include "UIMedium.h"
 #include "UIMediumTools.h"
-#include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
 #include "UIMouseHandler.h"
 #include "UINotificationCenter.h"
@@ -448,7 +447,7 @@ void UIMachineLogic::sltMachineStateChanged()
                 /* Ask how to proceed; Power off VM if proposal accepted: */
                 case GuruMeditationHandlerType_Default:
                 {
-                    if (msgCenter().warnAboutGuruMeditation(QDir::toNativeSeparators(strLogFolder)))
+                    if (UINotificationQuestion::warnAboutGuruMeditation(QDir::toNativeSeparators(strLogFolder)))
                     {
                         LogRel(("GUI: User requested to power VM off on Guru Meditation.\n"));
                         uimachine()->powerOff(false /* do NOT restore current snapshot */);

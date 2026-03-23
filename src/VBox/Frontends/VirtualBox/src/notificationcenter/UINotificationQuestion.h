@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.h 113516 2026-03-23 16:20:03Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.h 113517 2026-03-23 17:34:10Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion declarations.
  */
@@ -245,6 +245,9 @@ public:
 
     /** @name Runtime UI warnings.
       * @{ */
+        /** Notifies about Guru Meditation. Confirms powering down VM. */
+        static bool warnAboutGuruMeditation(const QString &strLogFolder);
+
         /** Confirms network interface choice. */
         static bool warnAboutNetworkInterfaceNotFound(const QString &strMachineName, const QString &strIfNames);
 

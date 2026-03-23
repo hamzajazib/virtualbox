@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.cpp 113378 2026-03-12 13:36:06Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.cpp 113517 2026-03-23 17:34:10Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class implementation.
  */
@@ -525,32 +525,6 @@ bool UIMessageCenter::confirmVisoDiscard(QWidget *pParent /* = 0*/) const
                           tr("Discard") /* ok button text */,
                           QString() /* cancel button text */,
                           false /* ok button by default? */);
-}
-
-bool UIMessageCenter::warnAboutGuruMeditation(const QString &strLogFolder)
-{
-    return questionBinary(0, MessageType_GuruMeditation,
-                          tr("<p>A critical error has occurred while running the virtual "
-                             "machine and the machine execution has been stopped.</p>"
-                             ""
-                             "<p>For help, please see the Community section on "
-                             "<a href=https://www.virtualbox.org>https://www.virtualbox.org</a> "
-                             "or your support contract. Please provide the contents of the "
-                             "log file <tt>VBox.log</tt> and the image file <tt>VBox.png</tt>, "
-                             "which you can find in the <nobr><b>%1</b></nobr> directory, "
-                             "as well as a description of what you were doing when this error happened. "
-                             ""
-                             "Note that you can also access the above files by selecting <b>Show Log</b> "
-                             "from the <b>Machine</b> menu of the main VirtualBox window.</p>"
-                             ""
-                             "<p>Press <b>OK</b> if you want to power off the machine "
-                             "or press <b>Ignore</b> if you want to leave it as is for debugging. "
-                             "Please note that debugging requires special knowledge and tools, "
-                             "so it is recommended to press <b>OK</b> now.</p>")
-                             .arg(strLogFolder),
-                          0 /* auto-confirm id */,
-                          QIMessageBox::tr("OK"),
-                          tr("Ignore"));
 }
 
 void UIMessageCenter::sltShowHelpWebDialog()
