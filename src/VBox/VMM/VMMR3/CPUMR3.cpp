@@ -1,4 +1,4 @@
-/* $Id: CPUMR3.cpp 113496 2026-03-22 22:23:27Z knut.osmundsen@oracle.com $ */
+/* $Id: CPUMR3.cpp 113498 2026-03-23 07:53:07Z knut.osmundsen@oracle.com $ */
 /** @file
  * CPUM - CPU Monitor / Manager.
  */
@@ -475,7 +475,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
         STAMR3RegisterF(pVM, &pVCpu->cpum.s.StatGuestFpuReload, STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_CALLS,
                         "Number of times the host swapped out our FPU state", "/cpum/cpu%u/GuestFpuReload", i);
 # ifdef VBOX_WITH_STATISTICS
-        STAMR3RegisterF(pVM, &pVCpu->cpum.s.StatGuestFpuLoadPerf, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_CALLS,
+        STAMR3RegisterF(pVM, &pVCpu->cpum.s.StatGuestFpuLoadPerf, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
                         "Profiling cpumR0LoadGuestFPU", "/cpum/cpu%u/GuestFpuLoadPerf", i);
 # endif
     }
