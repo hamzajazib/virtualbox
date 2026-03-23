@@ -1,4 +1,4 @@
-/* $Id: UIVMActivityMonitor.cpp 113487 2026-03-20 09:00:48Z serkan.bayraktar@oracle.com $ */
+/* $Id: UIVMActivityMonitor.cpp 113500 2026-03-23 10:12:18Z serkan.bayraktar@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIVMActivityMonitor class implementation.
  */
@@ -1175,6 +1175,7 @@ UIVMActivityMonitor::UIVMActivityMonitor(EmbedTo enmEmbedding, QWidget *pParent,
     , m_pTimer(0)
     , m_iTimeStep(0)
     , m_metrics(QVector<UIMetric>(Metric_Type_Max, UIMetric()))
+    , m_charts(QVector<UIChart*>(Metric_Type_Max, nullptr))
     , m_iMaximumQueueSize(iMaximumQueueSize)
     , m_pActionPool(pActionPool)
     , m_pMainLayout(0)
@@ -1351,22 +1352,16 @@ void UIVMActivityMonitor::resetRAMInfoLabel()
 
 QString UIVMActivityMonitor::dataColorString(Metric_Type enmType, int iDataIndex)
 {
-    if (!m_charts.contains(enmType))
+    if (m_charts.size() < Metric_Type_Max || !m_charts[enmType])
         return QColor(Qt::black).name(QColor::HexRgb);
-    UIChart *pChart = m_charts[enmType];
-    if (!pChart)
-        return QColor(Qt::black).name(QColor::HexRgb);
-    return pChart->dataSeriesColor(iDataIndex).name(QColor::HexRgb);
+    return m_charts[enmType]->dataSeriesColor(iDataIndex).name(QColor::HexRgb);
 }
 
 QColor UIVMActivityMonitor::dataColor(Metric_Type enmType, int iDataIndex)
 {
-    if (!m_charts.contains(enmType))
+    if (m_charts.size() < Metric_Type_Max || !m_charts[enmType])
         return QColor(Qt::black).name(QColor::HexRgb);
-    UIChart *pChart = m_charts[enmType];
-    if (!pChart)
-        return QColor(Qt::black).name(QColor::HexRgb);
-    return pChart->dataSeriesColor(iDataIndex);
+    return m_charts[enmType]->dataSeriesColor(iDataIndex);
 }
 
 void UIVMActivityMonitor::setInfoLabelWidth()
@@ -1417,7 +1412,7 @@ UIVMActivityMonitorLocal::UIVMActivityMonitorLocal(EmbedTo enmEmbedding, QWidget
     setMachine(machine);
 
     /* Configure charts: */
-    if (m_charts.contains(Metric_Type_CPU) && m_charts[Metric_Type_CPU])
+    if (m_charts.size() < Metric_Type_Max && m_charts[Metric_Type_CPU])
     {
         m_charts[Metric_Type_CPU]->setIsPieChartAllowed(true);
         m_charts[Metric_Type_CPU]->setIsAreaChartAllowed(true);
@@ -1452,7 +1447,8 @@ void UIVMActivityMonitorLocal::sltRetranslateUI()
     UIVMActivityMonitor::sltRetranslateUI();
 
     foreach (UIChart *pChart, m_charts)
-        pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Sec.", "short from seconds"));
+        if (pChart)
+            pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Sec.", "short from seconds"));
 
     m_strVMExitInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "VM Exits");
     m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strVMExitInfoLabelTitle.length());
@@ -1672,9 +1668,9 @@ void UIVMActivityMonitorLocal::reset()
     for (UIMetric &metric : m_metrics)
         metric.reset();
     /* force update on the charts to draw now emptied metrics' data: */
-    for (QMap<Metric_Type, UIChart*>::iterator iterator =  m_charts.begin();
-         iterator != m_charts.end(); ++iterator)
-        iterator.value()->update();
+    for (UIChart *pChart : m_charts)
+         if (pChart)
+            pChart->update();
     /* Reset the info labels: */
     resetCPUInfoLabel();
     resetRAMInfoLabel();
@@ -1688,7 +1684,7 @@ void UIVMActivityMonitorLocal::reset()
 
 void UIVMActivityMonitorLocal::prepareWidgets()
 {
-    if (m_metrics.size() < Metric_Type_Max)
+    if (m_metrics.size() < Metric_Type_Max || m_charts.size() < Metric_Type_Max)
         return;
     UIVMActivityMonitor::prepareWidgets();
     if (!m_pContainerLayout)
@@ -1731,19 +1727,16 @@ void UIVMActivityMonitorLocal::prepareWidgets()
         tempPal.setColor(QPalette::Window, tempPal.color(QPalette::Window).lighter(g_iBackgroundTint));
         pLabelContainer->setPalette(tempPal);
         pLabelContainer->setAutoFillBackground(true);
-
         m_infoLabelContainers.insert(enmType, pLabelContainer);
         pChartLayout->addWidget(pLabelContainer);
-
-        UIChart *pChart = new UIChart(this, m_pActionPool, m_iMaximumQueueSize);
-        pChart->setMetric(m_metrics[enmType]);
-        connect(pChart, &UIChart::sigExportMetricsToFile,
+        m_charts[enmType] = new UIChart(this, m_pActionPool, m_iMaximumQueueSize);
+        m_charts[enmType]->setMetric(m_metrics[enmType]);
+        connect(m_charts[enmType], &UIChart::sigExportMetricsToFile,
                 this, &UIVMActivityMonitor::sltExportMetricsToFile);
-        m_charts.insert(enmType, pChart);
-        pChart->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-        pChartLayout->addWidget(pChart);
+        m_charts[enmType]->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        pChartLayout->addWidget(m_charts[enmType]);
         m_pContainerLayout->addLayout(pChartLayout);
-        pLabelContainer->setTopMargin(pChart->topMargin());
+        pLabelContainer->setTopMargin(m_charts[enmType]->topMargin());
     }
     m_pContainerLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding));
 }
@@ -1861,7 +1854,7 @@ void UIVMActivityMonitorLocal::enableDisableGuestAdditionDependedWidgets(bool fE
         if (!m_metrics[i].requiresGuestAdditions())
             continue;
         Metric_Type enmType = static_cast<Metric_Type>(i);
-        if (m_charts.contains(enmType) && m_charts[enmType])
+        if (enmType < m_charts.size() && m_charts[enmType])
             m_charts[enmType]->setIsAvailable(fEnable);
         if (m_infoLabelContainers.contains(enmType) && m_infoLabelContainers[enmType])
         {
@@ -1894,7 +1887,7 @@ void UIVMActivityMonitorLocal::updateVMExitMetric(quint64 uTotalVMExits)
         m_infoLabelContainers[Metric_Type_VM_Exits]->setRowText(2, m_strVMExitLabelTotal,
             QString("%1 %2").arg(UITranslator::addMetricSuffixToNumber(uTotalVMExits)).arg(VMExitMetric.unit()), dataColor(Metric_Type_CPU, 1));
     }
-    if (m_charts.contains(Metric_Type_VM_Exits))
+    if (m_charts[Metric_Type_VM_Exits])
         m_charts[Metric_Type_VM_Exits]->update();
 }
 
@@ -1919,8 +1912,7 @@ void UIVMActivityMonitorLocal::updateCPUChart(ULONG iExecutingPercentage, ULONG 
         m_infoLabelContainers[Metric_Type_CPU]->setRowText(2, m_strCPUInfoLabelVMM,
             QString("%1%2").arg(QString::number(uOther)).arg(CPUMetric.unit()), dataColor(Metric_Type_CPU, 1));
     }
-
-    if (m_charts.contains(Metric_Type_CPU))
+    if (m_charts[Metric_Type_CPU])
         m_charts[Metric_Type_CPU]->update();
 }
 
@@ -1939,7 +1931,7 @@ void UIVMActivityMonitorLocal::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint
         m_infoLabelContainers[Metric_Type_RAM]->setRowText(3, m_strRAMInfoLabelUsed,
             UITranslator::formatSize(_1K * (iTotalRAM - iFreeRAM), g_iDecimalCount), dataColor(Metric_Type_RAM, 0));
     }
-    if (m_charts.contains(Metric_Type_RAM))
+    if (m_charts[Metric_Type_RAM])
         m_charts[Metric_Type_RAM]->update();
 }
 
@@ -1974,7 +1966,7 @@ void UIVMActivityMonitorLocal::updateNetworkChart(quint64 uReceiveTotal, quint64
         m_infoLabelContainers[Metric_Type_Network_InOut]->setRowText(4, m_strNetworkInfoLabelTransmittedTotal,
             UITranslator::formatSize(uTransmitTotal, g_iDecimalCount), dataColor(Metric_Type_Network_InOut, 1));
     }
-    if (m_charts.contains(Metric_Type_Network_InOut))
+    if (m_charts[Metric_Type_Network_InOut])
         m_charts[Metric_Type_Network_InOut]->update();
 }
 
@@ -2013,7 +2005,7 @@ void UIVMActivityMonitorLocal::updateUSBChart(quint64 uReceiveTotal, quint64 uTr
                                                                  UITranslator::formatSize(uTransmitTotal, g_iDecimalCount),
                                                                  dataColor(Metric_Type_USB_InOut, 1));
     }
-    if (m_charts.contains(Metric_Type_USB_InOut))
+    if (m_charts[Metric_Type_USB_InOut])
         m_charts[Metric_Type_USB_InOut]->update();
 }
 
@@ -2047,7 +2039,7 @@ void UIVMActivityMonitorLocal::updateDiskIOChart(quint64 uDiskIOTotalWritten, qu
         m_infoLabelContainers[Metric_Type_Disk_InOut]->setRowText(4, m_strDiskIOInfoLabelWrittenTotal,
             UITranslator::formatSize((quint64)uDiskIOTotalWritten, g_iDecimalCount), dataColor(Metric_Type_Network_InOut, 1));
     }
-    if (m_charts.contains(Metric_Type_Disk_InOut))
+    if (m_charts[Metric_Type_Disk_InOut])
         m_charts[Metric_Type_Disk_InOut]->update();
 }
 
@@ -2324,7 +2316,8 @@ void UIVMActivityMonitorCloud::sltRetranslateUI()
 {
     UIVMActivityMonitor::sltRetranslateUI();
     foreach (UIChart *pChart, m_charts)
-        pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Min.", "short from minutes"));
+        if (pChart)
+            pChart->setXAxisLabel(QApplication::translate("UIVMInformationDialog", "Min.", "short from minutes"));
 
     m_strNetworkInInfoLabelTitle = QApplication::translate("UIVMInformationDialog", "Network");
     m_iMaximumLabelLength = qMax(m_iMaximumLabelLength, m_strNetworkInInfoLabelTitle.length());
@@ -2382,9 +2375,9 @@ void UIVMActivityMonitorCloud::reset()
     for (UIMetric &metric : m_metrics)
         metric.reset();
     /* force update on the charts to draw now emptied metrics' data: */
-    for (QMap<Metric_Type, UIChart*>::iterator iterator =  m_charts.begin();
-         iterator != m_charts.end(); ++iterator)
-        iterator.value()->update();
+    for (UIChart* pChart : m_charts)
+        if (pChart)
+            pChart->update();
     /* Reset the info labels: */
     resetCPUInfoLabel();
     resetRAMInfoLabel();
@@ -2415,8 +2408,7 @@ void UIVMActivityMonitorCloud::updateCPUChart(quint64 iLoadPercentage, const QSt
         m_infoLabelContainers[Metric_Type_CPU]->setRowText(1, m_strCPUInfoLabelGuest,
             QString("%1%2").arg(QString::number(iLoadPercentage)).arg(CPUMetric.unit()), dataColor(Metric_Type_CPU, 0));
     }
-
-    if (m_charts.contains(Metric_Type_CPU))
+    if (m_charts[Metric_Type_CPU])
         m_charts[Metric_Type_CPU]->update();
 }
 
@@ -2431,7 +2423,7 @@ void UIVMActivityMonitorCloud::updateNetworkInChart(quint64 uReceiveRate, const 
                                                                   UITranslator::formatSize(uReceiveRate, g_iDecimalCount),
                                                                   dataColor(Metric_Type_Network_In, 0));
     }
-    if (m_charts.contains(Metric_Type_Network_In))
+    if (m_charts[Metric_Type_Network_In])
         m_charts[Metric_Type_Network_In]->update();
 }
 
@@ -2447,8 +2439,7 @@ void UIVMActivityMonitorCloud::updateNetworkOutChart(quint64 uTransmitRate, cons
                                                                    UITranslator::formatSize(uTransmitRate, g_iDecimalCount),
                                                                    dataColor(Metric_Type_Network_Out, 0));
     }
-    if (m_charts.contains(Metric_Type_Network_Out))
-        m_charts[Metric_Type_Network_Out]->update();
+    m_charts[Metric_Type_Network_Out]->update();
 }
 
 void UIVMActivityMonitorCloud::updateDiskIOWrittenChart(quint64 uWriteRate, const QString &strLabel)
@@ -2464,8 +2455,7 @@ void UIVMActivityMonitorCloud::updateDiskIOWrittenChart(quint64 uWriteRate, cons
                                                                UITranslator::formatSize(uWriteRate, g_iDecimalCount),
                                                                dataColor(Metric_Type_Disk_In, 0));
     }
-
-    if (m_charts.contains(Metric_Type_Disk_In))
+    if (m_charts[Metric_Type_Disk_In])
         m_charts[Metric_Type_Disk_In]->update();
 }
 
@@ -2483,8 +2473,7 @@ void UIVMActivityMonitorCloud::updateDiskIOReadChart(quint64 uReadRate, const QS
                                                                 UITranslator::formatSize(uReadRate, g_iDecimalCount),
                                                                 dataColor(Metric_Type_Disk_Out, 0));
     }
-
-    if (m_charts.contains(Metric_Type_Disk_Out))
+    if (m_charts[Metric_Type_Disk_Out])
         m_charts[Metric_Type_Disk_Out]->update();
 }
 
@@ -2507,28 +2496,9 @@ void UIVMActivityMonitorCloud::updateRAMChart(quint64 iUsedRAM, const QString &s
                                                            UITranslator::formatSize(_1K * iUsedRAM, g_iDecimalCount),
                                                            dataColor(Metric_Type_RAM, 0));
     }
-
-    if (m_charts.contains(Metric_Type_RAM))
+    if (m_charts[Metric_Type_RAM])
         m_charts[Metric_Type_RAM]->update();
 }
-
-// bool UIVMActivityMonitorCloud::findMetric(KMetricType enmMetricType, UIMetric &metric, int &iDataSeriesIndex) const
-// {
-//     if (!m_metricTypeDict.contains(enmMetricType))
-//         return false;
-
-//     Metric_Type enmType = m_metricTypeDict[enmMetricType];
-
-//     if (!m_metrics.contains(enmType))
-//         return false;
-
-//     metric = m_metrics[enmType];
-//     iDataSeriesIndex = 0;
-//     if (enmMetricType == KMetricType_NetworksBytesOut ||
-//         enmMetricType == KMetricType_DiskBytesRead)
-//         iDataSeriesIndex = 1;
-//     return true;
-// }
 
 void UIVMActivityMonitorCloud::prepareMetrics()
 {
@@ -2604,23 +2574,21 @@ void UIVMActivityMonitorCloud::prepareWidgets()
         tempPal.setColor(QPalette::Window, tempPal.color(QPalette::Window).lighter(g_iBackgroundTint));
         pLabelContainer->setPalette(tempPal);
         pLabelContainer->setAutoFillBackground(true);
-
         m_infoLabelContainers.insert(enmType, pLabelContainer);
         pChartLayout->addWidget(pLabelContainer);
-
-        UIChart *pChart = new UIChart(this, m_pActionPool, m_iMaximumQueueSize);
-        pChart->setMetric(m_metrics[enmType]);
-        connect(pChart, &UIChart::sigExportMetricsToFile,
+        m_charts[enmType] = new UIChart(this, m_pActionPool, m_iMaximumQueueSize);
+        m_charts[enmType]->setMetric(m_metrics[enmType]);
+        connect(m_charts[enmType], &UIChart::sigExportMetricsToFile,
                 this, &UIVMActivityMonitor::sltExportMetricsToFile);
-        m_charts.insert(enmType, pChart);
-        pChart->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-        pChartLayout->addWidget(pChart);
-        pLabelContainer->setTopMargin(pChart->topMargin());
+        m_charts[enmType]->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        pChartLayout->addWidget(m_charts[enmType]);
+        pLabelContainer->setTopMargin(m_charts[enmType]->topMargin());
         m_pContainerLayout->addLayout(pChartLayout);
     }
 
     m_pContainerLayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding));
-    m_charts[Metric_Type_CPU]->setShowPieChart(false);
+    if (m_charts[Metric_Type_CPU])
+        m_charts[Metric_Type_CPU]->setShowPieChart(false);
 }
 
 void UIVMActivityMonitorCloud::resetCPUInfoLabel()
