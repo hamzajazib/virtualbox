@@ -1,4 +1,4 @@
-/* $Id: DevVGA-SVGA3d-dx-dx11.cpp 113465 2026-03-19 11:25:41Z vitali.pelenjow@oracle.com $ */
+/* $Id: DevVGA-SVGA3d-dx-dx11.cpp 113512 2026-03-23 14:59:09Z vitali.pelenjow@oracle.com $ */
 /** @file
  * DevVMWare - VMWare SVGA device
  */
@@ -3872,26 +3872,6 @@ static void dxUpdateScreenEnd(DXDEVICE *pDXDevice, DXPIPELINESTATE &SavedState)
 }
 
 
-static void dxConvertOutputTargets(VMSVGASCREENOBJECT *pScreen, DXDEVICE *pDXDevice)
-{
-    VMSVGAHWSCREEN *p = pScreen->pHwScreen;
-
-    /* Check targets. Targets are created and deleted on FIFO thread so it is ok to access them without a lock. */
-    VMSVGAOUTPUTTARGET *pOutputTarget;
-    RTListForEach(&pScreen->listOutputTargets, pOutputTarget, VMSVGAOUTPUTTARGET, nodeOutputTarget)
-    {
-        AssertContinue(pOutputTarget->pHwOutputTarget);
-
-        if (!pOutputTarget->pHwOutputTarget->fReadingBack)
-        {
-            vmsvgaHwOutputTargetConvert(pOutputTarget, pDXDevice->pImmediateContext, p->pScreenTextureSRV,
-                                        p->cHwScreenWidth, p->cHwScreenHeight);
-            pOutputTarget->pHwOutputTarget->fReadingBack = true;
-        }
-    }
-}
-
-
 static void dxCopyStagingTextureToScreenBitmap(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pScreen, DXDEVICE *pDXDevice,
                                                SVGASignedRect const &updateRect)
 {
@@ -3973,6 +3953,18 @@ static void dxStartScreenReadback(VMSVGASCREENOBJECT *pScreen, DXDEVICE *pDXDevi
 
     pDXDevice->pImmediateContext->CopySubresourceRegion(p->pStagingTexture, 0, 0, 0, 0, p->pScreenTexture, 0, NULL);
 
+    /* Check targets. Targets are created and deleted on FIFO thread so it is ok to access them without a lock. */
+    VMSVGAOUTPUTTARGET *pOutputTarget;
+    RTListForEach(&pScreen->listOutputTargets, pOutputTarget, VMSVGAOUTPUTTARGET, nodeOutputTarget)
+    {
+        VMSVGAHWOUTPUTTARGET *pHwOutputTarget = pOutputTarget->pHwOutputTarget;
+        AssertContinue(pHwOutputTarget);
+
+        dxHwOutputTargetConvert(pOutputTarget, pDXDevice->pImmediateContext,
+                                p->pScreenTextureSRV, p->cHwScreenWidth, p->cHwScreenHeight);
+    }
+
+    /* Submit all the work: target conversion and readback to staging resources. */
     pDXDevice->pImmediateContext->Flush();
 
     /* Issue a query in order to be able to know when the transfer to the system memory will complete. */
@@ -3994,28 +3986,6 @@ static void dxProcessPendingUpdates(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pSc
 
     VMSVGAHWSCREEN *p = pScreen->pHwScreen;
 
-    /* Check targets. Targets are created and deleted on FIFO thread so it is ok to access them. */
-    VMSVGAOUTPUTTARGET *pOutputTarget;
-    RTListForEach(&pScreen->listOutputTargets, pOutputTarget, VMSVGAOUTPUTTARGET, nodeOutputTarget)
-    {
-        AssertContinue(pOutputTarget->pHwOutputTarget);
-
-        if (pOutputTarget->pHwOutputTarget->fReadingBack)
-        {
-            if (vmsvgaHwOutputTargetCheckCompletion(pOutputTarget, pDXDevice->pImmediateContext) == VINF_SUCCESS)
-            {
-                vmsvgaHwOutputTargetReadback(pOutputTarget, pDXDevice->pImmediateContext);
-                pOutputTarget->pHwOutputTarget->fReadingBack = false;
-
-                /* Increment u64UpdateSequenceNumber, skipping 0 on rollover. */
-                uint64_t u64 = pOutputTarget->u64UpdateSequenceNumber + 1;
-                if (u64 == 0)
-                    u64 = 1;
-                ASMAtomicWriteU64(&pOutputTarget->u64UpdateSequenceNumber, u64);
-            }
-        }
-    }
-
     if (p->fReadingBack)
     {
         BOOL queryData;
@@ -4032,6 +4002,23 @@ static void dxProcessPendingUpdates(PVGASTATECC pThisCC, VMSVGASCREENOBJECT *pSc
 
                 SVGASignedRect const &updateRect = p->aUpdates[p->idxLastUpdate].rect;
                 dxCopyStagingTextureToScreenBitmap(pThisCC, pScreen, pDXDevice, updateRect);
+
+                /* Check targets. Targets are created and deleted on FIFO thread so it is ok to access them. */
+                VMSVGAOUTPUTTARGET *pOutputTarget;
+                RTListForEach(&pScreen->listOutputTargets, pOutputTarget, VMSVGAOUTPUTTARGET, nodeOutputTarget)
+                {
+                    VMSVGAHWOUTPUTTARGET *pHwOutputTarget = pOutputTarget->pHwOutputTarget;
+                    AssertContinue(pHwOutputTarget);
+
+                    dxHwOutputTargetReadback(pOutputTarget, pDXDevice->pImmediateContext);
+
+                    /* Increment u64UpdateSequenceNumber, skipping 0 on rollover. */
+                    uint64_t u64 = pOutputTarget->u64UpdateSequenceNumber + 1;
+                    if (u64 == 0)
+                        u64 = 1;
+                    ASMAtomicWriteU64(&pOutputTarget->u64UpdateSequenceNumber, u64);
+                }
+
                 p->aUpdates[p->idxLastUpdate].u64ReadbackFence = 0;
 
                 vmsvgaR3UpdateScreen(pThisCC, pScreen,
@@ -4234,8 +4221,6 @@ static DECLCALLBACK(int) vmsvga3dBackSurfaceBlitToScreen(PVGASTATECC pThisCC, VM
         p->fReadingBack = true;
     }
 
-    dxConvertOutputTargets(pScreen, pDXDevice);
-
     return VINF_SUCCESS;
 }
 
@@ -4280,9 +4265,9 @@ static DECLCALLBACK(int) vmsvga3dBackCreateOutputTarget(PVGASTATE pThis, PVGASTA
     DXDEVICE *pDXDevice = dxDeviceGet(pState);
     AssertReturn(pDXDevice->pDevice, VERR_INVALID_STATE);
 
-    int rc = vmsvgaHwOutputTargetCreate(pOutputTarget, pDXDevice->pDevice);
+    int rc = dxHwOutputTargetCreate(pOutputTarget, pDXDevice->pDevice);
     if (RT_FAILURE(rc))
-        vmsvgaHwOutputTargetDestroy(pOutputTarget);
+        dxHwOutputTargetDestroy(pOutputTarget);
 
     return rc;
 }
@@ -4296,7 +4281,7 @@ static DECLCALLBACK(void) vmsvga3dBackDestroyOutputTarget(PVGASTATECC pThisCC, V
     DXDEVICE *pDXDevice = dxDeviceGet(pState);
     AssertReturnVoid(pDXDevice->pDevice);
 
-    vmsvgaHwOutputTargetDestroy(pOutputTarget);
+    dxHwOutputTargetDestroy(pOutputTarget);
 }
 
 
@@ -4808,8 +4793,6 @@ static DECLCALLBACK(int) vmsvga3dScreenTargetUpdate(PVGASTATECC pThisCC, VMSVGAS
         dxStartScreenReadback(pScreen, pDXDevice);
         pHwScreen->fReadingBack = true;
     }
-
-    dxConvertOutputTargets(pScreen, pDXDevice);
 
     return VINF_SUCCESS;
 }

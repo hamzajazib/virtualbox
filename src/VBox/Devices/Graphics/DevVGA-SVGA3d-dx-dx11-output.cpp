@@ -1,4 +1,4 @@
-/* $Id: DevVGA-SVGA3d-dx-dx11-output.cpp 113461 2026-03-19 10:40:53Z vitali.pelenjow@oracle.com $ */
+/* $Id: DevVGA-SVGA3d-dx-dx11-output.cpp 113512 2026-03-23 14:59:09Z vitali.pelenjow@oracle.com $ */
 /** @file
  * DevSVGA - D3D11 backend graphics output utilities
  */
@@ -46,6 +46,147 @@
  *   * Readback (optional): staging texture(s) -> memory buffers(s)
  *
  */
+
+typedef struct DXOUTPUTTARGETMETHODS
+{
+    DECLR3CALLBACKMEMBER(void, pfnDXOutputTargetDestroy,(VMSVGAOUTPUTTARGET *pOutputTarget));
+    DECLR3CALLBACKMEMBER(int, pfnDXOutputTargetConvert,(VMSVGAOUTPUTTARGET *pOutputTarget,
+                                                        ID3D11DeviceContext1 *pDeviceContext,
+                                                        ID3D11ShaderResourceView *pSrcSrv,
+                                                        UINT srcW, UINT srcH));
+    DECLR3CALLBACKMEMBER(int, pfnDXOutputTargetReadback,(VMSVGAOUTPUTTARGET *pOutputTarget,
+                                                         ID3D11DeviceContext1 *pDeviceContext));
+} DXOUTPUTTARGETMETHODS;
+
+/* Generic OT object with target specific data and virtual methods. */
+typedef struct VMSVGAHWOUTPUTTARGET
+{
+    DXOUTPUTTARGETMETHODS       methods;
+} VMSVGAHWOUTPUTTARGET;
+
+typedef struct DXOUTPUTTARGET_B8G8R8X8_I
+{
+    VMSVGAHWOUTPUTTARGET        Base;
+
+    ID3D11Texture2D            *pStagingTexture;
+} DXOUTPUTTARGET_B8G8R8X8_I;
+
+typedef struct DXTARGET2DUAV
+{
+    ID3D11Texture2D            *pT2D;
+    ID3D11UnorderedAccessView  *pUAV;
+    ID3D11Texture2D            *pT2DStaging;
+} DXTARGET2DUAV;
+
+typedef struct DXOUTPUTTARGET_I420
+{
+    VMSVGAHWOUTPUTTARGET        Base;
+
+    ID3D11ComputeShader        *pCSy;
+    ID3D11ComputeShader        *pCSuv;
+
+    ID3D11Buffer               *pCSConstantBuffer;
+    ID3D11SamplerState         *pSamplerState;
+
+    DXGI_FORMAT                 enmPlaneFormat;
+
+    DXTARGET2DUAV               y;
+    DXTARGET2DUAV               u;
+    DXTARGET2DUAV               v;
+} DXOUTPUTTARGET_I420;
+
+
+static DECLCALLBACK(int) dxOutputTargetCreate_B8G8R8X8_I(VMSVGAOUTPUTTARGET *pOutputTarget,
+                                                         ID3D11Device1 *pDevice)
+{
+    DXOUTPUTTARGET_B8G8R8X8_I *pThis = (DXOUTPUTTARGET_B8G8R8X8_I *)pOutputTarget->pHwOutputTarget;
+
+    /* Staging texture for downloading the screen content to the system memory. */
+    D3D11_TEXTURE2D_DESC td;
+    RT_ZERO(td);
+    td.Width              = pOutputTarget->desc.cWidth;
+    td.Height             = pOutputTarget->desc.cHeight;
+    td.MipLevels          = 1;
+    td.ArraySize          = 1;
+    td.Format             = DXGI_FORMAT_B8G8R8A8_UNORM;
+    td.SampleDesc.Count   = 1;
+    //td.SampleDesc.Quality = 0;
+    td.Usage              = D3D11_USAGE_STAGING;
+    //td.BindFlags          = 0;
+    td.CPUAccessFlags     = D3D11_CPU_ACCESS_READ;
+    //td.MiscFlags          = 0;
+
+    HRESULT hr = pDevice->CreateTexture2D(&td, 0, &pThis->pStagingTexture);
+    AssertReturn(SUCCEEDED(hr), VERR_NO_MEMORY);
+
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(void) dxOutputTargetDestroy_B8G8R8X8_I(VMSVGAOUTPUTTARGET *pOutputTarget)
+{
+    DXOUTPUTTARGET_B8G8R8X8_I *pThis = (DXOUTPUTTARGET_B8G8R8X8_I *)pOutputTarget->pHwOutputTarget;
+    D3D_RELEASE(pThis->pStagingTexture);
+}
+
+
+static DECLCALLBACK(int) dxOutputTargetConvert_B8G8R8X8_I(VMSVGAOUTPUTTARGET *pOutputTarget,
+                                                          ID3D11DeviceContext1 *pDeviceContext,
+                                                          ID3D11ShaderResourceView *pSrcSrv,
+                                                          UINT srcW, UINT srcH)
+{
+    RT_NOREF(srcW, srcH);
+
+    DXOUTPUTTARGET_B8G8R8X8_I *pThis = (DXOUTPUTTARGET_B8G8R8X8_I *)pOutputTarget->pHwOutputTarget;
+
+    ID3D11Resource *pSrcResource = NULL;
+    pSrcSrv->GetResource(&pSrcResource);
+    pDeviceContext->CopySubresourceRegion(pThis->pStagingTexture, 0, 0, 0, 0, pSrcResource, 0, NULL);
+    D3D_RELEASE(pSrcResource);
+
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) dxOutputTargetReadback_B8G8R8X8_I(VMSVGAOUTPUTTARGET *pOutputTarget,
+                                                           ID3D11DeviceContext1 *pDeviceContext)
+{
+    DXOUTPUTTARGET_B8G8R8X8_I *pThis = (DXOUTPUTTARGET_B8G8R8X8_I *)pOutputTarget->pHwOutputTarget;
+
+    /* Copy data from staging resource to the system memory. */
+    D3D11_MAPPED_SUBRESOURCE map;
+    RT_ZERO(map);
+
+    HRESULT hr = pDeviceContext->Map(pThis->pStagingTexture, 0, D3D11_MAP_READ, 0, &map);
+    AssertReturn(SUCCEEDED(hr), VERR_NOT_SUPPORTED);
+
+    uint32_t const cWidth  = pOutputTarget->desc.cWidth;
+    uint32_t const cHeight = pOutputTarget->desc.cHeight;
+
+    uint8_t *pu8Dst = (uint8_t *)pOutputTarget->desc.pvOutputBuffer;
+    uint8_t const *pu8Src = (uint8_t *)map.pData;
+
+    if (cWidth * 4 == map.RowPitch)
+    {
+        memcpy(pu8Dst, pu8Src, map.RowPitch * cHeight);
+    }
+    else
+    {
+        /** @todo sub-rect */
+        for (uint32_t iRow = 0; iRow < cHeight; ++iRow)
+        {
+            memcpy(pu8Dst, pu8Src, cWidth * 4);
+
+            pu8Src += map.RowPitch;
+            pu8Dst += cWidth * 4;
+        }
+    }
+
+    pDeviceContext->Unmap(pThis->pStagingTexture, 0);
+
+    return VINF_SUCCESS;
+}
+
 
 #include "shaders/d3d11yuv.hlsl.cs_y.h"
 #include "shaders/d3d11yuv.hlsl.cs_uv.h"
@@ -102,7 +243,7 @@ static void dxTarget2DUAVCleanup(DXTARGET2DUAV *p)
 }
 
 
-static void dxOutputTargetCleanup(VMSVGAHWOUTPUTTARGET *pHwOutputTarget)
+static void dxOutputTargetCleanup(DXOUTPUTTARGET_I420 *pHwOutputTarget)
 {
     dxTarget2DUAVCleanup(&pHwOutputTarget->v);
     dxTarget2DUAVCleanup(&pHwOutputTarget->u);
@@ -112,7 +253,6 @@ static void dxOutputTargetCleanup(VMSVGAHWOUTPUTTARGET *pHwOutputTarget)
     D3D_RELEASE(pHwOutputTarget->pCSConstantBuffer);
     D3D_RELEASE(pHwOutputTarget->pCSuv);
     D3D_RELEASE(pHwOutputTarget->pCSy);
-    D3D_RELEASE(pHwOutputTarget->pReadbackQuery);
 }
 
 
@@ -178,10 +318,10 @@ static HRESULT dxTarget2DUAVCreate(ID3D11Device1 *pDevice,
 }
 
 
-int vmsvgaHwOutputTargetCreate(VMSVGAOUTPUTTARGET *pOutputTarget,
-                               ID3D11Device1 *pDevice)
+static DECLCALLBACK(int) dxOutputTargetCreate_I420(VMSVGAOUTPUTTARGET *pOutputTarget,
+                                                   ID3D11Device1 *pDevice)
 {
-    HRESULT hr;
+    DXOUTPUTTARGET_I420 *pHwOutputTarget = (DXOUTPUTTARGET_I420 *)pOutputTarget->pHwOutputTarget;
 
     uint32_t const cWidth = pOutputTarget->desc.cWidth;
     uint32_t const cHeight = pOutputTarget->desc.cHeight;
@@ -196,27 +336,10 @@ int vmsvgaHwOutputTargetCreate(VMSVGAOUTPUTTARGET *pOutputTarget,
     DXGI_FORMAT const dxgiFormatPlane = dxChooseYUVPlaneFormat(pDevice);
     AssertReturn(dxgiFormatPlane != DXGI_FORMAT_UNKNOWN, VERR_NOT_SUPPORTED);
 
-    Assert(pOutputTarget->pHwOutputTarget == NULL);
-
-    VMSVGAHWOUTPUTTARGET *pHwOutputTarget = (VMSVGAHWOUTPUTTARGET *)RTMemAllocZ(sizeof(*pHwOutputTarget));
-    AssertPtrReturn(pHwOutputTarget, VERR_NO_MEMORY);
-
-    /* The caller will do a cleanup on failure. */
-    pOutputTarget->pHwOutputTarget = pHwOutputTarget;
-
     pHwOutputTarget->enmPlaneFormat  = dxgiFormatPlane;
-    pHwOutputTarget->fReadingBack    = false;
-
-    /* A query to indicate completion of conversion. */
-    D3D11_QUERY_DESC queryDesc;
-    RT_ZERO(queryDesc);
-    queryDesc.Query = D3D11_QUERY_EVENT;
-
-    hr = pDevice->CreateQuery(&queryDesc, &pHwOutputTarget->pReadbackQuery);
-    AssertReturn(SUCCEEDED(hr), VERR_NO_MEMORY);
 
     /* Compute shaders. */
-    hr = pDevice->CreateComputeShader(g_cs_y, sizeof(g_cs_y), NULL, &pHwOutputTarget->pCSy);
+    HRESULT hr = pDevice->CreateComputeShader(g_cs_y, sizeof(g_cs_y), NULL, &pHwOutputTarget->pCSy);
     AssertReturn(SUCCEEDED(hr), VERR_NO_MEMORY);
     hr = pDevice->CreateComputeShader(g_cs_uv, sizeof(g_cs_uv), NULL, &pHwOutputTarget->pCSuv);
     AssertReturn(SUCCEEDED(hr), VERR_NO_MEMORY);
@@ -257,29 +380,19 @@ int vmsvgaHwOutputTargetCreate(VMSVGAOUTPUTTARGET *pOutputTarget,
 }
 
 
-void vmsvgaHwOutputTargetDestroy(VMSVGAOUTPUTTARGET *pOutputTarget)
+static DECLCALLBACK(void) dxOutputTargetDestroy_I420(VMSVGAOUTPUTTARGET *pOutputTarget)
 {
-    AssertReturnVoid(pOutputTarget);
-
-    if (!pOutputTarget->pHwOutputTarget)
-        return;
-
-    dxOutputTargetCleanup(pOutputTarget->pHwOutputTarget);
-    RTMemFree(pOutputTarget->pHwOutputTarget);
-    pOutputTarget->pHwOutputTarget = NULL;
+    DXOUTPUTTARGET_I420 *pHwOutputTarget = (DXOUTPUTTARGET_I420 *)pOutputTarget->pHwOutputTarget;
+    dxOutputTargetCleanup(pHwOutputTarget);
 }
 
 
-int vmsvgaHwOutputTargetConvert(VMSVGAOUTPUTTARGET *pOutputTarget,
-                                ID3D11DeviceContext1 *pDeviceContext,
-                                ID3D11ShaderResourceView *pSrcSrv,
-                                UINT srcW, UINT srcH)
+static DECLCALLBACK(int) dxOutputTargetConvert_I420(VMSVGAOUTPUTTARGET *pOutputTarget,
+                                                    ID3D11DeviceContext1 *pDeviceContext,
+                                                    ID3D11ShaderResourceView *pSrcSrv,
+                                                    UINT srcW, UINT srcH)
 {
-    HRESULT hr;
-
-    AssertReturn(pOutputTarget && pOutputTarget->pHwOutputTarget, VERR_INVALID_PARAMETER);
-    AssertReturn(pDeviceContext, VERR_INVALID_PARAMETER);
-    AssertReturn(pSrcSrv, VERR_INVALID_PARAMETER);
+    DXOUTPUTTARGET_I420 *pHwOutputTarget = (DXOUTPUTTARGET_I420 *)pOutputTarget->pHwOutputTarget;
 
     /* Save/restore pipeline state.
      * Shader, shader resource and UAVs are set by setupPipeline.
@@ -290,11 +403,9 @@ int vmsvgaHwOutputTargetConvert(VMSVGAOUTPUTTARGET *pOutputTarget,
     ID3D11SamplerState *pSavedSamplerState;
     pDeviceContext->CSGetSamplers(0, 1, &pSavedSamplerState);
 
-    VMSVGAHWOUTPUTTARGET *pHwOutputTarget = pOutputTarget->pHwOutputTarget;
-
     /* Update compute shader parameters. */
     D3D11_MAPPED_SUBRESOURCE mapped;
-    hr = pDeviceContext->Map(pHwOutputTarget->pCSConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+    HRESULT hr = pDeviceContext->Map(pHwOutputTarget->pCSConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
     AssertReturn(SUCCEEDED(hr), VERR_INTERNAL_ERROR);
 
     CSParameters *pParams = (CSParameters *)mapped.pData;
@@ -358,37 +469,16 @@ int vmsvgaHwOutputTargetConvert(VMSVGAOUTPUTTARGET *pOutputTarget,
     pDeviceContext->CopyResource(pHwOutputTarget->u.pT2DStaging, pHwOutputTarget->u.pT2D);
     pDeviceContext->CopyResource(pHwOutputTarget->v.pT2DStaging, pHwOutputTarget->v.pT2D);
 
-    pDeviceContext->Flush();
-
-    pDeviceContext->End(pHwOutputTarget->pReadbackQuery);
-
     return VINF_SUCCESS;
 }
 
 
-int vmsvgaHwOutputTargetCheckCompletion(VMSVGAOUTPUTTARGET *pOutputTarget,
-                                        ID3D11DeviceContext1 *pDeviceContext)
-{
-    VMSVGAHWOUTPUTTARGET *pHwOutputTarget = pOutputTarget->pHwOutputTarget;
-
-    BOOL fDone = FALSE;
-    HRESULT hr = pDeviceContext->GetData(pHwOutputTarget->pReadbackQuery, &fDone, sizeof(fDone),
-                                         D3D11_ASYNC_GETDATA_DONOTFLUSH);
-    AssertReturn(SUCCEEDED(hr), VERR_NOT_SUPPORTED);
-
-    if (hr == S_FALSE || !fDone)
-        return VERR_TRY_AGAIN;
-
-    return VINF_SUCCESS;
-}
-
-
-static int vmsvgaHwOutputTargetCopyPlane(ID3D11DeviceContext1 *pDeviceContext,
-                                         ID3D11Texture2D *pStagingTexture,
-                                         uint32_t cWidth,
-                                         uint32_t cHeight,
-                                         DXGI_FORMAT enmPlaneFormat,
-                                         uint8_t *pu8Dst)
+static int dxCopyPlane(ID3D11DeviceContext1 *pDeviceContext,
+                       ID3D11Texture2D *pStagingTexture,
+                       uint32_t cWidth,
+                       uint32_t cHeight,
+                       DXGI_FORMAT enmPlaneFormat,
+                       uint8_t *pu8Dst)
 {
     D3D11_MAPPED_SUBRESOURCE mapped;
     HRESULT hr = pDeviceContext->Map(pStagingTexture, 0, D3D11_MAP_READ, 0, &mapped);
@@ -431,11 +521,13 @@ static int vmsvgaHwOutputTargetCopyPlane(ID3D11DeviceContext1 *pDeviceContext,
 }
 
 
-int vmsvgaHwOutputTargetReadback(VMSVGAOUTPUTTARGET *pOutputTarget,
-                                 ID3D11DeviceContext1 *pDeviceContext)
+static DECLCALLBACK(int) dxOutputTargetReadback_I420(VMSVGAOUTPUTTARGET *pOutputTarget,
+                                                     ID3D11DeviceContext1 *pDeviceContext)
 {
-    VMSVGAHWOUTPUTTARGET *pHwOutputTarget = pOutputTarget->pHwOutputTarget;
+    DXOUTPUTTARGET_I420 *pHwOutputTarget = (DXOUTPUTTARGET_I420 *)pOutputTarget->pHwOutputTarget;
 
+    AssertReturn(pOutputTarget->desc.enmFormat == PDMDISPLAYOUTPUTTARGETFORMAT_I420,
+                 VERR_INVALID_STATE);
     AssertReturn(   pHwOutputTarget->enmPlaneFormat == DXGI_FORMAT_R8_UNORM
                  || pHwOutputTarget->enmPlaneFormat == DXGI_FORMAT_R16_UNORM,
                  VERR_NOT_SUPPORTED);
@@ -452,13 +544,122 @@ int vmsvgaHwOutputTargetReadback(VMSVGAOUTPUTTARGET *pOutputTarget,
     uint8_t *pu8DstU = pu8DstY + cbY;
     uint8_t *pu8DstV = pu8DstU + cbUV;
 
-    int rc = vmsvgaHwOutputTargetCopyPlane(pDeviceContext, pHwOutputTarget->y.pT2DStaging,
-                                           cWidthY, cHeightY, pHwOutputTarget->enmPlaneFormat, pu8DstY);
+    int rc = dxCopyPlane(pDeviceContext, pHwOutputTarget->y.pT2DStaging,
+                         cWidthY, cHeightY, pHwOutputTarget->enmPlaneFormat, pu8DstY);
     if (RT_SUCCESS(rc))
-        rc = vmsvgaHwOutputTargetCopyPlane(pDeviceContext, pHwOutputTarget->u.pT2DStaging,
-                                           cWidthUV, cHeightUV, pHwOutputTarget->enmPlaneFormat, pu8DstU);
+        rc = dxCopyPlane(pDeviceContext, pHwOutputTarget->u.pT2DStaging,
+                         cWidthUV, cHeightUV, pHwOutputTarget->enmPlaneFormat, pu8DstU);
     if (RT_SUCCESS(rc))
-        rc = vmsvgaHwOutputTargetCopyPlane(pDeviceContext, pHwOutputTarget->v.pT2DStaging,
-                                           cWidthUV, cHeightUV, pHwOutputTarget->enmPlaneFormat, pu8DstV);
+        rc = dxCopyPlane(pDeviceContext, pHwOutputTarget->v.pT2DStaging,
+                         cWidthUV, cHeightUV, pHwOutputTarget->enmPlaneFormat, pu8DstV);
     return rc;
+}
+
+
+typedef DECLCALLBACKTYPE(int, FNDXOUTPUTTARGETCREATE,(VMSVGAOUTPUTTARGET *pOutputTarget, ID3D11Device1 *pDevice));
+typedef FNDXOUTPUTTARGETCREATE *PFNDXOUTPUTTARGETCREATE;
+
+typedef struct DXOUTPUTTARGETDESC
+{
+    size_t                  cbDXOutputTarget;
+    PFNDXOUTPUTTARGETCREATE pfnDXOutputTargetCreate;
+    DXOUTPUTTARGETMETHODS   methods;
+} DXOUTPUTTARGETDESC;
+
+
+static DXOUTPUTTARGETDESC const desc_B8G8R8X8_I =
+{
+    sizeof(DXOUTPUTTARGET_B8G8R8X8_I),
+    dxOutputTargetCreate_B8G8R8X8_I,
+    {
+        dxOutputTargetDestroy_B8G8R8X8_I,
+        dxOutputTargetConvert_B8G8R8X8_I,
+        dxOutputTargetReadback_B8G8R8X8_I
+    }
+};
+
+
+static DXOUTPUTTARGETDESC const desc_I420 =
+{
+    sizeof(DXOUTPUTTARGET_I420),
+    dxOutputTargetCreate_I420,
+    {
+        dxOutputTargetDestroy_I420,
+        dxOutputTargetConvert_I420,
+        dxOutputTargetReadback_I420
+    }
+};
+
+
+int dxHwOutputTargetCreate(VMSVGAOUTPUTTARGET *pOutputTarget,
+                           ID3D11Device1 *pDevice)
+{
+    Assert(pOutputTarget->pHwOutputTarget == NULL);
+
+    DXOUTPUTTARGETDESC const *pDesc = NULL;
+
+    switch (pOutputTarget->desc.enmFormat)
+    {
+        case PDMDISPLAYOUTPUTTARGETFORMAT_RESERVED_1:
+            pDesc = &desc_B8G8R8X8_I;
+            break;
+
+        case PDMDISPLAYOUTPUTTARGETFORMAT_I420:
+            pDesc = &desc_I420;
+            break;
+
+        default:
+            break;
+    }
+
+    if (pDesc == NULL)
+        return VERR_NOT_IMPLEMENTED;
+
+    VMSVGAHWOUTPUTTARGET *pHwOutputTarget = (VMSVGAHWOUTPUTTARGET *)RTMemAllocZ(pDesc->cbDXOutputTarget);
+    AssertPtrReturn(pHwOutputTarget, VERR_NO_MEMORY);
+
+    /* The caller will do a cleanup on failure. */
+    pOutputTarget->pHwOutputTarget = pHwOutputTarget;
+
+    pHwOutputTarget->methods = pDesc->methods;
+
+    return pDesc->pfnDXOutputTargetCreate(pOutputTarget, pDevice);
+}
+
+
+void dxHwOutputTargetDestroy(VMSVGAOUTPUTTARGET *pOutputTarget)
+{
+    AssertReturnVoid(pOutputTarget);
+
+    VMSVGAHWOUTPUTTARGET *pHwOutputTarget = pOutputTarget->pHwOutputTarget;
+    if (!pHwOutputTarget)
+        return;
+
+    if (pHwOutputTarget->methods.pfnDXOutputTargetDestroy)
+        pHwOutputTarget->methods.pfnDXOutputTargetDestroy(pOutputTarget);
+
+    RTMemFree(pOutputTarget->pHwOutputTarget);
+    pOutputTarget->pHwOutputTarget = NULL;
+}
+
+
+int dxHwOutputTargetConvert(VMSVGAOUTPUTTARGET *pOutputTarget,
+                            ID3D11DeviceContext1 *pDeviceContext,
+                            ID3D11ShaderResourceView *pSrcSrv,
+                            UINT srcW, UINT srcH)
+{
+    VMSVGAHWOUTPUTTARGET *pHwOutputTarget = pOutputTarget->pHwOutputTarget;
+    if (pHwOutputTarget->methods.pfnDXOutputTargetConvert)
+        return pHwOutputTarget->methods.pfnDXOutputTargetConvert(pOutputTarget, pDeviceContext, pSrcSrv, srcW, srcH);
+    return VINF_SUCCESS;
+}
+
+
+int dxHwOutputTargetReadback(VMSVGAOUTPUTTARGET *pOutputTarget,
+                             ID3D11DeviceContext1 *pDeviceContext)
+{
+    VMSVGAHWOUTPUTTARGET *pHwOutputTarget = pOutputTarget->pHwOutputTarget;
+    if (pHwOutputTarget->methods.pfnDXOutputTargetReadback)
+        return pHwOutputTarget->methods.pfnDXOutputTargetReadback(pOutputTarget, pDeviceContext);
+    return VINF_SUCCESS;
 }

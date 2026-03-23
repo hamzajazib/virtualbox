@@ -1,4 +1,4 @@
-/* $Id: DevVGA-SVGA3d-dx-dx11.h 113456 2026-03-18 17:33:21Z vitali.pelenjow@oracle.com $ */
+/* $Id: DevVGA-SVGA3d-dx-dx11.h 113512 2026-03-23 14:59:09Z vitali.pelenjow@oracle.com $ */
 /** @file
  * DevSVGA - Internal DX11 backend utilities.
  */
@@ -48,45 +48,14 @@
 # pragma GCC diagnostic pop
 #endif
 
-
-/** @todo This is for RGB->I420 conversion. Make a generic OT object with target specific data and virtual methods. */
-typedef struct DXTARGET2DUAV
-{
-    ID3D11Texture2D            *pT2D;
-    ID3D11UnorderedAccessView  *pUAV;
-    ID3D11Texture2D            *pT2DStaging;
-} DXTARGET2DUAV;
-
-typedef struct VMSVGAHWOUTPUTTARGET
-{
-    bool                        fReadingBack;
-
-    ID3D11Query                *pReadbackQuery;
-
-    ID3D11ComputeShader        *pCSy;
-    ID3D11ComputeShader        *pCSuv;
-
-    ID3D11Buffer               *pCSConstantBuffer;
-    ID3D11SamplerState         *pSamplerState;
-
-    DXGI_FORMAT                 enmPlaneFormat;
-
-    DXTARGET2DUAV               y;
-    DXTARGET2DUAV               u;
-    DXTARGET2DUAV               v;
-
-} VMSVGAHWOUTPUTTARGET;
-
-int vmsvgaHwOutputTargetCreate(VMSVGAOUTPUTTARGET *pOutputTarget,
-                               ID3D11Device1 *pDevice);
-void vmsvgaHwOutputTargetDestroy(VMSVGAOUTPUTTARGET *pOutputTarget);
-int vmsvgaHwOutputTargetConvert(VMSVGAOUTPUTTARGET *pOutputTarget,
-                                ID3D11DeviceContext1 *pDeviceContext,
-                                ID3D11ShaderResourceView *pSrcSrv,
-                                UINT srcW, UINT srcH);
-int vmsvgaHwOutputTargetCheckCompletion(VMSVGAOUTPUTTARGET *pOutputTarget,
-                                        ID3D11DeviceContext1 *pDeviceContext);
-int vmsvgaHwOutputTargetReadback(VMSVGAOUTPUTTARGET *pOutputTarget,
-                                 ID3D11DeviceContext1 *pDeviceContext);
+int dxHwOutputTargetCreate(VMSVGAOUTPUTTARGET *pOutputTarget,
+                           ID3D11Device1 *pDevice);
+void dxHwOutputTargetDestroy(VMSVGAOUTPUTTARGET *pOutputTarget);
+int dxHwOutputTargetConvert(VMSVGAOUTPUTTARGET *pOutputTarget,
+                            ID3D11DeviceContext1 *pDeviceContext,
+                            ID3D11ShaderResourceView *pSrcSrv,
+                            UINT srcW, UINT srcH);
+int dxHwOutputTargetReadback(VMSVGAOUTPUTTARGET *pOutputTarget,
+                             ID3D11DeviceContext1 *pDeviceContext);
 
 #endif /* !VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA3d_dx_dx11_h */
