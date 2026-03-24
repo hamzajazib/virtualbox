@@ -2251,7 +2251,7 @@ VMMR0_INT_DECL(int)     CPUMR0InitVM(PVMCC pVM);
 DECLASM(void)           CPUMR0RegisterVCpuThread(PVMCPUCC pVCpu);
 
 DECLASM(void)           CPUMR0TouchHostFpu(void);
-VMMR0_INT_DECL(int)     CPUMR0EnsureLoadedGuestFPU(PVMCC pVM, PVMCPUCC pVCpu);
+VMMR0_INT_DECL(int)     CPUMR0EnsureLoadedGuestFPU(PVMCC pVM, PVMCPUCC pVCpu, bool fUnlock);
 VMMR0_INT_DECL(bool)    CPUMR0FpuStateMaybeSaveGuestAndRestoreHost(PVMCPUCC pVCpu);
 VMMR0_INT_DECL(void)    CPUMR0FpuStatePrepareHostCpuForUse(PVMCPUCC pVCpu);
 VMMR0_INT_DECL(void)    CPUMR0FpuStateActualizeForRead(PVMCPUCC pVCpu);

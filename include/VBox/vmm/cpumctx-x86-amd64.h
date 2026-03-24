@@ -441,8 +441,9 @@ typedef struct CPUMCTX
     /** 0x270 - The mask to pass to XSAVE/XRSTOR in EDX:EAX.  If zero we use
      *  FXSAVE/FXRSTOR (since bit 0 will always be set, we only need to test it). */
     uint64_t            fXStateMask;
-    /** 0x278 - Mirror of CPUMCPU::fUseFlags[CPUM_USED_FPU_GUEST]. */
-    bool                fUsedFpuGuest;
+    /** 0x278 - Mirror of CPUMCPU::fUseFlags[CPUM_USED_FPU_GUEST].
+     * @note Marked volatile as it may be modified by the preemption hook.  */
+    bool volatile       fUsedFpuGuest;
     uint8_t             afUnused[7];
 
     /* ---- Start of members not zeroed at reset. ---- */

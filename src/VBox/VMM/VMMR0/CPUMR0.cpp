@@ -1,4 +1,4 @@
-/* $Id: CPUMR0.cpp 113496 2026-03-22 22:23:27Z knut.osmundsen@oracle.com $ */
+/* $Id: CPUMR0.cpp 113526 2026-03-24 08:45:34Z knut.osmundsen@oracle.com $ */
 /** @file
  * CPUM - Host Context Ring 0, only targeting x86.
  */
@@ -510,6 +510,8 @@ DECL_FORCE_INLINE(void) cpumR0FpuEnsureHostCurrent(PVMCPUCC pVCpu)
 
 
 /**
+ * Called by the AMD-V & VT-x code just before running guest code to ensure the
+ * guest FPU stat is loaded.
  *
  * @returns VINF_SUCCESS on success, host CR0 unmodified.
  * @returns VINF_CPUM_HOST_CR0_MODIFIED on success when the host CR0 was
@@ -517,11 +519,26 @@ DECL_FORCE_INLINE(void) cpumR0FpuEnsureHostCurrent(PVMCPUCC pVCpu)
  *
  * @param   pVM     The cross context VM structure.
  * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   fUnlock Whether to unlock the host kernel FPU or not.
+ *                  This is mainly for linux hosts where IEM have to lock the
+ *                  kernel FPU before it can use it, causing preemption to be
+ *                  disabled.
  */
-VMMR0_INT_DECL(int) CPUMR0EnsureLoadedGuestFPU(PVMCC pVM, PVMCPUCC pVCpu)
+VMMR0_INT_DECL(int) CPUMR0EnsureLoadedGuestFPU(PVMCC pVM, PVMCPUCC pVCpu, bool fUnlock)
 {
     Assert(!ASMIntAreEnabled());
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+
+    /*
+     * If locked, automatically unlock it, if requested.
+     */
+    if (fUnlock)
+    {
+        /** @todo move this to post-execution action. */
+        if (   (pVCpu->cpumr0.s.fFpuBegin & (SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE | SUPR0FPU_BEGIN_F_HOST_STATE_LOCKED))
+            == (SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE | SUPR0FPU_BEGIN_F_HOST_STATE_LOCKED) )
+            pVCpu->cpumr0.s.fFpuBegin = SUPR0FpuUnlock(pVCpu->cpumr0.s.fFpuBegin);
+    }
 
     /*
      * Load the FPU state if not loaded yet.
@@ -537,14 +554,6 @@ VMMR0_INT_DECL(int) CPUMR0EnsureLoadedGuestFPU(PVMCC pVM, PVMCPUCC pVCpu)
      * SIMD instructions for something (typically crypto or raid checksums).
      */
     cpumR0FpuEnsureHostCurrent(pVCpu);
-
-    /*
-     * Automatically unlock it, if requested.
-     */
-    /** @todo move this to post-execution action. */
-    if (   (pVCpu->cpumr0.s.fFpuBegin & (SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE | SUPR0FPU_BEGIN_F_HOST_STATE_LOCKED))
-        == (SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE | SUPR0FPU_BEGIN_F_HOST_STATE_LOCKED) )
-        pVCpu->cpumr0.s.fFpuBegin = SUPR0FpuUnlock(pVCpu->cpumr0.s.fFpuBegin);
 
     return VINF_SUCCESS;
 }
@@ -643,20 +652,32 @@ VMMRZ_INT_DECL(void)    CPUMR0FpuStatePrepareHostCpuForUse(PVMCPUCC pVCpu)
             Assert(pVCpu->cpumr0.s.fFpuBegin == 0);
             pVCpu->cpumr0.s.fFpuBegin = SUPR0FpuBegin(VMMR0ThreadCtxHookIsEnabled(pVCpu));
             if (pVCpu->cpumr0.s.fFpuBegin & SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE)
+            {
+                STAM_REL_COUNTER_INC(&pVCpu->cpum.s.StatPrepHostFpu0Lock);
                 pVCpu->cpumr0.s.fFpuBegin = SUPR0FpuLock(pVCpu->cpumr0.s.fFpuBegin);
+            }
+            else
+                STAM_REL_COUNTER_INC(&pVCpu->cpum.s.StatPrepHostFpu0NoLock);
 
             if (cpumRZSaveHostFPUState(&pVCpu->cpum.s) == VINF_CPUM_HOST_CR0_MODIFIED)
                 HMR0NotifyCpumModifiedHostCr0(pVCpu);
-            Log6(("CPUMR0FpuStatePrepareHostCpuForUse: #0 - %#x\n", ASMGetCR0()));
+            Log6(("CPUMR0FpuStatePrepareHostCpuForUse: #0 - %#x/%#x/%#x\n",
+                  (uint32_t)ASMGetCR0(), pVCpu->cpumr0.s.fFpuBegin, pVCpu->cpum.s.fUseFlags));
             break;
 
         case CPUM_USED_FPU_HOST:
             if (pVCpu->cpumr0.s.fFpuBegin & SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE)
             {
                 if (!(pVCpu->cpumr0.s.fFpuBegin & SUPR0FPU_BEGIN_F_HOST_STATE_LOCKED))
+                {
                     pVCpu->cpumr0.s.fFpuBegin = SUPR0FpuLock(pVCpu->cpumr0.s.fFpuBegin);
+                    STAM_REL_COUNTER_INC(&pVCpu->cpum.s.StatPrepHostFpu1Lock);
+                }
                 else
+                {
                     Assert(!SUPR0FpuEnsureCurrent(pVCpu->cpumr0.s.fFpuBegin));
+                    STAM_REL_COUNTER_INC(&pVCpu->cpum.s.StatPrepHostFpu1NoLock);
+                }
             }
             Log6(("CPUMR0FpuStatePrepareHostCpuForUse: #1 - %#x\n", ASMGetCR0()));
             break;
@@ -665,13 +686,20 @@ VMMRZ_INT_DECL(void)    CPUMR0FpuStatePrepareHostCpuForUse(PVMCPUCC pVCpu)
             if (pVCpu->cpumr0.s.fFpuBegin & SUPR0FPU_BEGIN_F_HOST_MAY_REPLACE_STATE)
             {
                 if (!(pVCpu->cpumr0.s.fFpuBegin & SUPR0FPU_BEGIN_F_HOST_STATE_LOCKED))
+                {
+                    STAM_REL_COUNTER_INC(&pVCpu->cpum.s.StatPrepHostFpu2Lock);
                     pVCpu->cpumr0.s.fFpuBegin = SUPR0FpuLock(pVCpu->cpumr0.s.fFpuBegin);
+                }
                 else
+                {
+                    STAM_REL_COUNTER_INC(&pVCpu->cpum.s.StatPrepHostFpu2NoLock);
                     Assert(!SUPR0FpuEnsureCurrent(pVCpu->cpumr0.s.fFpuBegin));
+                }
             }
             cpumRZSaveGuestFpuState(&pVCpu->cpum.s, true /*fLeaveFpuAccessible*/);
             HMR0NotifyCpumUnloadedGuestFpuState(pVCpu);
-            Log6(("CPUMR0FpuStatePrepareHostCpuForUse: #2 - %#x\n", ASMGetCR0()));
+            Log6(("CPUMR0FpuStatePrepareHostCpuForUse: #2 - %#x/%#x/%#x\n",
+                  (uint32_t)ASMGetCR0(), pVCpu->cpumr0.s.fFpuBegin, pVCpu->cpum.s.fUseFlags));
             break;
 
         default:

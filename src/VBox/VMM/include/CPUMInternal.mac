@@ -1,4 +1,4 @@
-; $Id: CPUMInternal.mac 113496 2026-03-22 22:23:27Z knut.osmundsen@oracle.com $
+; $Id: CPUMInternal.mac 113526 2026-03-24 08:45:34Z knut.osmundsen@oracle.com $
 ;; @file
 ; CPUM - Internal header file (asm).
 ;
@@ -367,6 +367,12 @@ struc CPUMCPU
     alignb 64
     .StatGuestFpuLoad           resq    1
     .StatGuestFpuReload         resq    1
+    .StatPrepHostFpu0Lock       resq    1
+    .StatPrepHostFpu0NoLock     resq    1
+    .StatPrepHostFpu1Lock       resq    1
+    .StatPrepHostFpu1NoLock     resq    1
+    .StatPrepHostFpu2Lock       resq    1
+    .StatPrepHostFpu2NoLock     resq    1
     .StatGuestFpuLoadPerf       resb    STAMPROFILE_size
 
     ;

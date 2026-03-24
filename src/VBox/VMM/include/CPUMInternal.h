@@ -1,4 +1,4 @@
-/* $Id: CPUMInternal.h 113496 2026-03-22 22:23:27Z knut.osmundsen@oracle.com $ */
+/* $Id: CPUMInternal.h 113526 2026-03-24 08:45:34Z knut.osmundsen@oracle.com $ */
 /** @file
  * CPUM - Internal header file.
  */
@@ -528,13 +528,26 @@ typedef struct CPUMCPU
     STAMCOUNTER             StatGuestFpuLoad;
     /** Release stat: Calls to SUPR0FpuEnsureCurrent. */
     STAMCOUNTER             StatGuestFpuReload;
+    /** Release stat: CPUMR0FpuStatePrepareHostCpuForUse case 0, locking FPU. */
+    STAMCOUNTER             StatPrepHostFpu0Lock;
+    /** Release stat: CPUMR0FpuStatePrepareHostCpuForUse case 0, no locking. */
+    STAMCOUNTER             StatPrepHostFpu0NoLock;
+    /** Release stat: CPUMR0FpuStatePrepareHostCpuForUse case 1, locking FPU. */
+    STAMCOUNTER             StatPrepHostFpu1Lock;
+    /** Release stat: CPUMR0FpuStatePrepareHostCpuForUse case 1, no locking. */
+    STAMCOUNTER             StatPrepHostFpu1NoLock;
+    /** Release stat: CPUMR0FpuStatePrepareHostCpuForUse case 2, locking FPU. */
+    STAMCOUNTER             StatPrepHostFpu2Lock;
+    /** Release stat: CPUMR0FpuStatePrepareHostCpuForUse case 2, no locking. */
+    STAMCOUNTER             StatPrepHostFpu2NoLock;
     /** Profiling SUPR0FpuEnsureCurrent. */
     STAMPROFILE             StatGuestFpuLoadPerf;
 #endif
 
     /** Use flags.
-     * These flags indicates both what is to be used and what has been used. */
-    uint32_t                fUseFlags;
+     * These flags indicates both what is to be used and what has been used.
+     * @note Marked volatile as it can be modified by the preemption hook.  */
+    uint32_t volatile       fUseFlags;
 
     /** Changed flags.
      * These flags indicates to REM (and others) which important guest
@@ -592,7 +605,9 @@ typedef CPUMCPU *PCPUMCPU;
 typedef struct CPUMR0PERVCPU
 {
 #if defined(VBOX_VMM_TARGET_X86) /** @todo temporary: */ || defined(VBOX_VMM_TARGET_AGNOSTIC)
-    /** The SUPR0FpuBegin return value (state). */
+    /** The SUPR0FpuBegin return value (state).
+     * @note Not marked volatile, as all tests and modifications should be done
+     *       with interrupts disabled. */
     uint32_t                fFpuBegin;
 #else
     uint32_t                uDummy;
