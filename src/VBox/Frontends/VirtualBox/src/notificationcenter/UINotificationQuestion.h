@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.h 113517 2026-03-23 17:34:10Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.h 113535 2026-03-24 10:01:33Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion declarations.
  */
@@ -175,6 +175,9 @@ public:
         static bool confirmInaccesibleMediaClear(const QStringList &media,
                                                  UIMediumDeviceType enmType,
                                                  QWidget *pParent);
+
+        /** Confirms discarding VISO. */
+        static bool confirmVisoDiscard(QWidget *pParent);
     /** @} */
 
     /** @name Network Manager warnings.

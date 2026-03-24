@@ -1,4 +1,4 @@
-/* $Id: UINotificationQuestion.cpp 113517 2026-03-23 17:34:10Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationQuestion.cpp 113535 2026-03-24 10:01:33Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationQuestion implementations.
  */
@@ -661,6 +661,19 @@ bool UINotificationQuestion::confirmInaccesibleMediaClear(const QStringList &med
                           << QApplication::translate("UIMessageCenter", "Clear", "inaccessible media") /* ok button text */,
             false /* ok button by default? */,
             pParent);
+}
+
+/* static */
+bool UINotificationQuestion::confirmVisoDiscard(QWidget *pParent)
+{
+    return createBlockingQuestion(
+        QApplication::translate("UIMessageCenter", "Discard VISO?"),
+        QApplication::translate("UIMessageCenter", "<p>To open a VISO file you will have to discard the current content.</p>"
+                                                   "<p>Are you sure you want to proceed?</p>"),
+        QStringList() << QString() /* cancel button text */
+                      << QApplication::translate("UIMessageCenter", "Discard", "VISO") /* ok button text */,
+        false /* ok button by default? */,
+        pParent);
 }
 
 /* static */
