@@ -1,4 +1,4 @@
-/* $Id: UINotificationCenter.cpp 113516 2026-03-23 16:20:03Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationCenter.cpp 113530 2026-03-24 09:05:13Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINotificationCenter class implementation.
  */
@@ -1237,9 +1237,9 @@ void UINotificationCenter::adjustGeometry()
     /* Acquire item layout spacing: */
     const int iSpacing = m_pLayoutItems->spacing();
 
-    /* Gather suitable minumum and maximum notification-center widths: */
+    /* Gather suitable minumum and actual notification-center widths: */
     int iMinimumWidth = 0;
-    int iMaximumWidth = minimumSizeHint().width();
+    int iActualWidth = minimumSizeHint().width();
     if (!isExtendedMode())
     {
         /* Acquire Open button width hint: */
@@ -1247,8 +1247,8 @@ void UINotificationCenter::adjustGeometry()
         /* Make sure minimum width is no less than button width hint: */
         iMinimumWidth = qMax(iMinimumWidth, iButtonWidthHint);
 
-        /* Make sure minimum width is no less than sane minimum (200px): */
-        iMaximumWidth = qMax(200, iMaximumWidth);
+        /* Make sure actual width is no less than sane minimum (200px): */
+        iActualWidth = qMax(iActualWidth, 200);
     }
     else
     {
@@ -1257,19 +1257,19 @@ void UINotificationCenter::adjustGeometry()
         foreach (UINotificationObjectItem *pItem, m_items.values())
             iItemsWidthHint = qMax(iItemsWidthHint, pItem->detailsWidthHint());
         /* Make sure maximum width is more or equal to items width hint: */
-        iMaximumWidth = qMax(iMaximumWidth, iItemsWidthHint);
-        iMaximumWidth += iL + iR;
+        iActualWidth = qMax(iActualWidth, iItemsWidthHint);
+        iActualWidth += iL + iR;
     }
-    /* Make sure maximum width is no less than minimum one: */
-    iMaximumWidth = qMax(iMaximumWidth, iMinimumWidth);
+    /* Make sure actual width is no less than minimum one: */
+    iActualWidth = qMax(iActualWidth, iMinimumWidth);
 
     /* Calculate and propagate details width hint: */
-    const int iDetailsWidthHint = iMaximumWidth - iL - iR;
+    const int iDetailsWidthHint = iActualWidth - iL - iR;
     foreach (UINotificationObjectItem *pItem, m_items.values())
         pItem->setDetailsWidthHint(iDetailsWidthHint);
 
     /* Gather suitable notification-center height (parent height in Simple mode): */
-    int iMaximumHeight = iParentHeight;
+    int iActualHeight = iParentHeight;
     if (isExtendedMode())
     {
         /* In Extended mode we're taking into account cumulative items height: */
@@ -1279,22 +1279,22 @@ void UINotificationCenter::adjustGeometry()
                 iItemsHeight += pItem->minimumSizeHint().height() + iSpacing;
         if (iItemsHeight > 0)
             iItemsHeight -= iSpacing;
-        iMaximumHeight = iItemsHeight + iT + iB;
+        iActualHeight = iItemsHeight + iT + iB;
     }
 
     /* Simple mode: */
     if (!isExtendedMode())
     {
         /* Move and resize notification-center finally: */
-        move(iParentWidth - (iMinimumWidth + (double)animatedValue() / 100 * (iMaximumWidth - iMinimumWidth)), 0);
-        resize(iMaximumWidth, iMaximumHeight);
+        move(iParentWidth - (iMinimumWidth + (double)animatedValue() / 100 * (iActualWidth - iMinimumWidth)), 0);
+        resize(iActualWidth, iActualHeight);
     }
     /* Extended mode: */
     else
     {
         /* Move and resize notification-center finally: */
-        move(iParentWidth / 2 - iMaximumWidth / 2, - iMaximumHeight + (double)animatedValue() / 100 * iMaximumHeight);
-        resize(iMaximumWidth, iMaximumHeight);
+        move(iParentWidth / 2 - iActualWidth / 2, - iActualHeight + (double)animatedValue() / 100 * iActualHeight);
+        resize(iActualWidth, iActualHeight);
     }
 }
 
