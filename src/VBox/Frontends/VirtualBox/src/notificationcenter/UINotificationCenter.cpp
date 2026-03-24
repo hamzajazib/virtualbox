@@ -1,4 +1,4 @@
-/* $Id: UINotificationCenter.cpp 113530 2026-03-24 09:05:13Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationCenter.cpp 113531 2026-03-24 09:09:31Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UINotificationCenter class implementation.
  */
@@ -1242,9 +1242,8 @@ void UINotificationCenter::adjustGeometry()
     int iActualWidth = minimumSizeHint().width();
     if (!isExtendedMode())
     {
-        /* Acquire Open button width hint: */
+        /* Make sure minimum width is no less than Open button width hint: */
         const int iButtonWidthHint = m_pButtonOpen->minimumSizeHint().width() + iL + iR;
-        /* Make sure minimum width is no less than button width hint: */
         iMinimumWidth = qMax(iMinimumWidth, iButtonWidthHint);
 
         /* Make sure actual width is no less than sane minimum (200px): */
@@ -1252,18 +1251,17 @@ void UINotificationCenter::adjustGeometry()
     }
     else
     {
-        /* Search for maximum item's details width hint: */
+        /* Make sure actual width is more or equal to items width hint: */
         int iItemsWidthHint = 0;
         foreach (UINotificationObjectItem *pItem, m_items.values())
             iItemsWidthHint = qMax(iItemsWidthHint, pItem->detailsWidthHint());
-        /* Make sure maximum width is more or equal to items width hint: */
         iActualWidth = qMax(iActualWidth, iItemsWidthHint);
         iActualWidth += iL + iR;
     }
     /* Make sure actual width is no less than minimum one: */
     iActualWidth = qMax(iActualWidth, iMinimumWidth);
 
-    /* Calculate and propagate details width hint: */
+    /* Propagate details width hint (which is actual width hint minus two margins): */
     const int iDetailsWidthHint = iActualWidth - iL - iR;
     foreach (UINotificationObjectItem *pItem, m_items.values())
         pItem->setDetailsWidthHint(iDetailsWidthHint);
