@@ -1,4 +1,4 @@
-/* $Id: UIVMActivityMonitor.cpp 113506 2026-03-23 14:20:22Z serkan.bayraktar@oracle.com $ */
+/* $Id: UIVMActivityMonitor.cpp 113541 2026-03-24 15:05:33Z serkan.bayraktar@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIVMActivityMonitor class implementation.
  */
@@ -1426,7 +1426,6 @@ UIVMActivityMonitorLocal::UIVMActivityMonitorLocal(EmbedTo enmEmbedding, QWidget
     connect(&uiCommon(), &UICommon::sigAskToDetachCOM, this, &UIVMActivityMonitorLocal::sltClearCOMData);
     connect(&translationEventListener(), &UITranslationEventListener::sigRetranslateUI, this, &UIVMActivityMonitorLocal::sltRetranslateUI);
     setMachine(machine);
-
     /* Configure charts: */
     if (m_charts.size() < Metric_Type_Max && m_charts[Metric_Type_CPU])
     {
@@ -1456,6 +1455,11 @@ QUuid UIVMActivityMonitorLocal::machineId() const
     if (m_comMachine.isNull())
         return QUuid();
     return m_comMachine.GetId();
+}
+
+bool UIVMActivityMonitorLocal::isMachineRunning() const
+{
+    return m_comMachine.GetState() == KMachineState_Running;
 }
 
 void UIVMActivityMonitorLocal::sltRetranslateUI()
@@ -1607,20 +1611,34 @@ void UIVMActivityMonitorLocal::sltMachineStateChange(const QUuid &uId)
         return;
     if (m_comMachine.GetId() != uId)
         return;
-    if (m_comMachine.GetState() == KMachineState_Running)
+    switch (m_comMachine.GetState())
     {
-        setEnabled(true);
-        openSession();
-        start();
+        case KMachineState_Running:
+        {
+            setEnabled(true);
+            openSession();
+            start();
+            break;
+        }
+        case KMachineState_Paused:
+        {
+            /* If we are already active then stop: */
+            if (!m_comSession.isNull() && m_pTimer && m_pTimer->isActive())
+                m_pTimer->stop();
+            break;
+        }
+        case KMachineState_Saved:
+        case KMachineState_Teleported:
+        case KMachineState_Aborted:
+        case KMachineState_AbortedSaved:
+        case KMachineState_PoweredOff:
+        {
+            reset();
+            break;
+        }
+        default:
+        break;
     }
-    else if (m_comMachine.GetState() == KMachineState_Paused)
-    {
-        /* If we are already active then stop: */
-        if (!m_comSession.isNull() && m_pTimer && m_pTimer->isActive())
-            m_pTimer->stop();
-    }
-    else
-        reset();
 }
 
 QString UIVMActivityMonitorLocal::defaultMachineFolder() const
@@ -1648,6 +1666,12 @@ template <typename T> void UIVMActivityMonitorLocal::detachCOMResource(T &comObj
 
 void UIVMActivityMonitorLocal::sltClearCOMData()
 {
+    clearCOMObjectsExceptMachine();
+    detachCOMResource(m_comMachine);
+}
+
+void UIVMActivityMonitorLocal::clearCOMObjectsExceptMachine()
+{
     detachCOMResource(m_comGuest);
     detachCOMResource(m_comMachineDebugger);
 
@@ -1665,8 +1689,6 @@ void UIVMActivityMonitorLocal::sltClearCOMData()
     if (!m_comSession.isNull())
         m_comSession.UnlockMachine();
     detachCOMResource(m_comSession);
-
-    detachCOMResource(m_comMachine);
     detachCOMResource(m_comConsole);
     detachCOMResource(m_performanceCollector);
     detachCOMResource(m_comConsole);
@@ -1695,7 +1717,7 @@ void UIVMActivityMonitorLocal::reset()
     resetUSBInfoLabel();
     resetVMExitInfoLabel();
     update();
-    sltClearCOMData();
+    clearCOMObjectsExceptMachine();
 }
 
 void UIVMActivityMonitorLocal::prepareWidgets()
@@ -2344,6 +2366,11 @@ QString UIVMActivityMonitorCloud::machineName() const
     if (m_comMachine.isOk())
         return m_comMachine.GetName();
     return QString();
+}
+
+bool UIVMActivityMonitorCloud::isMachineRunning() const
+{
+    return m_comMachine.GetState() == KCloudMachineState_Running;
 }
 
 void UIVMActivityMonitorCloud::sltRetranslateUI()

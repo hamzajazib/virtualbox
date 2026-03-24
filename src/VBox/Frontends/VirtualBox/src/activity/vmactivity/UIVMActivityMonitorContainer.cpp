@@ -1,4 +1,4 @@
-/* $Id: UIVMActivityMonitorContainer.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIVMActivityMonitorContainer.cpp 113541 2026-03-24 15:05:33Z serkan.bayraktar@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIVMLogViewer class implementation.
  */
@@ -206,8 +206,17 @@ void UIVMActivityMonitorContainer::removeTabs(const QVector<QUuid> &machineIdsTo
             continue;
         if (machineIdsToRemove.contains(pMonitor->machineId()))
         {
-            removeList << pMonitor;
-            m_pTabWidget->removeTab(i);
+            //pMonitor->isMachineRunning();
+            /* If the VM is running just hide the tab hosting the activity monitor: */
+            // if (pMonitor->isMachineRunning())
+            // {
+            //     m_pTabWidget->setTabVisible(i, false);
+            // }
+            // else
+            {
+                removeList << pMonitor;
+                m_pTabWidget->removeTab(i);
+            }
         }
     }
     qDeleteAll(removeList.begin(), removeList.end());

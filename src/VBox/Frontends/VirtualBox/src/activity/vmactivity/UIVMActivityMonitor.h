@@ -1,4 +1,4 @@
-/* $Id: UIVMActivityMonitor.h 113506 2026-03-23 14:20:22Z serkan.bayraktar@oracle.com $ */
+/* $Id: UIVMActivityMonitor.h 113541 2026-03-24 15:05:33Z serkan.bayraktar@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIVMActivityMonitor class declaration.
  */
@@ -168,6 +168,7 @@ public:
     virtual QUuid machineId() const = 0;
     virtual QString machineName() const = 0;
     void setDataSeriesColor(int iIndex, const QColor &color);
+    virtual bool isMachineRunning() const = 0;
 
 public slots:
 
@@ -283,6 +284,7 @@ protected:
     virtual QString defaultMachineFolder() const RT_OVERRIDE;
     virtual void reset() RT_OVERRIDE;
     virtual void start() RT_OVERRIDE;
+    virtual bool isMachineRunning() const RT_OVERRIDE;
 
 private slots:
 
@@ -311,6 +313,7 @@ private:
     void resetDiskIOInfoLabel();
     virtual void prepareWidgets() RT_OVERRIDE;
     void configureCOMPerformanceCollector();
+    void clearCOMObjectsExceptMachine();
     template <typename T> void detachCOMResource(T &comObject);
 
     bool m_fGuestAdditionsAvailable;
@@ -343,6 +346,7 @@ public:
     UIVMActivityMonitorCloud(EmbedTo enmEmbedding, QWidget *pParent, const CCloudMachine &machine, UIActionPool *pActionPool);
     virtual QUuid machineId() const RT_OVERRIDE;
     virtual QString machineName() const RT_OVERRIDE;
+    virtual bool isMachineRunning() const RT_OVERRIDE;
     /** According to OCI docs returned time stamp is in RFC3339 format. */
     static QString formatCloudTimeStamp(const QString &strInput);
 
