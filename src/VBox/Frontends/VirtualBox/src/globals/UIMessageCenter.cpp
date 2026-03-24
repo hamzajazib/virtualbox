@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.cpp 113536 2026-03-24 12:55:20Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.cpp 113543 2026-03-24 15:59:43Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class implementation.
  */
@@ -85,19 +85,6 @@ void UIMessageCenter::destroy()
     s_pInstance->cleanup();
     /* Destroy instance: */
     delete s_pInstance;
-}
-
-void UIMessageCenter::setWarningShown(const QString &strWarningName, bool fWarningShown) const
-{
-    if (fWarningShown && !m_warnings.contains(strWarningName))
-        m_warnings.append(strWarningName);
-    else if (!fWarningShown && m_warnings.contains(strWarningName))
-        m_warnings.removeAll(strWarningName);
-}
-
-bool UIMessageCenter::warningShown(const QString &strWarningName) const
-{
-    return m_warnings.contains(strWarningName);
 }
 
 int UIMessageCenter::message(QWidget *pParent, MessageType enmType,

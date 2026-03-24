@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.h 113536 2026-03-24 12:55:20Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.h 113543 2026-03-24 15:59:43Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class declaration.
  */
@@ -87,11 +87,6 @@ public:
     static void create();
     /** Destroys message-center singleton. */
     static void destroy();
-
-    /** Defines whether warning with particular @a strWarningName is @a fShown. */
-    void setWarningShown(const QString &strWarningName, bool fShown) const;
-    /** Returns whether warning with particular @a strWarningName is shown. */
-    bool warningShown(const QString &strWarningName) const;
 
     /** Shows a general type of 'Message'.
       * @param  pParent            Brings the message-box parent.
@@ -277,7 +272,7 @@ private:
     /** Constructs message-center. */
     UIMessageCenter();
     /** Destructs message-center. */
-    ~UIMessageCenter();
+    virtual ~UIMessageCenter() RT_OVERRIDE RT_FINAL;
 
     /** Prepares all. */
     void prepare();
@@ -302,9 +297,6 @@ private:
                        int iButton1, int iButton2, int iButton3,
                        const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
                        const QString &strAutoConfirmId, const QString &strHelpKeyword) const;
-
-    /** Holds the list of shown warnings. */
-    mutable QStringList m_warnings;
 
     /** Holds the singleton message-center instance. */
     static UIMessageCenter *s_pInstance;
