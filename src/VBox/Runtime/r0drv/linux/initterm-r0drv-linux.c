@@ -1,4 +1,4 @@
-/* $Id: initterm-r0drv-linux.c 113065 2026-02-17 15:00:09Z vadim.galitsyn@oracle.com $ */
+/* $Id: initterm-r0drv-linux.c 113547 2026-03-24 23:42:47Z knut.osmundsen@oracle.com $ */
 /** @file
  * IPRT - Initialization & Termination, R0 Driver, Linux.
  */
@@ -60,9 +60,9 @@ static DECLARE_TASK_QUEUE(g_rtR0LnxWorkQueue);
  * This is a special mm structure used to manage the kernel address space. */
 struct mm_struct *g_pLnxInitMm = NULL;
 
-#if RTLNX_VER_MIN(6,19,0)
+#if RTLNX_VER_MIN(6,19,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
 /** Pointer to __flush_tlb_all kernel symbol. */
-void (*g_pfnLinuxFlushTlbAll)(void);
+__typeof__(__flush_tlb_all) *g_pfnLinuxFlushTlbAll;
 #endif
 
 
@@ -128,8 +128,11 @@ DECLHIDDEN(int) rtR0InitNative(void)
         rc = VERR_NO_MEMORY;
 #endif
 
-
-    /* Try get hold of 'init_mm' so we can protect kernel memory. */
+    /*
+     * There are some unexported symbols we want, try get them:
+     *      - 'init_mm' so we can protect kernel memory (esp on arm64).
+     *      - __flush_tlb_all is restricted since 6.19 (x86 & amd64).
+     */
 #if RTLNX_VER_MIN(3,16,0) /** @todo support this for older kernels (see also dbgkrnlinfo-r0drv-linux.c and fileio-r0drv-linux.c) */
     {
         RTDBGKRNLINFO hKrnlInfo;
@@ -138,17 +141,25 @@ DECLHIDDEN(int) rtR0InitNative(void)
         {
             g_pLnxInitMm = (struct mm_struct *)RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL,  "init_mm");
             //printk("rtR0InitNative: g_pLnxInitMm=%#lx\n", (unsigned long)g_pLnxInitMm);
-            printk("rtR0InitNative: g_pLnxInitMm=%p\n", g_pLnxInitMm);
-
-            RTR0DbgKrnlInfoRelease(hKrnlInfo);
-# if RTLNX_VER_MIN(6,19,0)
-            g_pfnLinuxFlushTlbAll = __symbol_get("__flush_tlb_all");
-            if (!RT_VALID_PTR(g_pfnLinuxFlushTlbAll))
-                printk("rtR0InitNative: can't load __flush_tlb_all\n");
+            printk(KERN_INFO "rtR0InitNative: g_pLnxInitMm=%p\n", g_pLnxInitMm);
+# if RTLNX_VER_MIN(6,19,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+            g_pfnLinuxFlushTlbAll = (__typeof__(g_pfnLinuxFlushTlbAll))RTR0DbgKrnlInfoGetFunction(hKrnlInfo, NULL,
+                                                                                                   "__flush_tlb_all");
 # endif
+            RTR0DbgKrnlInfoRelease(hKrnlInfo);
         }
         else
-            printk("rtR0InitNative: RTR0DbgKrnlInfoOpen failed: %d\n", rc);
+            printk(KERN_WARNING "rtR0InitNative: RTR0DbgKrnlInfoOpen failed: %d\n", rc);
+
+# if RTLNX_VER_MIN(6,19,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+        if (!RT_VALID_PTR(g_pfnLinuxFlushTlbAll))
+            g_pfnLinuxFlushTlbAll = (__typeof__(g_pfnLinuxFlushTlbAll))__symbol_get("__flush_tlb_all");
+        if (!RT_VALID_PTR(g_pfnLinuxFlushTlbAll))
+        {
+            printk(KERN_ERR "rtR0InitNative: Unable to resolve '__flush_tlb_all'!\n");
+            g_pfnLinuxFlushTlbAll = NULL;
+        }
+# endif
     }
 #endif
 
@@ -161,16 +172,16 @@ DECLHIDDEN(void) rtR0TermNative(void)
 {
     IPRT_LINUX_SAVE_EFL_AC();
 
-# if RTLNX_VER_MIN(6,19,0)
-    if (RT_VALID_PTR(g_pfnLinuxFlushTlbAll))
-        symbol_put_addr(g_pfnLinuxFlushTlbAll);
-    g_pfnLinuxFlushTlbAll = NULL;
-#endif
-
     rtR0LnxWorkqueueFlush();
 #if RTLNX_VER_MIN(2,5,41)
     destroy_workqueue(g_prtR0LnxWorkQueue);
     g_prtR0LnxWorkQueue = NULL;
+#endif
+
+#if RTLNX_VER_MIN(6,19,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+    /* Don't bother putting __flush_tlb_all, it's in kernel text and we
+       probably got it via kallsyms anyway. */
+    g_pfnLinuxFlushTlbAll = NULL;
 #endif
 
     IPRT_LINUX_RESTORE_EFL_AC();

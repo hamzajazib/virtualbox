@@ -1,4 +1,4 @@
-/* $Id: SUPDrv-linux.c 113539 2026-03-24 14:36:41Z ramshankar.venkataraman@oracle.com $ */
+/* $Id: SUPDrv-linux.c 113547 2026-03-24 23:42:47Z knut.osmundsen@oracle.com $ */
 /** @file
  * VBoxDrv - The VirtualBox Support Driver - Linux specifics.
  */
@@ -80,10 +80,9 @@
 # include <iprt/asm-amd64-x86.h>
 #endif
 
-#if RTLNX_VER_MIN(6,16,0) && defined(CONFIG_MODULES) && defined(CONFIG_KVM_GENERIC_HARDWARE_ENABLING) && defined(CONFIG_KPROBES) && defined(VBOX_WITH_HOST_VMX)
+#if RTLNX_VER_MIN(6,16,0) && defined(CONFIG_MODULES) && defined(CONFIG_KVM_GENERIC_HARDWARE_ENABLING) && defined(VBOX_WITH_HOST_VMX)
 # if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 #  include <linux/kvm_host.h>
-#  include <linux/kprobes.h>
 #  define SUPDRV_LINUX_HAS_KVM_HWVIRT_API
 # endif
 #endif
@@ -180,30 +179,38 @@ static int  supdrvLinuxLdrModuleNotifyCallback(struct notifier_block *pBlock,
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /**
- * Device extention & session data association structure.
+ * Device extension & session data association structure.
  */
 static SUPDRVDEVEXT         g_DevExt;
 
-#if RTLNX_VER_MIN(6,15,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
-/** Pointer to the switch_fpu_return function. */
-static __typeof__(switch_fpu_return) *g_pfnSwitchFpuReturn;
-#endif
-
 #ifdef SUPDRV_LINUX_HAS_KVM_HWVIRT_API
 /** Whether we have called kvm_enable_virtualization(). */
-static bool                 g_fEnabledHwvirtUsingKvm;
+static bool                                     g_fEnabledHwvirtUsingKvm;
+/** Whether we think AMD-V is supported by the CPU. */
+static bool                                     g_fCpuSupportsSvm;
+/** Whether we think VT-x is supported by the CPU. */
+static bool                                     g_fCpuSupportsVmx;
+/** Whether we need to put the corresponding KVM function pointers. */
+static bool                                     g_fPutKvmEnableVirtualization, g_fPutKvmDisableVirtualization;
 /** Function pointer to kvm_enable_virtualization(). */
-static int                  (*g_pfnKvmEnableVirtualization)(void);
+static __typeof__(kvm_enable_virtualization)   *g_pfnKvmEnableVirtualization;
 /** Function pointer to kvm_disable_virtualization(). */
-static void                 (*g_pfnKvmDisableVirtualization)(void);
-# if RTLNX_VER_MIN(6,19,0)
-/** Function pointer to cr4_update_irqsoff(). */
-static void                 (*g_pfnCr4UpdateIrqsoff)(unsigned long set, unsigned long clear);
-/** Function pointer to cr4_read_shadow(). */
-static unsigned long        (*g_pfnCr4ReadShadow)(void);
-# endif
+static __typeof__(kvm_disable_virtualization)  *g_pfnKvmDisableVirtualization;
 /** Pointer to the KVM hardware specific module. */
-struct module               *g_pKvmHwvirtModule;
+static struct module                           *g_pKvmHwvirtModule;
+#endif
+
+#if RTLNX_VER_MIN(6,15,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+/** Pointer to the switch_fpu_return function. */
+static __typeof__(switch_fpu_return)           *g_pfnSwitchFpuReturn;
+#endif
+
+#if RTLNX_VER_MIN(6,19,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+# define SUPDRV_LINUX_DYNAMIC_CR4_FUNCTIONS
+/** Function pointer to cr4_update_irqsoff(). */
+static __typeof__(cr4_update_irqsoff)           *g_pfnCr4UpdateIrqsoff;
+/** Function pointer to cr4_read_shadow(). */
+static __typeof__(cr4_read_shadow)              *g_pfnCr4ReadShadow;
 #endif
 
 /** Module parameter.
@@ -364,43 +371,41 @@ DECLINLINE(RTUID) vboxdrvLinuxEuid(void)
 #endif
 
 
-#if RTLNX_VER_MIN(6,15,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+#if (RTLNX_VER_MIN(6,15,0) || defined(SUPDRV_LINUX_HAS_KVM_HWVIRT_API)) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
 /**
  * Dynamically resolves a function we need.
  *
  * @returns true if gotten using __symbol_get, false if via
- *          RTR0DbgKrnlInfoGetFunction or if we failed.
+ *          RTR0DbgKrnlInfoGetFunction or register_kprobe or if we failed.
  */
-static bool supdrvLinuxFunction(const char *pszModule, const char *pszFunctionNm, PFNRT *ppfnFunction, PRTDBGKRNLINFO phKrnlInfo)
+static bool __init
+supdrvLinuxFunction(const char *pszModule, const char *pszFunctionNm, PFNRT *ppfnFunction, PRTDBGKRNLINFO phKrnlInfo)
 {
-    int rc;
+    int rc2;
+
+    /* 1. Try __symbol_get. These symbols must be put back, so return true. */
     *ppfnFunction = (PFNRT)__symbol_get(pszFunctionNm);
     if (*ppfnFunction)
         return true;
 
-    if (*phKrnlInfo == NIL_RTDBGKRNLINFO)
+    /* 2. Try /proc/kallsyms, kprobes and other magic that RTR0DbgKrnlInfoOpen wields. */
+    if (*phKrnlInfo != NIL_RTDBGKRNLINFO)
+        rc2 = RTR0DbgKrnlInfoQuerySymbol(*phKrnlInfo, pszModule, pszFunctionNm, (void **)ppfnFunction);
+    else
     {
-        rc = RTR0DbgKrnlInfoOpen(phKrnlInfo, 0 /*fFlags*/);
-        if (RT_FAILURE(rc))
-        {
-            printk(KERN_WARNING "vboxdrv: warning: failed to resolve %s%s%s (RTR0DbgKrnlInfoOpen failed: %d)\n",
-                   pszModule ? pszModule : "", pszModule ? "!" : "", pszFunctionNm, rc);
-            return false;
-        }
+        rc2 = RTR0DbgKrnlInfoOpen(phKrnlInfo, 0 /*fFlags*/);
+        if (RT_SUCCESS(rc2))
+            rc2 = RTR0DbgKrnlInfoQuerySymbol(*phKrnlInfo, pszModule, pszFunctionNm, (void **)ppfnFunction);
     }
-
-    rc = RTR0DbgKrnlInfoQuerySymbol(*phKrnlInfo, pszModule, pszFunctionNm, (void **)&ppfnFunction);
-    if (RT_FAILURE(rc))
-        printk(KERN_WARNING "vboxdrv: warning: failed to resolve %s%s%s (rc=%d)\n",
-               pszModule ? pszModule : "", pszModule ? "!" : "", pszFunctionNm, rc);
-
-    /** @todo try the register_kprobe() approach. */
+    if (RT_FAILURE(rc2))
+        printk(KERN_WARNING "vboxdrv: warning: failed to resolve %s%s%s (rc2=%d)\n",
+               pszModule ? pszModule : "", pszModule ? "!" : "", pszFunctionNm, rc2);
     return false;
 }
 #endif
 
-
 #ifdef SUPDRV_LINUX_HAS_KVM_HWVIRT_API
+
 /**
  * This is a hack/workaround that attempts to detect whether
  * kvm_enable_virtualization() is likely to have been called. See
@@ -414,16 +419,14 @@ static bool supdrvLinuxIsKvmVirtEnabledLikelyCalled(void)
      * We don't disable preemption/interrupts here because we assume all CPUs will have
      * the relevant bits identical in CR4 and EFER.
      */
-    bool const     fIsIntel  = ASMIsIntelOrCompatibleCpu();
     uint64_t const fVmxeMask = RT_BIT_64(13); /* CR4.VMXE bit. */
-    if (   fIsIntel
+    if (   g_fCpuSupportsVmx
         && (ASMGetCR4() & fVmxeMask))
         return true;
 
-    bool const     fIsAmd    = ASMIsAmdOrCompatibleCpu();
     uint32_t const idEfer    = 0xc0000080; /* EFER MSR. */
     uint64_t const fSvmeMask = RT_BIT_64(12); /* EFER.SVME bit. */
-    if (   fIsAmd
+    if (   g_fCpuSupportsSvm
         && (ASMRdMsr(idEfer) & fSvmeMask))
            return true;
 
@@ -434,141 +437,80 @@ static bool supdrvLinuxIsKvmVirtEnabledLikelyCalled(void)
 /**
  * Initializes usage of KVM hardware-virtualization symbols.
  */
-static int supdrvLinuxInitKvmSymbols(void)
+static int __init supdrvLinuxInitKvmSymbols(PRTDBGKRNLINFO phKrnlInfo)
 {
-    /* __symbol_get() will bump the reference count for the owner of these functions. */
-    void *pfnEnable = __symbol_get("kvm_enable_virtualization");
-    if (pfnEnable)
+    /*
+     * Figure out the module name first using SUPR0GetVTSupport
+     * and just stop early if we cannot figure out the module name.
+     */
+    uint32_t fCaps = 0;
+    int rc = SUPR0GetVTSupport(&fCaps);
+    g_fCpuSupportsSvm = (fCaps & SUPVTCAPS_AMD_V) || rc == VERR_SVM_NO_SVM;
+    g_fCpuSupportsVmx = (fCaps & SUPVTCAPS_VT_X)  || rc == VERR_VMX_NO_VMX;
+    const char * const pszModName = g_fCpuSupportsVmx ? "kvm_intel"
+                                  : g_fCpuSupportsSvm ? "kvm_amd" : NULL;
+    if (!pszModName)
     {
-        void *pfnDisable = __symbol_get("kvm_disable_virtualization");
-        if (pfnDisable)
+        printk(KERN_WARNING "vboxdrv: Cannot determine KVM module name for this CPU architecture! (%d)\n", rc);
+        return RT_FAILURE(rc) ? rc : VERR_NOT_FOUND;
+    }
+
+    /*
+     * Get the enable & disable functions.
+     */
+    g_fPutKvmEnableVirtualization = supdrvLinuxFunction("kvm", "kvm_enable_virtualization",
+                                                        (PFNRT *)&g_pfnKvmEnableVirtualization, phKrnlInfo);
+    if (g_pfnKvmEnableVirtualization)
+    {
+        g_fPutKvmDisableVirtualization = supdrvLinuxFunction("kvm", "kvm_disable_virtualization",
+                                                             (PFNRT *)&g_pfnKvmDisableVirtualization, phKrnlInfo);
+        if (g_pfnKvmDisableVirtualization)
         {
-# if RTLNX_VER_MIN(6,19,0)
-            void *pfnCr4UpdateIrqsoff = __symbol_get("cr4_update_irqsoff");
-            void *pfnRr4ReadShadow = __symbol_get("cr4_read_shadow");
-
-            if (   pfnCr4UpdateIrqsoff
-                && pfnRr4ReadShadow)
-            {
-                g_pfnCr4UpdateIrqsoff   = pfnCr4UpdateIrqsoff;
-                g_pfnCr4ReadShadow      = pfnRr4ReadShadow;
-
-                printk(KERN_INFO "vboxdrv: Found extra KVM hardware-virtualization symbols\n");
-            }
-            else
-            {
-                printk(KERN_WARNING "vboxdrv: Failed to find extra KVM hardware-virtualization symbols\n");
-
-                if (pfnCr4UpdateIrqsoff)
-                    symbol_put_addr(pfnCr4UpdateIrqsoff);
-                if (pfnRr4ReadShadow)
-                    symbol_put_addr(pfnRr4ReadShadow);
-            }
-#endif
             /*
              * Try to obtain a reference to kvm_intel/kvm_amd module in addition to the
              * reference to the kvm module. If we fail, we will not try to use KVM for
              * enabling/disable hardware-virtualization. This is due a a bug in the Linux
              * kernel, see @bugref{10963}.
              */
-            struct kprobe KernProbe;
-            RT_ZERO(KernProbe);
-            KernProbe.symbol_name = "find_module";
-            int const rc = register_kprobe(&KernProbe);
-            if (!rc)
+            struct module * (*pfnFindModule)(const char *) = NULL;
+            bool fPutFindModule = supdrvLinuxFunction(NULL, "find_module", (PFNRT *)&pfnFindModule, phKrnlInfo);
+            if (pfnFindModule)
             {
-                if (RT_VALID_PTR(KernProbe.addr))
+                RTTHREADPREEMPTSTATE Preempt = RTTHREADPREEMPTSTATE_INITIALIZER; /** @todo r=bird: was this just for CR4/IBT hacking? */
+                RTThreadPreemptDisable(&Preempt);
+                struct module * const pModule = pfnFindModule(pszModName);
+                RTThreadPreemptRestore(&Preempt);
+                if (fPutFindModule)
+                    symbol_put_addr(pfnFindModule);
+
+                if (pModule)
                 {
-                    struct module* (*pfnFindModule)(const char *) = (void *)(uintptr_t)KernProbe.addr;
-                    const char *pszModName = ASMIsIntelOrCompatibleCpu() ? "kvm_intel"
-                                           : ASMIsAmdOrCompatibleCpu()   ? "kvm_amd" : NULL;
-                    if (pszModName)
+                    if (try_module_get(pModule))
                     {
-                        /*
-                         * When CET is enabled, the address obtained by kprobe may be offset by a
-                         * few bytes (endbr32/64 or a multi-byte NOP sequence). We disable CET prior
-                         * to jumping into the function, as otherwise it would cause a \#GP fault.
-                         * We deliberately do not usesupdrvOSChangeCR4() here as cr4_update_irqsoff()
-                         * disallows modifying 'pinned' bits.
-                         */
-                        RTTHREADPREEMPTSTATE Preempt = RTTHREADPREEMPTSTATE_INITIALIZER;
-                        RTThreadPreemptDisable(&Preempt);
-                        RTCCUINTREG const uOldCr4 = ASMGetCR4();
-                        if (uOldCr4 & X86_CR4_CET)
-                            ASMSetCR4(uOldCr4 & ~(RTCCUINTREG)X86_CR4_CET);
-                        struct module *pModule = pfnFindModule(pszModName);
-                        if (uOldCr4 & X86_CR4_CET)
-                            ASMSetCR4(uOldCr4);
-                        RTThreadPreemptRestore(&Preempt);
-                        if (   pModule
-                            && try_module_get(pModule))
-                        {
-                            g_pfnKvmEnableVirtualization  = pfnEnable;
-                            g_pfnKvmDisableVirtualization = pfnDisable;
-                            g_pKvmHwvirtModule            = pModule;
-                            unregister_kprobe(&KernProbe);
-                            return VINF_SUCCESS;
-                        }
-                        else
-                            printk(KERN_WARNING "vboxdrv: Failed to find or obtain reference for the KVM module\n");
+                        g_pKvmHwvirtModule = pModule;
+                        return VINF_SUCCESS;
                     }
-                    else
-                        printk(KERN_WARNING "vboxdrv: Cannot determine KVM module name for this CPU architecture\n");
+                    printk(KERN_WARNING "vboxdrv: Failed to obtain reference for the KVM impl module (%s)\n", pszModName);
                 }
                 else
-                    printk(KERN_WARNING "vboxdrv: The address of the found 'find_module' symbol isn't valid\n");
-                unregister_kprobe(&KernProbe);
+                    printk(KERN_WARNING "vboxdrv: Failed to find the KVM impl module (%s)\n", pszModName);
             }
-            else
-                printk(KERN_WARNING "vboxdrv: Failed to register kprobe for 'find_module', rc=%d\n", rc);
-            symbol_put_addr(pfnDisable);
+            if (g_fPutKvmDisableVirtualization)
+                symbol_put_addr(g_pfnKvmDisableVirtualization);
         }
-        else
-            printk(KERN_WARNING "vboxdrv: Failed to find 'kvm_disable_virtualization'\n");
-        symbol_put_addr(pfnEnable);
+        if (g_fPutKvmEnableVirtualization)
+            symbol_put_addr(g_pfnKvmEnableVirtualization);
     }
-    else
-        printk(KERN_WARNING "vboxdrv: Failed to find 'kvm_enable_virtualization'\n");
 
+    g_pfnKvmDisableVirtualization  = NULL;
+    g_pfnKvmEnableVirtualization   = NULL;
+    g_pKvmHwvirtModule             = NULL;
+    g_fPutKvmEnableVirtualization  = false;
+    g_fPutKvmDisableVirtualization = false;
     return VERR_NOT_FOUND;
 }
 
-
-/**
- * Terminates usage of KVM hardware-virtualization symbols.
- */
-static void supdrvLinuxTermKvmSymbols(void)
-{
-    if (g_pfnKvmEnableVirtualization)
-    {
-        symbol_put_addr(g_pfnKvmEnableVirtualization);
-        g_pfnKvmEnableVirtualization = NULL;
-    }
-    if (g_pfnKvmDisableVirtualization)
-    {
-        symbol_put_addr(g_pfnKvmDisableVirtualization);
-        g_pfnKvmDisableVirtualization = NULL;
-    }
-# if RTLNX_VER_MIN(6,19,0)
-    if (g_pfnCr4UpdateIrqsoff)
-    {
-        symbol_put_addr(g_pfnCr4UpdateIrqsoff);
-        g_pfnCr4UpdateIrqsoff = NULL;
-    }
-    if (g_pfnCr4ReadShadow)
-    {
-        symbol_put_addr(g_pfnCr4ReadShadow);
-        g_pfnCr4ReadShadow = NULL;
-    }
-#endif
-    if (g_pKvmHwvirtModule)
-    {
-        module_put(g_pKvmHwvirtModule);
-        g_pKvmHwvirtModule = NULL;
-    }
-}
 #endif /* SUPDRV_LINUX_HAS_KVM_HWVIRT_API */
-
 
 /**
  * Initialize module.
@@ -630,29 +572,38 @@ static int __init VBoxDrvLinuxInit(void)
                     if (rc == 0)
 #endif
                     {
-#if RTLNX_VER_MIN(6,15,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
                         /*
-                         * Resolve symbols we want for FPU management.
+                         * Resolve symbols that was made difficult to access with 6.19.
                          */
+#if (defined(SUPDRV_LINUX_HAS_KVM_HWVIRT_API) || RTLNX_VER_MIN(6,15,0)) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
                         RTDBGKRNLINFO hKrnlInfo = NIL_RTDBGKRNLINFO;
-                        supdrvLinuxFunction(NULL, "switch_fpu_return", (PFNRT *)&g_pfnSwitchFpuReturn, &hKrnlInfo);
-                        if (hKrnlInfo != NIL_RTDBGKRNLINFO)
-                            RTR0DbgKrnlInfoRelease(hKrnlInfo);
-#endif
-#if RTLNX_VER_MIN(5,0,0)
-                        /*
-                         * Register the module notifier.
-                         */
-                        int rc2 = register_module_notifier(&g_supdrvLinuxModuleNotifierBlock);
-                        if (rc2)
-                            printk(KERN_WARNING "vboxdrv: failed to register module notifier! rc2=%d\n", rc2);
-#endif
-#ifdef SUPDRV_LINUX_HAS_KVM_HWVIRT_API
-                        rc2 = supdrvLinuxInitKvmSymbols();
+# if RTLNX_VER_MIN(6,15,0)
+                        /* Needed for FPU management. */
+                        supdrvLinuxFunction(NULL, "switch_fpu_return",  (PFNRT *)&g_pfnSwitchFpuReturn,  &hKrnlInfo);
+# endif
+# ifdef SUPDRV_LINUX_DYNAMIC_CR4_FUNCTIONS
+                        /* Shadow CR4 */
+                        supdrvLinuxFunction(NULL, "cr4_update_irqsoff", (PFNRT *)&g_pfnCr4UpdateIrqsoff, &hKrnlInfo);
+                        supdrvLinuxFunction(NULL, "cr4_read_shadow",    (PFNRT *)&g_pfnCr4ReadShadow,    &hKrnlInfo);
+# endif
+# ifdef SUPDRV_LINUX_HAS_KVM_HWVIRT_API
+                        int rc2 = supdrvLinuxInitKvmSymbols(&hKrnlInfo);
                         if (RT_SUCCESS(rc2))
                             printk(KERN_INFO "vboxdrv: Found KVM hardware-virtualization symbols\n");
                         else
                             printk(KERN_WARNING "vboxdrv: Failed to find KVM hardware-virtualization symbols\n");
+# endif
+                        if (hKrnlInfo != NIL_RTDBGKRNLINFO)
+                            RTR0DbgKrnlInfoRelease(hKrnlInfo);
+#endif
+
+#if RTLNX_VER_MIN(5,0,0)
+                        /*
+                         * Register the module notifier.
+                         */
+                        int rc3 = register_module_notifier(&g_supdrvLinuxModuleNotifierBlock);
+                        if (rc3)
+                            printk(KERN_WARNING "vboxdrv: failed to register module notifier! rc3=%d\n", rc3);
 #endif
                         printk(KERN_INFO "vboxdrv: TSC mode is %s, tentative frequency %llu Hz\n",
                                SUPGetGIPModeName(g_DevExt.pGip), g_DevExt.pGip->u64CpuHz);
@@ -663,9 +614,9 @@ static int __init VBoxDrvLinuxInit(void)
                                 " (interface " RT_XSTR(SUPDRV_IOC_VERSION) ")\n");
                         return rc;
                     }
+
 #ifdef VBOX_WITH_SUSPEND_NOTIFICATION
-                    else
-                        platform_driver_unregister(&gPlatformDriver);
+                    platform_driver_unregister(&gPlatformDriver);
                 }
 #endif
             }
@@ -694,14 +645,47 @@ static void __exit VBoxDrvLinuxUnload(void)
 {
     Log(("VBoxDrvLinuxUnload\n"));
 
-#ifdef SUPDRV_LINUX_HAS_KVM_HWVIRT_API
-    supdrvLinuxTermKvmSymbols();
-#endif
+    /*
+     * I don't think it's possible to unload a driver which processes have
+     * opened, at least we'll blindly assume that here. Best do this first.
+     */
+    misc_deregister(&gMiscDeviceUsr);
+    misc_deregister(&gMiscDeviceSys);
 
+    /*
+     * Drop notifications.
+     */
 #ifdef VBOX_WITH_SUSPEND_NOTIFICATION
     platform_device_unregister(&gPlatformDevice);
     platform_driver_unregister(&gPlatformDriver);
 #endif
+
+    /*
+     * Release symbol and module references.
+     */
+#ifdef SUPDRV_LINUX_HAS_KVM_HWVIRT_API
+    /* Put the kvm symbols and module. */
+    if (g_fPutKvmEnableVirtualization && g_pfnKvmEnableVirtualization)
+        symbol_put_addr(g_pfnKvmEnableVirtualization);
+    g_pfnKvmEnableVirtualization = NULL;
+    if (g_fPutKvmDisableVirtualization && g_pfnKvmDisableVirtualization)
+        symbol_put_addr(g_pfnKvmDisableVirtualization);
+    if (g_pKvmHwvirtModule)
+    {
+        module_put(g_pKvmHwvirtModule);
+        g_pKvmHwvirtModule = NULL;
+    }
+#endif
+
+#ifdef SUPDRV_LINUX_DYNAMIC_CR4_FUNCTIONS
+    /* We don't need to put these, they should be in core_kernel_text(). */
+    g_pfnCr4UpdateIrqsoff = NULL;
+    g_pfnCr4ReadShadow    = NULL;
+#endif
+# if RTLNX_VER_MIN(6,15,0)
+    /* Same for this. */
+    g_pfnSwitchFpuReturn  = NULL;
+# endif
 
 #if RTLNX_VER_MIN(5,0,0)
     /*
@@ -722,13 +706,6 @@ static void __exit VBoxDrvLinuxUnload(void)
     }
     spin_unlock(&g_supdrvLinuxWrapperModuleSpinlock);
 #endif
-
-    /*
-     * I Don't think it's possible to unload a driver which processes have
-     * opened, at least we'll blindly assume that here.
-     */
-    misc_deregister(&gMiscDeviceUsr);
-    misc_deregister(&gMiscDeviceSys);
 
     /*
      * Destroy GIP, delete the device extension and terminate IPRT.
@@ -1250,49 +1227,45 @@ SUPR0DECL(int) SUPDrvLinuxLdrDeregisterWrappedModule(PCSUPLDRWRAPPEDMODULE pWrap
 }
 EXPORT_SYMBOL(SUPDrvLinuxLdrDeregisterWrappedModule);
 
-#if RTLNX_VER_MIN(5,8,0)
-/**
- * Wrapper function for cr4_update_irqsoff() which was
- * exported only for KVM starting from kernel 6.19.
- */
-static void supdrvLinux_cr4_update_irqsoff(unsigned long set, unsigned long clear)
-{
-# if RTLNX_VER_MIN(6,19,0) && defined(SUPDRV_LINUX_HAS_KVM_HWVIRT_API)
-    if (g_pfnCr4UpdateIrqsoff)
-        g_pfnCr4UpdateIrqsoff(set, clear);
-# else
-    cr4_update_irqsoff(set, clear);
-# endif
-}
-
-/**
- * Wrapper function for supdrvLinux_cr4_read_shadow() which was
- * exported only for KVM starting from kernel 6.19.
- */
-static unsigned long supdrvLinux_cr4_read_shadow(void)
-{
-    unsigned long cr4 = 0;
-# if RTLNX_VER_MIN(6,19,0) && defined(SUPDRV_LINUX_HAS_KVM_HWVIRT_API)
-    if (g_pfnCr4ReadShadow)
-        cr4 = g_pfnCr4ReadShadow();
-# else
-    cr4 = cr4_read_shadow();
-# endif
-    return cr4;
-}
-#endif /* 5.8.0 */
-
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+
+# if RTLNX_VER_MIN(5,8,0)
+/**
+ * Wrapper for cr4_read_shadow() which is an kvm-only export starting v6.19.
+ */
+DECLINLINE(unsigned long) supdrvLinux_cr4_read_shadow(void)
+{
+#  ifdef SUPDRV_LINUX_DYNAMIC_CR4_FUNCTIONS
+    if (RT_LIKELY(g_pfnCr4ReadShadow))
+        return g_pfnCr4ReadShadow();
+    return ASMGetCR4(); /* This better not happen! */
+#  else
+    return cr4_read_shadow();
+#  endif
+}
+# endif /* 5.8.0 */
+
 RTCCUINTREG VBOXCALL supdrvOSChangeCR4(RTCCUINTREG fOrMask, RTCCUINTREG fAndMask)
 {
 # if RTLNX_VER_MIN(5,8,0)
     unsigned long fSavedFlags;
     local_irq_save(fSavedFlags);
     RTCCUINTREG const uOld = supdrvLinux_cr4_read_shadow();
-    supdrvLinux_cr4_update_irqsoff(fOrMask, ~fAndMask); /* Same as this function, only it is not returning the old value. */
+
+#  ifdef SUPDRV_LINUX_DYNAMIC_CR4_FUNCTIONS
+    if (RT_LIKELY(g_pfnCr4UpdateIrqsoff))
+        g_pfnCr4UpdateIrqsoff(fOrMask, ~fAndMask);
+    else
+        ASMSetCR4((uOld & fAndMask) | fOrMask); /* This better not happen! */
+#  else
+    cr4_update_irqsoff(fOrMask, ~fAndMask); /* Same as this function, only it is not returning the old value. */
+#  endif
+
     AssertMsg(supdrvLinux_cr4_read_shadow() == ((uOld & fAndMask) | fOrMask),
-              ("fOrMask=%#RTreg fAndMask=%#RTreg uOld=%#RTreg; new cr4=%#llx\n", fOrMask, fAndMask, uOld, supdrvLinux_cr4_read_shadow()));
+              ("fOrMask=%#RTreg fAndMask=%#RTreg uOld=%#RTreg; new cr4=%#llx\n",
+               fOrMask, fAndMask, uOld, supdrvLinux_cr4_read_shadow()));
     local_irq_restore(fSavedFlags);
+
 # else
 #  if RTLNX_VER_MIN(3,20,0)
     RTCCUINTREG const uOld = this_cpu_read(cpu_tlbstate.cr4);
@@ -1312,8 +1285,8 @@ RTCCUINTREG VBOXCALL supdrvOSChangeCR4(RTCCUINTREG fOrMask, RTCCUINTREG fAndMask
 # endif
     return uOld;
 }
-#endif /* RT_ARCH_AMD64 || RT_ARCH_X86 */
 
+#endif /* RT_ARCH_AMD64 || RT_ARCH_X86 */
 
 void VBOXCALL supdrvOSCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
 {

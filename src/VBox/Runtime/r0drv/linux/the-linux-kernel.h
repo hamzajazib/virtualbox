@@ -1,4 +1,4 @@
-/* $Id: the-linux-kernel.h 113065 2026-02-17 15:00:09Z vadim.galitsyn@oracle.com $ */
+/* $Id: the-linux-kernel.h 113547 2026-03-24 23:42:47Z knut.osmundsen@oracle.com $ */
 /** @file
  * IPRT - Include all necessary headers for the Linux kernel.
  */
@@ -512,7 +512,7 @@ RTDECL(struct page *) rtR0MemObjLinuxVirtToPage(void *pv);
 
 
 extern struct mm_struct *g_pLnxInitMm;
-#if RTLNX_VER_MIN(6,19,0)
+#if RTLNX_VER_MIN(6,19,0) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
 extern void (*g_pfnLinuxFlushTlbAll)(void);
 #endif
 

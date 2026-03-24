@@ -1,4 +1,4 @@
-/* $Id: memobj-r0drv-linux.c 113067 2026-02-17 15:37:37Z vadim.galitsyn@oracle.com $ */
+/* $Id: memobj-r0drv-linux.c 113547 2026-03-24 23:42:47Z knut.osmundsen@oracle.com $ */
 /** @file
  * IPRT - Ring-0 Memory Objects, Linux.
  */
@@ -47,6 +47,14 @@
 #include <iprt/mem.h>
 #include <iprt/process.h>
 #include <iprt/string.h>
+#if RTLNX_VER_MIN(6,19,0) && (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64))
+# include <iprt/mp.h>
+# include <iprt/asm-amd64-x86.h>
+# ifndef X86_CPUID_FEATURE_EDX_PGE /* can't include iprt/x86.h here */
+#  define X86_CPUID_FEATURE_EDX_PGE RT_BIT_32(13)
+# endif
+#endif
+
 #include "internal/memobj.h"
 #include "internal/iprt.h"
 
@@ -181,6 +189,7 @@ static const struct
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 static void rtR0MemObjLinuxFreePages(PRTR0MEMOBJLNX pMemLnx);
+
 
 
 /**
@@ -2244,16 +2253,71 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
     return rc;
 }
 
-#if defined(IPRT_USE_ALLOC_VM_AREA_FOR_EXEC) || defined(IPRT_USE_APPLY_TO_PAGE_RANGE_FOR_EXEC)
+#if (defined(IPRT_USE_ALLOC_VM_AREA_FOR_EXEC) || defined(IPRT_USE_APPLY_TO_PAGE_RANGE_FOR_EXEC)) \
+  && (defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64))
+
+/*
+ * Wrapper around __flush_tlb_all and fallback code for 4.19+.
+ */
+# if RTLNX_VER_MIN(6,19,0)
+
+static DECLCALLBACK(void) rtR0MemObjLinuxFlushTlbAllOnEach(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    RTCCUINTREG const fIntFlags = ASMIntDisableFlags();
+    ASMReloadCR3();
+    ASMSetFlags(fIntFlags);
+    RT_NOREF(idCpu, pvUser1, pvUser2);
+}
+
+static DECLCALLBACK(void) rtR0MemObjLinuxFlushTlbAllOnEachPge(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    RTCCUINTREG const fIntFlags = ASMIntDisableFlags();
+    RTCCUINTREG fCr4 = ASMGetCR4();
+    ASMSetCR4(fCr4 ^ X86_CR4_PGE);
+    ASMSetCR4(fCr4);
+    ASMSetFlags(fIntFlags);
+    RT_NOREF(idCpu, pvUser1, pvUser2);
+}
+
+static DECLCALLBACK(void) rtR0MemObjLinuxFlushTlbAllOnEachInvPcid(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    RT_NOREF(idCpu, pvUser1, pvUser2);
+    invpcid_flush_all();
+}
+
+# endif
+
 static void rtR0MemObjLinuxFlushTlbAll(void)
 {
 # if RTLNX_VER_MIN(6,19,0)
     if (RT_LIKELY(RT_VALID_PTR(g_pfnLinuxFlushTlbAll)))
         g_pfnLinuxFlushTlbAll();
+    else
+    {
+        uint32_t uMax;
+        if (   ASMHasCpuId()
+             && RTX86IsValidStdRange(uMax = ASMCpuId_EAX(0))
+             && (ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_PGE))
+        {
+            uint32_t uEax = 0;
+            uint32_t uEbx = 0;
+            uint32_t uEcx = 0;
+            uint32_t uEdx = 0;
+            if (uMax >= 7)
+                ASMCpuId_Idx_ECX(7, 0, &uEax, &uEbx, &uEcx, &uEdx);
+            if (uEbx & RT_BIT_32(10) /*X86_CPUID_STEXT_FEATURE_EBX_INVPCID*/)
+                RTMpOnAll(rtR0MemObjLinuxFlushTlbAllOnEachInvPcid, NULL, NULL);
+            else
+                RTMpOnAll(rtR0MemObjLinuxFlushTlbAllOnEachPge, NULL, NULL);
+        }
+        else
+            RTMpOnAll(rtR0MemObjLinuxFlushTlbAllOnEach, NULL, NULL);
+    }
 # else
     __flush_tlb_all();
 # endif
 }
+
 #endif
 
 DECLHIDDEN(int) rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub, size_t cbSub, uint32_t fProt)

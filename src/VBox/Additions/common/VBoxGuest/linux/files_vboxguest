@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: files_vboxguest 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $
+# $Id: files_vboxguest 113547 2026-03-24 23:42:47Z knut.osmundsen@oracle.com $
 ## @file
 # Shared file between Makefile.kmk and export_modules.sh.
 #
@@ -238,6 +238,7 @@ FILES_VBOXGUEST_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/waitqueue-r0drv-linux.h=>r0drv/linux/waitqueue-r0drv-linux.h \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/RTLogWriteDebugger-r0drv-linux.c=>r0drv/linux/RTLogWriteDebugger-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/generic/semspinmutex-r0drv-generic.c=>r0drv/generic/semspinmutex-r0drv-generic.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/RTR0DbgKrnlInfoGetFunction.cpp=>r0drv/RTR0DbgKrnlInfoGetFunction.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/RTR0DbgKrnlInfoGetSymbol.cpp=>r0drv/RTR0DbgKrnlInfoGetSymbol.c \
     ${PATH_ROOT}/src/VBox/Runtime/VBox/log-vbox.cpp=>VBox/log-vbox.c \
     ${PATH_ROOT}/src/VBox/Runtime/VBox/logbackdoor.cpp=>VBox/logbackdoor.c \

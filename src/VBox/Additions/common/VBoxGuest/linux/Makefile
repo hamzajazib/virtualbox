@@ -1,4 +1,4 @@
-# $Id: Makefile 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $
+# $Id: Makefile 113547 2026-03-24 23:42:47Z knut.osmundsen@oracle.com $
 ## @file
 # VirtualBox Guest Additions Module Makefile.
 #
@@ -83,6 +83,7 @@ VBOXMOD_OBJS += \
 	r0drv/linux/timer-r0drv-linux.o \
 	r0drv/linux/RTLogWriteDebugger-r0drv-linux.o \
 	r0drv/generic/semspinmutex-r0drv-generic.o \
+	r0drv/RTR0DbgKrnlInfoGetFunction.o \
 	r0drv/RTR0DbgKrnlInfoGetSymbol.o \
 	common/alloc/alloc.o \
 	common/checksum/crc32.o \
