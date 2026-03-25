@@ -1,4 +1,4 @@
-/* $Id: UICommon.h 113578 2026-03-25 13:01:24Z sergey.dubov@oracle.com $ */
+/* $Id: UICommon.h 113580 2026-03-25 16:05:23Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UICommon class declaration.
  */
@@ -151,8 +151,10 @@ public:
 
     /** @name Process arguments stuff.
      * @{ */
-        /** Process application args. */
-        bool processArgs();
+        /** Process application options. */
+        void processOptions();
+        /** Process application arguments. */
+        bool processArguments();
 
         /** Returns whether there are unhandled URL arguments present. */
         bool argumentUrlsPresent() const;
