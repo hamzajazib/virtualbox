@@ -1,4 +1,4 @@
-/* $Id: precomp_vcc.h 113262 2026-03-04 20:12:57Z sergey.dubov@oracle.com $*/
+/* $Id: precomp_vcc.h 113576 2026-03-25 12:24:09Z sergey.dubov@oracle.com $*/
 /** @file
  * VBox Qt GUI - Precompiled header for Visual C++.
  */
@@ -63,9 +63,6 @@
 #include <qflags.h>
 #include <qgenericatomic.h>
 #include <qglobalstatic.h>
-#ifndef VBOX_IS_QT6_OR_LATER
-# include <qisenum.h>
-#endif
 #include <qlogging.h>
 #include <qmutex.h>
 #include <qnamespace.h>
@@ -88,9 +85,6 @@
 #include <qlist.h>
 #include <qstringlist.h>
 #include <qstringmatcher.h>
-#ifndef VBOX_IS_QT6_OR_LATER
-# include <qtypetraits.h>
-#endif
 
 /* Less frequently included: */
 #include <QtWidgets/QGraphicsWidget>
@@ -99,9 +93,6 @@
 #include <QtWidgets/qgraphicswidget.h>
 #include <QtCore/QMetaType>
 #include <QtGui/qevent.h>
-#ifndef VBOX_IS_QT6_OR_LATER
-# include <QtGui/qtouchdevice.h>
-#endif
 #include <QtGui/qvector2d.h>
 #include <QtCore/QEvent>
 #include <QtGui/qguiapplication.h>
@@ -131,9 +122,6 @@
 #include <QtCore/qline.h>
 #include <QtGui/qcolor.h>
 #include <QtGui/qimage.h>
-#ifndef VBOX_IS_QT6_OR_LATER
-# include <QtGui/qmatrix.h>
-#endif
 #include <QtGui/qpaintdevice.h>
 #include <QtGui/qpainterpath.h>
 #include <QtGui/qpixelformat.h>

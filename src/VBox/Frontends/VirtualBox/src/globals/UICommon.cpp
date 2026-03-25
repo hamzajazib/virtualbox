@@ -1,4 +1,4 @@
-/* $Id: UICommon.cpp 113574 2026-03-25 12:16:05Z sergey.dubov@oracle.com $ */
+/* $Id: UICommon.cpp 113576 2026-03-25 12:24:09Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UICommon class implementation.
  */
@@ -194,10 +194,7 @@ UICommon::~UICommon()
 
 void UICommon::prepare()
 {
-    /* Make sure QApplication cleanup us on exit: */
-#ifndef VBOX_IS_QT6_OR_LATER /** @todo qt6: ... */
-    qApp->setFallbackSessionManagementEnabled(false);
-#endif
+    /* Listen to QApplication cleanup on exit: */
     connect(qApp, &QGuiApplication::aboutToQuit,
             this, &UICommon::sltCleanup);
 #ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
@@ -1527,7 +1524,7 @@ void UICommon::sltHandleCommitDataRequest(QSessionManager &manager)
              * but for fat clients: */
             if (!isSeparateProcess())
             {
-# if defined(VBOX_WS_MAC) && defined(VBOX_IS_QT6_OR_LATER) /** @todo qt6: ... */
+# ifdef VBOX_WS_MAC
                 Q_UNUSED(manager);
                 /* This code prevents QWindowSystemInterface::handleApplicationTermination
                    for running, so among other things QApplication::closeAllWindows isn't

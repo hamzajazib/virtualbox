@@ -1,4 +1,4 @@
-# $Id: Makefile.kmk 113572 2026-03-25 10:42:57Z sergey.dubov@oracle.com $
+# $Id: Makefile.kmk 113576 2026-03-25 12:24:09Z sergey.dubov@oracle.com $
 ## @file
 # Makefile for the VirtualBox Qt GUI.
 #
@@ -106,7 +106,6 @@ VirtualBox_NAME           = VirtualBox
 VirtualBox_DEPS           = $(UICommon_0_OUTDIR)/include/COMWrappers
 VirtualBox_SDKS.win       = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
 VirtualBox_DEFS           =
-VirtualBox_DEFS          += VBOX_IS_QT6_OR_LATER
 VirtualBox_DEFS.debug     = VBOX_CHECK_STATE # QT_FATAL_ASSERT
 VirtualBox_DEFS.linux     = VBOX_WS_NIX QT_NO_DEPRECATED_WARNINGS
 VirtualBox_DEFS.solaris   = VBOX_WS_NIX
@@ -172,7 +171,6 @@ endif
 VirtualBoxVM_DEPS           = $(UICommon_0_OUTDIR)/include/COMWrappers
 VirtualBoxVM_SDKS.win       = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
 VirtualBoxVM_DEFS           = VBOX_RUNTIME_UI
-VirtualBoxVM_DEFS          += VBOX_IS_QT6_OR_LATER
 VirtualBoxVM_DEFS.debug     = VBOX_CHECK_STATE # QT_FATAL_ASSERT
 VirtualBoxVM_DEFS.linux     = VBOX_WS_NIX QT_NO_DEPRECATED_WARNINGS
 VirtualBoxVM_DEFS.solaris   = VBOX_WS_NIX
@@ -232,7 +230,6 @@ endif
 UICommon_TEMPLATE = VBoxQtGuiDll
 UICommon_NAME = UICommon
 UICommon_DEFS         = VBOX_GUI_LIBRARY
-UICommon_DEFS        += VBOX_IS_QT6_OR_LATER
 UICommon_DEFS.darwin  = VBOX_WS_MAC
 UICommon_DEFS.freebsd = VBOX_WS_NIX
 UICommon_DEFS.linux   = VBOX_WS_NIX QT_NO_DEPRECATED_WARNINGS
