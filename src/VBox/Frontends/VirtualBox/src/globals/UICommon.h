@@ -1,4 +1,4 @@
-/* $Id: UICommon.h 112957 2026-02-11 15:18:35Z sergey.dubov@oracle.com $ */
+/* $Id: UICommon.h 113578 2026-03-25 13:01:24Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UICommon class declaration.
  */
@@ -144,8 +144,9 @@ public:
         /** Returns whether host OS is in Dark mode. */
         bool isInDarkMode() const { return m_fDarkMode; }
 
-        /** Loads the color theme. */
-        void loadColorTheme();
+        /** Loads the color theme.
+          * @param  fAnyway  Brings whether it should be done anyway. */
+        void loadColorTheme(bool fAnyway = false);
     /** @} */
 
     /** @name Process arguments stuff.

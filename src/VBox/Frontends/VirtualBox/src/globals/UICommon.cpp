@@ -1,4 +1,4 @@
-/* $Id: UICommon.cpp 113577 2026-03-25 12:45:24Z sergey.dubov@oracle.com $ */
+/* $Id: UICommon.cpp 113578 2026-03-25 13:01:24Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UICommon class implementation.
  */
@@ -249,16 +249,8 @@ void UICommon::prepare()
     m_pThreadPool = new UIThreadPool(3 /* worker count */, 5000 /* worker timeout */);
     m_pThreadPoolCloud = new UIThreadPool(2 /* worker count */, 1000 /* worker timeout */);
 
-    /* Load whether host OS is in Dark mode: */
-#if defined(VBOX_WS_MAC)
-    m_fDarkMode = UICocoaApplication::instance()->isDarkMode();
-#elif defined(VBOX_WS_WIN)
-    m_fDarkMode = isWindowsInDarkMode();
-#else /* Linux, BSD, Solaris */
-    m_fDarkMode = isPaletteInDarkMode();
-#endif /* Linux, BSD, Solaris */
-    /* Load color theme: */
-    loadColorTheme();
+    /* Load color theme for the 1st time: */
+    loadColorTheme(true /* anyway */);
 
     /* Load translation based on the user settings: */
     QString strLanguageId = gEDataManager->languageId();
@@ -846,8 +838,22 @@ bool UICommon::isPaletteInDarkMode() const
 }
 #endif /* Linux, BSD, Solaris */
 
-void UICommon::loadColorTheme()
+void UICommon::loadColorTheme(bool fAnyway /* = false */)
 {
+#if defined(VBOX_WS_MAC)
+    const bool fDarkMode = UICocoaApplication::instance()->isDarkMode();
+#elif defined(VBOX_WS_WIN)
+    const bool fDarkMode = isWindowsInDarkMode();
+#else /* Linux, BSD, Solaris */
+    const bool fDarkMode = isPaletteInDarkMode();
+#endif /* Linux, BSD, Solaris */
+
+    /* Make sure something really changed: */
+    if (!fAnyway && m_fDarkMode == fDarkMode)
+        return;
+    /* And remember new value: */
+    m_fDarkMode = fDarkMode;
+
 #if defined (VBOX_WS_MAC)
     /* macOS has Window color hardcoded somewhere inside, Qt has no access to it,
      * moreover these colors are influenced by window background blending,
@@ -1030,6 +1036,9 @@ void UICommon::loadColorTheme()
     }
 
 #endif /* Linux, BSD, Solaris */
+
+    /* Notifiy listeners ater all: */
+    emit sigThemeChange();
 }
 
 bool UICommon::processArgs()
@@ -1435,24 +1444,10 @@ bool UICommon::eventFilter(QObject *pObject, QEvent *pEvent)
         }
     }
 
-    /* Handle application palette change event: */
+    /* Handle application palette change event by reloading color theme: */
     if (   pEvent->type() == QEvent::ApplicationPaletteChange
         && pObject == windowManager().mainWindowShown())
-    {
-#if defined(VBOX_WS_MAC)
-        const bool fDarkMode = UICocoaApplication::instance()->isDarkMode();
-#elif defined(VBOX_WS_WIN)
-        const bool fDarkMode = isWindowsInDarkMode();
-#else /* Linux, BSD, Solaris */
-        const bool fDarkMode = isPaletteInDarkMode();
-#endif /* Linux, BSD, Solaris */
-        if (m_fDarkMode != fDarkMode)
-        {
-            m_fDarkMode = fDarkMode;
-            loadColorTheme();
-            emit sigThemeChange();
-        }
-    }
+        loadColorTheme();
 
     /* Call to base-class: */
     return QObject::eventFilter(pObject, pEvent);
