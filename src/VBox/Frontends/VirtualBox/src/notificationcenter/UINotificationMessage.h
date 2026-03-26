@@ -1,4 +1,4 @@
-/* $Id: UINotificationMessage.h 113585 2026-03-26 11:01:52Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationMessage.h 113589 2026-03-26 11:48:29Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationMessage declarations.
  */
@@ -463,7 +463,7 @@ public:
           * @param  comVBox   Brings the object extra-data being changed for.
           * @param  strKey    Brings the extra-data key.
           * @param  strValue  Brings the extra-data value. */
-        static void cannotSetExtraData(const CVirtualBox &comVBox,
+        static bool cannotSetExtraData(const CVirtualBox &comVBox,
                                        const QString &strKey,
                                        const QString &strValue,
                                        QWidget *pParent);
@@ -471,7 +471,7 @@ public:
           * @param  comMachine  Brings the object extra-data being changed for.
           * @param  strKey      Brings the extra-data key.
           * @param  strValue    Brings the extra-data value. */
-        static void cannotSetExtraData(const CMachine &comMachine,
+        static bool cannotSetExtraData(const CMachine &comMachine,
                                        const QString &strKey,
                                        const QString &strValue,
                                        QWidget *pParent);

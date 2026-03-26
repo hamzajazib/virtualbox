@@ -1,4 +1,4 @@
-/* $Id: UINotificationMessage.cpp 113585 2026-03-26 11:01:52Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationMessage.cpp 113589 2026-03-26 11:48:29Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationMessage implementations.
  */
@@ -1234,7 +1234,7 @@ void UINotificationMessage::cannotAcquireCloudMachineParameter(const CCloudMachi
 }
 
 /* static */
-void UINotificationMessage::cannotSetExtraData(const CVirtualBox &comVBox,
+bool UINotificationMessage::cannotSetExtraData(const CVirtualBox &comVBox,
                                                const QString &strKey,
                                                const QString &strValue,
                                                QWidget *pParent)
@@ -1248,10 +1248,11 @@ void UINotificationMessage::cannotSetExtraData(const CVirtualBox &comVBox,
         QString() /* help keyword */,
         NotificationType_Warning,
         pParent);
+    return false;
 }
 
 /* static */
-void UINotificationMessage::cannotSetExtraData(const CMachine &comMachine,
+bool UINotificationMessage::cannotSetExtraData(const CMachine &comMachine,
                                                const QString &strKey,
                                                const QString &strValue,
                                                QWidget *pParent)
@@ -1265,6 +1266,7 @@ void UINotificationMessage::cannotSetExtraData(const CMachine &comMachine,
         QString() /* help keyword */,
         NotificationType_Warning,
         pParent);
+    return false;
 }
 
 /* static */

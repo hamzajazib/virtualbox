@@ -1,4 +1,4 @@
-/* $Id: UIExtraDataManager.cpp 113585 2026-03-26 11:01:52Z sergey.dubov@oracle.com $ */
+/* $Id: UIExtraDataManager.cpp 113589 2026-03-26 11:48:29Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIExtraDataManager class implementation.
  */
@@ -335,14 +335,17 @@ QString UIExtraDataManager::extraDataString(const QString &strKey, const QUuid &
     return strValue;
 }
 
-void UIExtraDataManager::setExtraDataString(const QString &strKey,
+bool UIExtraDataManager::setExtraDataString(const QString &strKey,
                                             const QString &strValue,
                                             const QUuid &uID /* = GlobalID */,
                                             QWidget *pParent /* = 0 */)
 {
     /* Make sure VBoxSVC is available: */
     if (!gpGlobalSession->isVBoxSVCAvailable())
-        return;
+        return false;
+
+    /* Prepare result: */
+    bool fResult = true;
 
     /* Hot-load machine extra-data map if necessary: */
     if (uID != GlobalID && !m_data.contains(uID))
@@ -362,14 +365,14 @@ void UIExtraDataManager::setExtraDataString(const QString &strKey,
         /* Update global extra-data: */
         comVBox.SetExtraData(strKey, strValue);
         if (!comVBox.isOk())
-            UINotificationMessage::cannotSetExtraData(comVBox, strKey, strValue, pParent);
+            fResult = UINotificationMessage::cannotSetExtraData(comVBox, strKey, strValue, pParent);
         /* Wipe out old keys: */
         foreach (const QString &strOldKey, g_mapOfObsoleteKeys.values(strKey))
         {
             comVBox.SetExtraData(strOldKey, QString());
             if (!comVBox.isOk())
             {
-                UINotificationMessage::cannotSetExtraData(comVBox, strOldKey, strValue, pParent);
+                fResult = UINotificationMessage::cannotSetExtraData(comVBox, strOldKey, strValue, pParent);
                 break;
             }
         }
@@ -380,7 +383,7 @@ void UIExtraDataManager::setExtraDataString(const QString &strKey,
         /* Search for corresponding machine: */
         CVirtualBox comVBox = gpGlobalSession->virtualBox();
         const CMachine comMachine = comVBox.FindMachine(uID.toString());
-        AssertReturnVoid(comVBox.isOk() && !comMachine.isNull());
+        AssertReturn(comVBox.isOk() && !comMachine.isNull(), false);
         /* Check the configuration access-level: */
         const KMachineState enmMachineState = comMachine.GetState();
         const KSessionState enmSessionState = comMachine.GetSessionState();
@@ -391,25 +394,28 @@ void UIExtraDataManager::setExtraDataString(const QString &strKey,
             comSession = openSession(uID);
         else
             comSession = openExistingSession(uID);
-        AssertReturnVoid(!comSession.isNull());
+        AssertReturn(!comSession.isNull(), false);
         /* Get machine from that session: */
         CMachine comSessionMachine = comSession.GetMachine();
         /* Update machine extra-data: */
         comSessionMachine.SetExtraData(strKey, strValue);
         if (!comSessionMachine.isOk())
-            UINotificationMessage::cannotSetExtraData(comSessionMachine, strKey, strValue, pParent);
+            fResult = UINotificationMessage::cannotSetExtraData(comSessionMachine, strKey, strValue, pParent);
         /* Wipe out old keys: */
         foreach (const QString &strOldKey, g_mapOfObsoleteKeys.values(strKey))
         {
             comSessionMachine.SetExtraData(strOldKey, QString());
             if (!comSessionMachine.isOk())
             {
-                UINotificationMessage::cannotSetExtraData(comSessionMachine, strOldKey, strValue, pParent);
+                fResult = UINotificationMessage::cannotSetExtraData(comSessionMachine, strOldKey, strValue, pParent);
                 break;
             }
         }
         comSession.UnlockMachine();
     }
+
+    /* Return result: */
+    return fResult;
 }
 
 QStringList UIExtraDataManager::extraDataStringList(const QString &strKey, const QUuid &uID /* = GlobalID */)
@@ -435,14 +441,17 @@ QStringList UIExtraDataManager::extraDataStringList(const QString &strKey, const
     return strValue.split(QRegularExpression("[;,]"), Qt::SkipEmptyParts);
 }
 
-void UIExtraDataManager::setExtraDataStringList(const QString &strKey,
+bool UIExtraDataManager::setExtraDataStringList(const QString &strKey,
                                                 const QStringList &value,
                                                 const QUuid &uID /* = GlobalID */,
                                                 QWidget *pParent /* = 0 */)
 {
     /* Make sure VBoxSVC is available: */
     if (!gpGlobalSession->isVBoxSVCAvailable())
-        return;
+        return false;
+
+    /* Prepare result: */
+    bool fResult = true;
 
     /* Hot-load machine extra-data map if necessary: */
     if (uID != GlobalID && !m_data.contains(uID))
@@ -462,14 +471,14 @@ void UIExtraDataManager::setExtraDataStringList(const QString &strKey,
         /* Update global extra-data: */
         comVBox.SetExtraDataStringList(strKey, value);
         if (!comVBox.isOk())
-            UINotificationMessage::cannotSetExtraData(comVBox, strKey, value.join(","), pParent);
+            fResult = UINotificationMessage::cannotSetExtraData(comVBox, strKey, value.join(","), pParent);
         /* Wipe out old keys: */
         foreach (const QString &strOldKey, g_mapOfObsoleteKeys.values(strKey))
         {
             comVBox.SetExtraData(strOldKey, QString());
             if (!comVBox.isOk())
             {
-                UINotificationMessage::cannotSetExtraData(comVBox, strOldKey, value.join(","), pParent);
+                fResult = UINotificationMessage::cannotSetExtraData(comVBox, strOldKey, value.join(","), pParent);
                 break;
             }
         }
@@ -480,7 +489,7 @@ void UIExtraDataManager::setExtraDataStringList(const QString &strKey,
         /* Search for corresponding machine: */
         CVirtualBox comVBox = gpGlobalSession->virtualBox();
         const CMachine comMachine = comVBox.FindMachine(uID.toString());
-        AssertReturnVoid(comVBox.isOk() && !comMachine.isNull());
+        AssertReturn(comVBox.isOk() && !comMachine.isNull(), false);
         /* Check the configuration access-level: */
         const KMachineState enmMachineState = comMachine.GetState();
         const KSessionState enmSessionState = comMachine.GetSessionState();
@@ -491,25 +500,28 @@ void UIExtraDataManager::setExtraDataStringList(const QString &strKey,
             comSession = openSession(uID);
         else
             comSession = openExistingSession(uID);
-        AssertReturnVoid(!comSession.isNull());
+        AssertReturn(!comSession.isNull(), false);
         /* Get machine from that session: */
         CMachine comSessionMachine = comSession.GetMachine();
         /* Update machine extra-data: */
         comSessionMachine.SetExtraDataStringList(strKey, value);
         if (!comSessionMachine.isOk())
-            UINotificationMessage::cannotSetExtraData(comSessionMachine, strKey, value.join(","), pParent);
+            fResult = UINotificationMessage::cannotSetExtraData(comSessionMachine, strKey, value.join(","), pParent);
         /* Wipe out old keys: */
         foreach (const QString &strOldKey, g_mapOfObsoleteKeys.values(strKey))
         {
             comSessionMachine.SetExtraData(strOldKey, QString());
             if (!comSessionMachine.isOk())
             {
-                UINotificationMessage::cannotSetExtraData(comSessionMachine, strOldKey, value.join(","), pParent);
+                fResult = UINotificationMessage::cannotSetExtraData(comSessionMachine, strOldKey, value.join(","), pParent);
                 break;
             }
         }
         comSession.UnlockMachine();
     }
+
+    /* Return result: */
+    return fResult;
 }
 
 UIExtraDataManager::UIExtraDataManager()
@@ -540,7 +552,7 @@ UIExtraDataMetaDefs::DialogType UIExtraDataManager::restrictedDialogTypes(const 
     return result;
 }
 
-void UIExtraDataManager::setRestrictedDialogTypes(UIExtraDataMetaDefs::DialogType dialogs, const QUuid &uID)
+bool UIExtraDataManager::setRestrictedDialogTypes(UIExtraDataMetaDefs::DialogType dialogs, const QUuid &uID)
 {
     /* We have MenuType enum registered, so we can enumerate it: */
     const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
@@ -569,7 +581,7 @@ void UIExtraDataManager::setRestrictedDialogTypes(UIExtraDataMetaDefs::DialogTyp
         }
     }
     /* Save result: */
-    setExtraDataStringList(GUI_RestrictedDialogs, result, uID);
+    return setExtraDataStringList(GUI_RestrictedDialogs, result, uID);
 }
 
 UIColorThemeType UIExtraDataManager::colorTheme()
@@ -577,9 +589,9 @@ UIColorThemeType UIExtraDataManager::colorTheme()
     return gpConverter->fromInternalString<UIColorThemeType>(extraDataString(GUI_ColorTheme));
 }
 
-void UIExtraDataManager::setColorTheme(const UIColorThemeType &enmType)
+bool UIExtraDataManager::setColorTheme(const UIColorThemeType &enmType)
 {
-    setExtraDataString(GUI_ColorTheme, gpConverter->toInternalString(enmType));
+    return setExtraDataString(GUI_ColorTheme, gpConverter->toInternalString(enmType));
 }
 
 QStringList UIExtraDataManager::suppressedMessages(const QUuid &uID /* = GlobalID */)
@@ -587,9 +599,9 @@ QStringList UIExtraDataManager::suppressedMessages(const QUuid &uID /* = GlobalI
     return extraDataStringList(GUI_SuppressMessages, uID);
 }
 
-void UIExtraDataManager::setSuppressedMessages(const QStringList &list)
+bool UIExtraDataManager::setSuppressedMessages(const QStringList &list)
 {
-    setExtraDataStringList(GUI_SuppressMessages, list);
+    return setExtraDataStringList(GUI_SuppressMessages, list);
 }
 
 #ifdef VBOX_NOTIFICATION_CENTER_WITH_KEEP_BUTTON
@@ -599,10 +611,10 @@ bool UIExtraDataManager::keepSuccessfullNotificationProgresses()
     return isFeatureAllowed(GUI_NotificationCenter_KeepSuccessfullProgresses);
 }
 
-void UIExtraDataManager::setKeepSuccessfullNotificationProgresses(bool fKeep)
+bool UIExtraDataManager::setKeepSuccessfullNotificationProgresses(bool fKeep)
 {
     /* 'True' if feature allowed, null-string otherwise: */
-    setExtraDataString(GUI_NotificationCenter_KeepSuccessfullProgresses, toFeatureAllowed(fKeep));
+    return setExtraDataString(GUI_NotificationCenter_KeepSuccessfullProgresses, toFeatureAllowed(fKeep));
 }
 #endif /* VBOX_NOTIFICATION_CENTER_WITH_KEEP_BUTTON */
 
@@ -612,10 +624,10 @@ Qt::Alignment UIExtraDataManager::notificationCenterAlignment()
     return strValue.isEmpty() ? Qt::AlignTop : gpConverter->fromInternalString<Qt::Alignment>(strValue);
 }
 
-void UIExtraDataManager::setNotificationCenterAlignment(Qt::Alignment enmOrder)
+bool UIExtraDataManager::setNotificationCenterAlignment(Qt::Alignment enmOrder)
 {
     const QString strValue = enmOrder == Qt::AlignTop ? QString() : gpConverter->toInternalString(enmOrder);
-    setExtraDataString(GUI_NotificationCenter_Alignment, strValue);
+    return setExtraDataString(GUI_NotificationCenter_Alignment, strValue);
 }
 
 Qt::SortOrder UIExtraDataManager::notificationCenterOrder()
@@ -624,10 +636,10 @@ Qt::SortOrder UIExtraDataManager::notificationCenterOrder()
     return strValue.isEmpty() ? Qt::DescendingOrder : gpConverter->fromInternalString<Qt::SortOrder>(strValue);
 }
 
-void UIExtraDataManager::setNotificationCenterOrder(Qt::SortOrder enmOrder)
+bool UIExtraDataManager::setNotificationCenterOrder(Qt::SortOrder enmOrder)
 {
     const QString strValue = enmOrder == Qt::DescendingOrder ? QString() : gpConverter->toInternalString(enmOrder);
-    setExtraDataString(GUI_NotificationCenter_Order, strValue);
+    return setExtraDataString(GUI_NotificationCenter_Order, strValue);
 }
 
 bool UIExtraDataManager::preventBetaBuildLabel()
@@ -654,9 +666,9 @@ QString UIExtraDataManager::applicationUpdateData()
     return extraDataString(GUI_UpdateDate);
 }
 
-void UIExtraDataManager::setApplicationUpdateData(const QString &strValue)
+bool UIExtraDataManager::setApplicationUpdateData(const QString &strValue)
 {
-    setExtraDataString(GUI_UpdateDate, strValue);
+    return setExtraDataString(GUI_UpdateDate, strValue);
 }
 
 qulonglong UIExtraDataManager::applicationUpdateCheckCounter()
@@ -674,10 +686,10 @@ qulonglong UIExtraDataManager::applicationUpdateCheckCounter()
     return uResult;
 }
 
-void UIExtraDataManager::incrementApplicationUpdateCheckCounter()
+bool UIExtraDataManager::incrementApplicationUpdateCheckCounter()
 {
     /* Increment update check counter value: */
-    setExtraDataString(GUI_UpdateCheckCount, QString::number(applicationUpdateCheckCounter() + 1));
+    return setExtraDataString(GUI_UpdateCheckCount, QString::number(applicationUpdateCheckCounter() + 1));
 }
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
@@ -739,11 +751,11 @@ bool UIExtraDataManager::isSettingsInExpertMode()
     return isFeatureAllowed(GUI_Settings_ExpertMode);
 }
 
-void UIExtraDataManager::setSettingsInExpertMode(bool fExpertMode)
+bool UIExtraDataManager::setSettingsInExpertMode(bool fExpertMode)
 {
     /* Store actual feature state, whether it is "true" or "false",
      * because absent state means default, depending on defines: */
-    setExtraDataString(GUI_Settings_ExpertMode, toFeatureState(fExpertMode));
+    return setExtraDataString(GUI_Settings_ExpertMode, toFeatureState(fExpertMode));
 }
 
 QString UIExtraDataManager::languageId()
@@ -752,10 +764,10 @@ QString UIExtraDataManager::languageId()
     return extraDataString(GUI_LanguageID);
 }
 
-void UIExtraDataManager::setLanguageId(const QString &strLanguageId)
+bool UIExtraDataManager::setLanguageId(const QString &strLanguageId)
 {
     /* Save language ID: */
-    setExtraDataString(GUI_LanguageID, strLanguageId);
+    return setExtraDataString(GUI_LanguageID, strLanguageId);
 }
 
 MaximumGuestScreenSizePolicy UIExtraDataManager::maxGuestResolutionPolicy()
@@ -764,14 +776,14 @@ MaximumGuestScreenSizePolicy UIExtraDataManager::maxGuestResolutionPolicy()
     return gpConverter->fromInternalString<MaximumGuestScreenSizePolicy>(extraDataString(GUI_MaxGuestResolution));
 }
 
-void UIExtraDataManager::setMaxGuestScreenResolution(MaximumGuestScreenSizePolicy enmPolicy, const QSize resolution /* = QSize() */)
+bool UIExtraDataManager::setMaxGuestScreenResolution(MaximumGuestScreenSizePolicy enmPolicy, const QSize resolution /* = QSize() */)
 {
     /* If policy is 'Fixed' => call the wrapper: */
     if (enmPolicy == MaximumGuestScreenSizePolicy_Fixed)
-        setMaxGuestResolutionForPolicyFixed(resolution);
+        return setMaxGuestResolutionForPolicyFixed(resolution);
     /* Otherwise => just store the value: */
     else
-        setExtraDataString(GUI_MaxGuestResolution, gpConverter->toInternalString(enmPolicy));
+        return setExtraDataString(GUI_MaxGuestResolution, gpConverter->toInternalString(enmPolicy));
 }
 
 QSize UIExtraDataManager::maxGuestResolutionForPolicyFixed()
@@ -797,14 +809,14 @@ QSize UIExtraDataManager::maxGuestResolutionForPolicyFixed()
     return QSize(iWidth, iHeight);
 }
 
-void UIExtraDataManager::setMaxGuestResolutionForPolicyFixed(const QSize &resolution)
+bool UIExtraDataManager::setMaxGuestResolutionForPolicyFixed(const QSize &resolution)
 {
     /* If resolution is 'empty' => call the wrapper: */
     if (resolution.isEmpty())
-        setMaxGuestScreenResolution(MaximumGuestScreenSizePolicy_Automatic);
+        return setMaxGuestScreenResolution(MaximumGuestScreenSizePolicy_Automatic);
     /* Otherwise => just store the value: */
     else
-        setExtraDataString(GUI_MaxGuestResolution, QString("%1,%2").arg(resolution.width()).arg(resolution.height()));
+        return setExtraDataString(GUI_MaxGuestResolution, QString("%1,%2").arg(resolution.width()).arg(resolution.height()));
 }
 
 bool UIExtraDataManager::activateHoveredMachineWindow()
@@ -813,10 +825,10 @@ bool UIExtraDataManager::activateHoveredMachineWindow()
     return isFeatureAllowed(GUI_ActivateHoveredMachineWindow);
 }
 
-void UIExtraDataManager::setActivateHoveredMachineWindow(bool fActivate)
+bool UIExtraDataManager::setActivateHoveredMachineWindow(bool fActivate)
 {
     /* 'True' if feature allowed, null-string otherwise: */
-    setExtraDataString(GUI_ActivateHoveredMachineWindow, toFeatureAllowed(fActivate));
+    return setExtraDataString(GUI_ActivateHoveredMachineWindow, toFeatureAllowed(fActivate));
 }
 
 bool UIExtraDataManager::disableHostScreenSaver()
@@ -825,10 +837,10 @@ bool UIExtraDataManager::disableHostScreenSaver()
     return isFeatureAllowed(GUI_DisableHostScreenSaver);
 }
 
-void UIExtraDataManager::setDisableHostScreenSaver(bool fActivate)
+bool UIExtraDataManager::setDisableHostScreenSaver(bool fActivate)
 {
     /* 'True' if feature allowed, null-string otherwise: */
-    setExtraDataString(GUI_DisableHostScreenSaver, toFeatureAllowed(fActivate));
+    return setExtraDataString(GUI_DisableHostScreenSaver, toFeatureAllowed(fActivate));
 }
 
 QString UIExtraDataManager::hostKeyCombination()
@@ -853,11 +865,11 @@ QString UIExtraDataManager::hostKeyCombination()
     return strHostCombo;
 }
 
-void UIExtraDataManager::setFontScaleFactor(int iFontScaleFactor)
+bool UIExtraDataManager::setFontScaleFactor(int iFontScaleFactor)
 {
     if (iFontScaleFactor < UIExtraDataDefs::iFontScaleMin || iFontScaleFactor > UIExtraDataDefs::iFontScaleMax)
-        return;
-    setExtraDataString(GUI_FontScaleFactor, QString::number(iFontScaleFactor));
+        return false;
+    return setExtraDataString(GUI_FontScaleFactor, QString::number(iFontScaleFactor));
 }
 
 int UIExtraDataManager::fontScaleFactor()
@@ -870,14 +882,14 @@ int UIExtraDataManager::fontScaleFactor()
     return iScaleFactor;
 }
 
-void UIExtraDataManager::setHostKeyCombination(const QString &strHostCombo)
+bool UIExtraDataManager::setHostKeyCombination(const QString &strHostCombo)
 {
     /* Do not save anything if it's absolutely wrong or invalid: */
     QRegularExpression reTemplate("0|[1-9]\\d*(,[1-9]\\d*)?(,[1-9]\\d*)?");
     if (!reTemplate.match(strHostCombo).hasMatch() || !UIHostCombo::isValidKeyCombo(strHostCombo))
-        return;
+        return false;
     /* Define host-combo: */
-    setExtraDataString(GUI_Input_HostKeyCombination, strHostCombo);
+    return setExtraDataString(GUI_Input_HostKeyCombination, strHostCombo);
 }
 
 QStringList UIExtraDataManager::shortcutOverrides(const QString &strPoolExtraDataID)
@@ -911,11 +923,11 @@ bool UIExtraDataManager::autoCaptureEnabled()
     return fAutoCapture;
 }
 
-void UIExtraDataManager::setAutoCaptureEnabled(bool fEnabled)
+bool UIExtraDataManager::setAutoCaptureEnabled(bool fEnabled)
 {
     /* Store actual feature state, whether it is "true" or "false",
      * because absent state means default, different on various hosts: */
-    setExtraDataString(GUI_Input_AutoCapture, toFeatureState(fEnabled));
+    return setExtraDataString(GUI_Input_AutoCapture, toFeatureState(fEnabled));
 }
 
 QString UIExtraDataManager::remappedScanCodes()
@@ -935,9 +947,9 @@ QString UIExtraDataManager::proxySettings()
     return extraDataString(GUI_ProxySettings);
 }
 
-void UIExtraDataManager::setProxySettings(const QString &strSettings)
+bool UIExtraDataManager::setProxySettings(const QString &strSettings)
 {
-    setExtraDataString(GUI_ProxySettings, strSettings);
+    return setExtraDataString(GUI_ProxySettings, strSettings);
 }
 
 QString UIExtraDataManager::recentFolderForHardDrives()
@@ -955,19 +967,19 @@ QString UIExtraDataManager::recentFolderForFloppyDisks()
     return extraDataString(GUI_RecentFolderFD);
 }
 
-void UIExtraDataManager::setRecentFolderForHardDrives(const QString &strValue)
+bool UIExtraDataManager::setRecentFolderForHardDrives(const QString &strValue)
 {
-    setExtraDataString(GUI_RecentFolderHD, strValue);
+    return setExtraDataString(GUI_RecentFolderHD, strValue);
 }
 
-void UIExtraDataManager::setRecentFolderForOpticalDisks(const QString &strValue)
+bool UIExtraDataManager::setRecentFolderForOpticalDisks(const QString &strValue)
 {
-    setExtraDataString(GUI_RecentFolderCD, strValue);
+    return setExtraDataString(GUI_RecentFolderCD, strValue);
 }
 
-void UIExtraDataManager::setRecentFolderForFloppyDisks(const QString &strValue)
+bool UIExtraDataManager::setRecentFolderForFloppyDisks(const QString &strValue)
 {
-    setExtraDataString(GUI_RecentFolderFD, strValue);
+    return setExtraDataString(GUI_RecentFolderFD, strValue);
 }
 
 QStringList UIExtraDataManager::recentListOfHardDrives()
@@ -985,19 +997,19 @@ QStringList UIExtraDataManager::recentListOfFloppyDisks()
     return extraDataStringList(GUI_RecentListFD);
 }
 
-void UIExtraDataManager::setRecentListOfHardDrives(const QStringList &value)
+bool UIExtraDataManager::setRecentListOfHardDrives(const QStringList &value)
 {
-    setExtraDataStringList(GUI_RecentListHD, value);
+    return setExtraDataStringList(GUI_RecentListHD, value);
 }
 
-void UIExtraDataManager::setRecentListOfOpticalDisks(const QStringList &value)
+bool UIExtraDataManager::setRecentListOfOpticalDisks(const QStringList &value)
 {
-    setExtraDataStringList(GUI_RecentListCD, value);
+    return setExtraDataStringList(GUI_RecentListCD, value);
 }
 
-void UIExtraDataManager::setRecentListOfFloppyDisks(const QStringList &value)
+bool UIExtraDataManager::setRecentListOfFloppyDisks(const QStringList &value)
 {
-    setExtraDataStringList(GUI_RecentListFD, value);
+    return setExtraDataStringList(GUI_RecentListFD, value);
 }
 
 UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork UIExtraDataManager::restrictedNetworkAttachmentTypes()
@@ -1022,9 +1034,9 @@ QString UIExtraDataManager::visoCreatorRecentFolder()
     return extraDataString(GUI_VISOCreator_RecentFolder);
 }
 
-void UIExtraDataManager::setVISOCreatorRecentFolder(const QString &strValue)
+bool UIExtraDataManager::setVISOCreatorRecentFolder(const QString &strValue)
 {
-    setExtraDataString(GUI_VISOCreator_RecentFolder, strValue);
+    return setExtraDataString(GUI_VISOCreator_RecentFolder, strValue);
 }
 
 QRect UIExtraDataManager::visoCreatorDialogGeometry(QWidget *pWidget, QWidget *pParentWidget, const QRect &defaultGeometry)
@@ -1052,7 +1064,7 @@ bool UIExtraDataManager::selectorWindowShouldBeMaximized()
     return dialogShouldBeMaximized(GUI_LastSelectorWindowPosition);
 }
 
-void UIExtraDataManager::setSelectorWindowGeometry(const QRect &geometry, bool fMaximized)
+bool UIExtraDataManager::setSelectorWindowGeometry(const QRect &geometry, bool fMaximized)
 {
     /* Serialize passed values: */
     QStringList data;
@@ -1064,7 +1076,7 @@ void UIExtraDataManager::setSelectorWindowGeometry(const QRect &geometry, bool f
         data << GUI_Geometry_State_Max;
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_LastSelectorWindowPosition, data);
+    return setExtraDataStringList(GUI_LastSelectorWindowPosition, data);
 }
 
 QList<int> UIExtraDataManager::selectorWindowSplitterHints()
@@ -1081,7 +1093,7 @@ QList<int> UIExtraDataManager::selectorWindowSplitterHints()
     return hints;
 }
 
-void UIExtraDataManager::setSelectorWindowSplitterHints(const QList<int> &hints)
+bool UIExtraDataManager::setSelectorWindowSplitterHints(const QList<int> &hints)
 {
     /* Parse passed hints: */
     QStringList data;
@@ -1089,7 +1101,7 @@ void UIExtraDataManager::setSelectorWindowSplitterHints(const QList<int> &hints)
     data << (hints.size() > 1 ? QString::number(hints[1]) : QString());
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_SplitterSizes, data);
+    return setExtraDataStringList(GUI_SplitterSizes, data);
 }
 
 bool UIExtraDataManager::selectorWindowToolBarVisible()
@@ -1098,10 +1110,10 @@ bool UIExtraDataManager::selectorWindowToolBarVisible()
     return !isFeatureRestricted(GUI_Toolbar);
 }
 
-void UIExtraDataManager::setSelectorWindowToolBarVisible(bool fVisible)
+bool UIExtraDataManager::setSelectorWindowToolBarVisible(bool fVisible)
 {
     /* 'False' if feature restricted, null-string otherwise: */
-    setExtraDataString(GUI_Toolbar, toFeatureRestricted(!fVisible));
+    return setExtraDataString(GUI_Toolbar, toFeatureRestricted(!fVisible));
 }
 
 bool UIExtraDataManager::selectorWindowToolBarTextVisible()
@@ -1110,10 +1122,10 @@ bool UIExtraDataManager::selectorWindowToolBarTextVisible()
     return !isFeatureRestricted(GUI_Toolbar_Text);
 }
 
-void UIExtraDataManager::setSelectorWindowToolBarTextVisible(bool fVisible)
+bool UIExtraDataManager::setSelectorWindowToolBarTextVisible(bool fVisible)
 {
     /* 'False' if feature restricted, null-string otherwise: */
-    setExtraDataString(GUI_Toolbar_Text, toFeatureRestricted(!fVisible));
+    return setExtraDataString(GUI_Toolbar_Text, toFeatureRestricted(!fVisible));
 }
 
 void UIExtraDataManager::toolsPaneLastItemsChosen(UIToolType &enmTypeGlobal,
@@ -1137,7 +1149,7 @@ void UIExtraDataManager::toolsPaneLastItemsChosen(UIToolType &enmTypeGlobal,
         enmTypeMachine = UIToolType_Details;
 }
 
-void UIExtraDataManager::setToolsPaneLastItemsChosen(UIToolType enmTypeGlobal,
+bool UIExtraDataManager::setToolsPaneLastItemsChosen(UIToolType enmTypeGlobal,
                                                      UIToolType enmTypeMachine)
 {
     /* Serialize passed values: */
@@ -1149,7 +1161,7 @@ void UIExtraDataManager::setToolsPaneLastItemsChosen(UIToolType enmTypeGlobal,
         data << gpConverter->toInternalString(enmType);
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_Tools_LastItemsSelected, data);
+    return setExtraDataStringList(GUI_Tools_LastItemsSelected, data);
 }
 
 QList<UIToolType> UIExtraDataManager::detachedTools()
@@ -1167,7 +1179,7 @@ QList<UIToolType> UIExtraDataManager::detachedTools()
     return result;
 }
 
-void UIExtraDataManager::setDetachedTools(const QList<UIToolType> &tools)
+bool UIExtraDataManager::setDetachedTools(const QList<UIToolType> &tools)
 {
     /* Serialize passed values: */
     QStringList data;
@@ -1175,7 +1187,7 @@ void UIExtraDataManager::setDetachedTools(const QList<UIToolType> &tools)
         data << gpConverter->toInternalString(enmType);
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_Tools_Detached, data);
+    return setExtraDataStringList(GUI_Tools_Detached, data);
 }
 
 bool UIExtraDataManager::isToolTextVisible()
@@ -1184,7 +1196,7 @@ bool UIExtraDataManager::isToolTextVisible()
     return isFeatureAllowed(GUI_Tools_Text);
 }
 
-void UIExtraDataManager::setToolTextVisible(bool fVisible)
+bool UIExtraDataManager::setToolTextVisible(bool fVisible)
 {
     /* 'True' if feature allowed, null-string otherwise: */
     return setExtraDataString(GUI_Tools_Text, toFeatureAllowed(fVisible));
@@ -1196,10 +1208,10 @@ bool UIExtraDataManager::selectorWindowStatusBarVisible()
     return !isFeatureRestricted(GUI_Statusbar);
 }
 
-void UIExtraDataManager::setSelectorWindowStatusBarVisible(bool fVisible)
+bool UIExtraDataManager::setSelectorWindowStatusBarVisible(bool fVisible)
 {
     /* 'False' if feature restricted, null-string otherwise: */
-    setExtraDataString(GUI_Statusbar, toFeatureRestricted(!fVisible));
+    return setExtraDataString(GUI_Statusbar, toFeatureRestricted(!fVisible));
 }
 
 QStringList UIExtraDataManager::knownMachineGroupDefinitionKeys()
@@ -1223,9 +1235,9 @@ QStringList UIExtraDataManager::machineGroupDefinitions(const QString &strGroupI
     return extraDataStringList(GUI_GroupDefinitions + strGroupID);
 }
 
-void UIExtraDataManager::setMachineGroupDefinitions(const QString &strGroupID, const QStringList &definitions)
+bool UIExtraDataManager::setMachineGroupDefinitions(const QString &strGroupID, const QStringList &definitions)
 {
-    setExtraDataStringList(GUI_GroupDefinitions + strGroupID, definitions);
+    return setExtraDataStringList(GUI_GroupDefinitions + strGroupID, definitions);
 }
 
 QString UIExtraDataManager::selectorWindowLastItemChosen()
@@ -1233,9 +1245,9 @@ QString UIExtraDataManager::selectorWindowLastItemChosen()
     return extraDataString(GUI_LastItemSelected);
 }
 
-void UIExtraDataManager::setSelectorWindowLastItemChosen(const QString &strItemID)
+bool UIExtraDataManager::setSelectorWindowLastItemChosen(const QString &strItemID)
 {
-    setExtraDataString(GUI_LastItemSelected, strItemID);
+    return setExtraDataString(GUI_LastItemSelected, strItemID);
 }
 
 QMap<DetailsElementType, bool> UIExtraDataManager::selectorWindowDetailsElements()
@@ -1278,7 +1290,7 @@ QMap<DetailsElementType, bool> UIExtraDataManager::selectorWindowDetailsElements
     return elements;
 }
 
-void UIExtraDataManager::setSelectorWindowDetailsElements(const QMap<DetailsElementType, bool> &elements)
+bool UIExtraDataManager::setSelectorWindowDetailsElements(const QMap<DetailsElementType, bool> &elements)
 {
     /* Prepare corresponding extra-data: */
     QStringList data;
@@ -1293,7 +1305,7 @@ void UIExtraDataManager::setSelectorWindowDetailsElements(const QMap<DetailsElem
     }
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_Details_Elements, data);
+    return setExtraDataStringList(GUI_Details_Elements, data);
 }
 
 PreviewUpdateIntervalType UIExtraDataManager::selectorWindowPreviewUpdateInterval()
@@ -1301,9 +1313,9 @@ PreviewUpdateIntervalType UIExtraDataManager::selectorWindowPreviewUpdateInterva
     return gpConverter->fromInternalString<PreviewUpdateIntervalType>(extraDataString(GUI_Details_Elements_Preview_UpdateInterval));
 }
 
-void UIExtraDataManager::setSelectorWindowPreviewUpdateInterval(PreviewUpdateIntervalType interval)
+bool UIExtraDataManager::setSelectorWindowPreviewUpdateInterval(PreviewUpdateIntervalType interval)
 {
-    setExtraDataString(GUI_Details_Elements_Preview_UpdateInterval, gpConverter->toInternalString(interval));
+    return setExtraDataString(GUI_Details_Elements_Preview_UpdateInterval, gpConverter->toInternalString(interval));
 }
 
 QStringList UIExtraDataManager::vboxManagerDetailsPaneElementOptions(DetailsElementType enmElementType)
@@ -1318,16 +1330,16 @@ QStringList UIExtraDataManager::vboxManagerDetailsPaneElementOptions(DetailsElem
     return extraDataStringList(strFullKey);
 }
 
-void UIExtraDataManager::setVBoxManagerDetailsPaneElementOptions(DetailsElementType enmElementType, const QStringList &options)
+bool UIExtraDataManager::setVBoxManagerDetailsPaneElementOptions(DetailsElementType enmElementType, const QStringList &options)
 {
     /* Compose full key from GUI_Details_Elements and enmElementType: */
     QString strElementType = gpConverter->toInternalString(enmElementType);
-    AssertReturnVoid(!strElementType.isEmpty());
+    AssertReturn(!strElementType.isEmpty(), false);
     strElementType[0] = strElementType.at(0).toUpper();
     const QString strFullKey = QString("%1/%2").arg(GUI_Details_Elements).arg(strElementType);
 
     /* Store option list: */
-    setExtraDataStringList(strFullKey, options);
+    return setExtraDataStringList(strFullKey, options);
 }
 
 bool UIExtraDataManager::snapshotManagerDetailsExpanded()
@@ -1336,7 +1348,7 @@ bool UIExtraDataManager::snapshotManagerDetailsExpanded()
     return isFeatureAllowed(GUI_SnapshotManager_Details_Expanded);
 }
 
-void UIExtraDataManager::setSnapshotManagerDetailsExpanded(bool fExpanded)
+bool UIExtraDataManager::setSnapshotManagerDetailsExpanded(bool fExpanded)
 {
     /* 'True' if feature allowed, null-string otherwise: */
     return setExtraDataString(GUI_SnapshotManager_Details_Expanded, toFeatureAllowed(fExpanded));
@@ -1348,7 +1360,7 @@ bool UIExtraDataManager::virtualMediaManagerDetailsExpanded()
     return isFeatureAllowed(GUI_VirtualMediaManager_Details_Expanded);
 }
 
-void UIExtraDataManager::setVirtualMediaManagerDetailsExpanded(bool fExpanded)
+bool UIExtraDataManager::setVirtualMediaManagerDetailsExpanded(bool fExpanded)
 {
     /* 'True' if feature allowed, null-string otherwise: */
     return setExtraDataString(GUI_VirtualMediaManager_Details_Expanded, toFeatureAllowed(fExpanded));
@@ -1360,7 +1372,7 @@ bool UIExtraDataManager::virtualMediaManagerSearchWidgetExpanded()
     return isFeatureAllowed(GUI_VirtualMediaManager_Search_Widget_Expanded);
 }
 
-void UIExtraDataManager::setVirtualMediaManagerSearchWidgetExpanded(bool fExpanded)
+bool UIExtraDataManager::setVirtualMediaManagerSearchWidgetExpanded(bool fExpanded)
 {
     /* 'True' if feature allowed, null-string otherwise: */
     return setExtraDataString(GUI_VirtualMediaManager_Search_Widget_Expanded, toFeatureAllowed(fExpanded));
@@ -1372,7 +1384,7 @@ bool UIExtraDataManager::hostNetworkManagerDetailsExpanded()
     return isFeatureAllowed(GUI_HostNetworkManager_Details_Expanded);
 }
 
-void UIExtraDataManager::setHostNetworkManagerDetailsExpanded(bool fExpanded)
+bool UIExtraDataManager::setHostNetworkManagerDetailsExpanded(bool fExpanded)
 {
     /* 'True' if feature allowed, null-string otherwise: */
     return setExtraDataString(GUI_HostNetworkManager_Details_Expanded, toFeatureAllowed(fExpanded));
@@ -1383,7 +1395,7 @@ QStringList UIExtraDataManager::cloudProfileManagerRestrictions()
     return extraDataStringList(GUI_CloudProfileManager_Restrictions);
 }
 
-void UIExtraDataManager::setCloudProfileManagerRestrictions(const QStringList &restrictions)
+bool UIExtraDataManager::setCloudProfileManagerRestrictions(const QStringList &restrictions)
 {
     return setExtraDataStringList(GUI_CloudProfileManager_Restrictions, restrictions);
 }
@@ -1394,7 +1406,7 @@ bool UIExtraDataManager::cloudProfileManagerDetailsExpanded()
     return isFeatureAllowed(GUI_CloudProfileManager_Details_Expanded);
 }
 
-void UIExtraDataManager::setCloudProfileManagerDetailsExpanded(bool fExpanded)
+bool UIExtraDataManager::setCloudProfileManagerDetailsExpanded(bool fExpanded)
 {
     /* 'True' if feature allowed, null-string otherwise: */
     return setExtraDataString(GUI_CloudProfileManager_Details_Expanded, toFeatureAllowed(fExpanded));
@@ -1433,9 +1445,9 @@ QString UIExtraDataManager::cloudConsoleManagerApplication(const QString &strId)
     return extraDataString(QString("%1/%2").arg(GUI_CloudConsoleManager_Application, strId));
 }
 
-void UIExtraDataManager::setCloudConsoleManagerApplication(const QString &strId, const QString &strDefinition)
+bool UIExtraDataManager::setCloudConsoleManagerApplication(const QString &strId, const QString &strDefinition)
 {
-    setExtraDataString(QString("%1/%2").arg(GUI_CloudConsoleManager_Application, strId), strDefinition);
+    return setExtraDataString(QString("%1/%2").arg(GUI_CloudConsoleManager_Application, strId), strDefinition);
 }
 
 QString UIExtraDataManager::cloudConsoleManagerProfile(const QString &strApplicationId, const QString &strProfileId)
@@ -1443,9 +1455,9 @@ QString UIExtraDataManager::cloudConsoleManagerProfile(const QString &strApplica
     return extraDataString(QString("%1/%2/%3").arg(GUI_CloudConsoleManager_Application, strApplicationId, strProfileId));
 }
 
-void UIExtraDataManager::setCloudConsoleManagerProfile(const QString &strApplicationId, const QString &strProfileId, const QString &strDefinition)
+bool UIExtraDataManager::setCloudConsoleManagerProfile(const QString &strApplicationId, const QString &strProfileId, const QString &strDefinition)
 {
-    setExtraDataString(QString("%1/%2/%3").arg(GUI_CloudConsoleManager_Application, strApplicationId, strProfileId), strDefinition);
+    return setExtraDataString(QString("%1/%2/%3").arg(GUI_CloudConsoleManager_Application, strApplicationId, strProfileId), strDefinition);
 }
 
 QStringList UIExtraDataManager::cloudConsoleManagerRestrictions()
@@ -1453,7 +1465,7 @@ QStringList UIExtraDataManager::cloudConsoleManagerRestrictions()
     return extraDataStringList(GUI_CloudConsoleManager_Restrictions);
 }
 
-void UIExtraDataManager::setCloudConsoleManagerRestrictions(const QStringList &restrictions)
+bool UIExtraDataManager::setCloudConsoleManagerRestrictions(const QStringList &restrictions)
 {
     return setExtraDataStringList(GUI_CloudConsoleManager_Restrictions, restrictions);
 }
@@ -1464,7 +1476,7 @@ bool UIExtraDataManager::cloudConsoleManagerDetailsExpanded()
     return isFeatureAllowed(GUI_CloudConsoleManager_Details_Expanded);
 }
 
-void UIExtraDataManager::setCloudConsoleManagerDetailsExpanded(bool fExpanded)
+bool UIExtraDataManager::setCloudConsoleManagerDetailsExpanded(bool fExpanded)
 {
     /* 'True' if feature allowed, null-string otherwise: */
     return setExtraDataString(GUI_CloudConsoleManager_Details_Expanded, toFeatureAllowed(fExpanded));
@@ -1475,9 +1487,9 @@ QString UIExtraDataManager::cloudConsolePublicKeyPath()
     return extraDataString(GUI_CloudConsole_PublicKey_Path);
 }
 
-void UIExtraDataManager::setCloudConsolePublicKeyPath(const QString &strPath)
+bool UIExtraDataManager::setCloudConsolePublicKeyPath(const QString &strPath)
 {
-    setExtraDataString(GUI_CloudConsole_PublicKey_Path, strPath);
+    return setExtraDataString(GUI_CloudConsole_PublicKey_Path, strPath);
 }
 
 bool UIExtraDataManager::showMachineInVirtualBoxManagerChooser(const QUuid &uID)
@@ -1568,7 +1580,7 @@ bool UIExtraDataManager::machineWindowShouldBeMaximized(UIVisualStateType visual
     return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
 }
 
-void UIExtraDataManager::setMachineWindowGeometry(UIVisualStateType visualStateType, ulong uScreenIndex, const QRect &geometry, bool fMaximized, const QUuid &uID)
+bool UIExtraDataManager::setMachineWindowGeometry(UIVisualStateType visualStateType, ulong uScreenIndex, const QRect &geometry, bool fMaximized, const QUuid &uID)
 {
     /* Choose corresponding key: */
     QString strKey;
@@ -1576,7 +1588,7 @@ void UIExtraDataManager::setMachineWindowGeometry(UIVisualStateType visualStateT
     {
         case UIVisualStateType_Normal: strKey = extraDataKeyPerScreen(GUI_LastNormalWindowPosition, uScreenIndex); break;
         case UIVisualStateType_Scale:  strKey = extraDataKeyPerScreen(GUI_LastScaleWindowPosition, uScreenIndex); break;
-        default: AssertFailedReturnVoid();
+        default: AssertFailedReturn(false);
     }
 
     /* Serialize passed values: */
@@ -1589,7 +1601,7 @@ void UIExtraDataManager::setMachineWindowGeometry(UIVisualStateType visualStateT
         data << GUI_Geometry_State_Max;
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(strKey, data, uID);
+    return setExtraDataStringList(strKey, data, uID);
 }
 
 #ifndef VBOX_WS_MAC
@@ -1599,10 +1611,10 @@ bool UIExtraDataManager::menuBarEnabled(const QUuid &uID)
     return !isFeatureRestricted(GUI_MenuBar_Enabled, uID);
 }
 
-void UIExtraDataManager::setMenuBarEnabled(bool fEnabled, const QUuid &uID)
+bool UIExtraDataManager::setMenuBarEnabled(bool fEnabled, const QUuid &uID)
 {
     /* 'False' if feature restricted, null-string otherwise: */
-    setExtraDataString(GUI_MenuBar_Enabled, toFeatureRestricted(!fEnabled), uID);
+    return setExtraDataString(GUI_MenuBar_Enabled, toFeatureRestricted(!fEnabled), uID);
 }
 #endif /* !VBOX_WS_MAC */
 
@@ -1612,10 +1624,10 @@ bool UIExtraDataManager::menuBarContextMenuEnabled(const QUuid &uID)
     return !isFeatureRestricted(GUI_MenuBar_ContextMenu_Enabled, uID);
 }
 
-void UIExtraDataManager::setMenuBarContextMenuEnabled(bool fEnabled, const QUuid &uID)
+bool UIExtraDataManager::setMenuBarContextMenuEnabled(bool fEnabled, const QUuid &uID)
 {
     /* 'False' if feature restricted, null-string otherwise: */
-    setExtraDataString(GUI_MenuBar_ContextMenu_Enabled, toFeatureRestricted(!fEnabled), uID);
+    return setExtraDataString(GUI_MenuBar_ContextMenu_Enabled, toFeatureRestricted(!fEnabled), uID);
 }
 
 UIExtraDataMetaDefs::MenuType UIExtraDataManager::restrictedRuntimeMenuTypes(const QUuid &uID)
@@ -1633,7 +1645,7 @@ UIExtraDataMetaDefs::MenuType UIExtraDataManager::restrictedRuntimeMenuTypes(con
     return result;
 }
 
-void UIExtraDataManager::setRestrictedRuntimeMenuTypes(UIExtraDataMetaDefs::MenuType types, const QUuid &uID)
+bool UIExtraDataManager::setRestrictedRuntimeMenuTypes(UIExtraDataMetaDefs::MenuType types, const QUuid &uID)
 {
     /* We have MenuType enum registered, so we can enumerate it: */
     const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
@@ -1662,7 +1674,7 @@ void UIExtraDataManager::setRestrictedRuntimeMenuTypes(UIExtraDataMetaDefs::Menu
         }
     }
     /* Save result: */
-    setExtraDataStringList(GUI_RestrictedRuntimeMenus, result, uID);
+    return setExtraDataStringList(GUI_RestrictedRuntimeMenus, result, uID);
 }
 
 UIExtraDataMetaDefs::MenuApplicationActionType UIExtraDataManager::restrictedRuntimeMenuApplicationActionTypes(const QUuid &uID)
@@ -1680,7 +1692,7 @@ UIExtraDataMetaDefs::MenuApplicationActionType UIExtraDataManager::restrictedRun
     return result;
 }
 
-void UIExtraDataManager::setRestrictedRuntimeMenuApplicationActionTypes(UIExtraDataMetaDefs::MenuApplicationActionType types, const QUuid &uID)
+bool UIExtraDataManager::setRestrictedRuntimeMenuApplicationActionTypes(UIExtraDataMetaDefs::MenuApplicationActionType types, const QUuid &uID)
 {
     /* We have MenuApplicationActionType enum registered, so we can enumerate it: */
     const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
@@ -1709,7 +1721,7 @@ void UIExtraDataManager::setRestrictedRuntimeMenuApplicationActionTypes(UIExtraD
         }
     }
     /* Save result: */
-    setExtraDataStringList(GUI_RestrictedRuntimeApplicationMenuActions, result, uID);
+    return setExtraDataStringList(GUI_RestrictedRuntimeApplicationMenuActions, result, uID);
 }
 
 UIExtraDataMetaDefs::RuntimeMenuMachineActionType UIExtraDataManager::restrictedRuntimeMenuMachineActionTypes(const QUuid &uID)
@@ -1739,7 +1751,7 @@ UIExtraDataMetaDefs::RuntimeMenuMachineActionType UIExtraDataManager::restricted
     return result;
 }
 
-void UIExtraDataManager::setRestrictedRuntimeMenuMachineActionTypes(UIExtraDataMetaDefs::RuntimeMenuMachineActionType types, const QUuid &uID)
+bool UIExtraDataManager::setRestrictedRuntimeMenuMachineActionTypes(UIExtraDataMetaDefs::RuntimeMenuMachineActionType types, const QUuid &uID)
 {
     /* We have RuntimeMenuMachineActionType enum registered, so we can enumerate it: */
     const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
@@ -1772,7 +1784,7 @@ void UIExtraDataManager::setRestrictedRuntimeMenuMachineActionTypes(UIExtraDataM
     if (result.isEmpty())
         result << gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Nothing);
     /* Save result: */
-    setExtraDataStringList(GUI_RestrictedRuntimeMachineMenuActions, result, uID);
+    return setExtraDataStringList(GUI_RestrictedRuntimeMachineMenuActions, result, uID);
 }
 
 UIExtraDataMetaDefs::RuntimeMenuViewActionType UIExtraDataManager::restrictedRuntimeMenuViewActionTypes(const QUuid &uID)
@@ -1790,7 +1802,7 @@ UIExtraDataMetaDefs::RuntimeMenuViewActionType UIExtraDataManager::restrictedRun
     return result;
 }
 
-void UIExtraDataManager::setRestrictedRuntimeMenuViewActionTypes(UIExtraDataMetaDefs::RuntimeMenuViewActionType types, const QUuid &uID)
+bool UIExtraDataManager::setRestrictedRuntimeMenuViewActionTypes(UIExtraDataMetaDefs::RuntimeMenuViewActionType types, const QUuid &uID)
 {
     /* We have RuntimeMenuViewActionType enum registered, so we can enumerate it: */
     const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
@@ -1819,7 +1831,7 @@ void UIExtraDataManager::setRestrictedRuntimeMenuViewActionTypes(UIExtraDataMeta
         }
     }
     /* Save result: */
-    setExtraDataStringList(GUI_RestrictedRuntimeViewMenuActions, result, uID);
+    return setExtraDataStringList(GUI_RestrictedRuntimeViewMenuActions, result, uID);
 }
 
 UIExtraDataMetaDefs::RuntimeMenuInputActionType UIExtraDataManager::restrictedRuntimeMenuInputActionTypes(const QUuid &uID)
@@ -1837,7 +1849,7 @@ UIExtraDataMetaDefs::RuntimeMenuInputActionType UIExtraDataManager::restrictedRu
     return result;
 }
 
-void UIExtraDataManager::setRestrictedRuntimeMenuInputActionTypes(UIExtraDataMetaDefs::RuntimeMenuInputActionType types, const QUuid &uID)
+bool UIExtraDataManager::setRestrictedRuntimeMenuInputActionTypes(UIExtraDataMetaDefs::RuntimeMenuInputActionType types, const QUuid &uID)
 {
     /* We have RuntimeMenuInputActionType enum registered, so we can enumerate it: */
     const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
@@ -1866,7 +1878,7 @@ void UIExtraDataManager::setRestrictedRuntimeMenuInputActionTypes(UIExtraDataMet
         }
     }
     /* Save result: */
-    setExtraDataStringList(GUI_RestrictedRuntimeInputMenuActions, result, uID);
+    return setExtraDataStringList(GUI_RestrictedRuntimeInputMenuActions, result, uID);
 }
 
 UIExtraDataMetaDefs::RuntimeMenuDevicesActionType UIExtraDataManager::restrictedRuntimeMenuDevicesActionTypes(const QUuid &uID)
@@ -1895,7 +1907,7 @@ UIExtraDataMetaDefs::RuntimeMenuDevicesActionType UIExtraDataManager::restricted
     return result;
 }
 
-void UIExtraDataManager::setRestrictedRuntimeMenuDevicesActionTypes(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType types, const QUuid &uID)
+bool UIExtraDataManager::setRestrictedRuntimeMenuDevicesActionTypes(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType types, const QUuid &uID)
 {
     /* We have RuntimeMenuDevicesActionType enum registered, so we can enumerate it: */
     const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
@@ -1928,7 +1940,7 @@ void UIExtraDataManager::setRestrictedRuntimeMenuDevicesActionTypes(UIExtraDataM
     if (result.isEmpty())
         result << gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Nothing);
     /* Save result: */
-    setExtraDataStringList(GUI_RestrictedRuntimeDevicesMenuActions, result, uID);
+    return setExtraDataStringList(GUI_RestrictedRuntimeDevicesMenuActions, result, uID);
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -1947,7 +1959,7 @@ UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType UIExtraDataManager::restricte
     return result;
 }
 
-void UIExtraDataManager::setRestrictedRuntimeMenuDebuggerActionTypes(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType types, const QUuid &uID)
+bool UIExtraDataManager::setRestrictedRuntimeMenuDebuggerActionTypes(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType types, const QUuid &uID)
 {
     /* We have RuntimeMenuDebuggerActionType enum registered, so we can enumerate it: */
     const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
@@ -1976,7 +1988,7 @@ void UIExtraDataManager::setRestrictedRuntimeMenuDebuggerActionTypes(UIExtraData
         }
     }
     /* Save result: */
-    setExtraDataStringList(GUI_RestrictedRuntimeDebuggerMenuActions, result, uID);
+    return setExtraDataStringList(GUI_RestrictedRuntimeDebuggerMenuActions, result, uID);
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
@@ -1996,7 +2008,7 @@ UIExtraDataMetaDefs::MenuWindowActionType UIExtraDataManager::restrictedRuntimeM
     return result;
 }
 
-void UIExtraDataManager::setRestrictedRuntimeMenuWindowActionTypes(UIExtraDataMetaDefs::MenuWindowActionType types, const QUuid &uID)
+bool UIExtraDataManager::setRestrictedRuntimeMenuWindowActionTypes(UIExtraDataMetaDefs::MenuWindowActionType types, const QUuid &uID)
 {
     /* We have MenuWindowActionType enum registered, so we can enumerate it: */
     const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
@@ -2025,7 +2037,7 @@ void UIExtraDataManager::setRestrictedRuntimeMenuWindowActionTypes(UIExtraDataMe
         }
     }
     /* Save result: */
-    setExtraDataStringList(GUI_RestrictedRuntimeWindowMenuActions, result, uID);
+    return setExtraDataStringList(GUI_RestrictedRuntimeWindowMenuActions, result, uID);
 }
 #endif /* VBOX_WS_MAC */
 
@@ -2044,7 +2056,7 @@ UIExtraDataMetaDefs::MenuHelpActionType UIExtraDataManager::restrictedRuntimeMen
     return result;
 }
 
-void UIExtraDataManager::setRestrictedRuntimeMenuHelpActionTypes(UIExtraDataMetaDefs::MenuHelpActionType types, const QUuid &uID)
+bool UIExtraDataManager::setRestrictedRuntimeMenuHelpActionTypes(UIExtraDataMetaDefs::MenuHelpActionType types, const QUuid &uID)
 {
     /* We have MenuHelpActionType enum registered, so we can enumerate it: */
     const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
@@ -2073,7 +2085,7 @@ void UIExtraDataManager::setRestrictedRuntimeMenuHelpActionTypes(UIExtraDataMeta
         }
     }
     /* Save result: */
-    setExtraDataStringList(GUI_RestrictedRuntimeHelpMenuActions, result, uID);
+    return setExtraDataStringList(GUI_RestrictedRuntimeHelpMenuActions, result, uID);
 }
 
 UIVisualStateType UIExtraDataManager::restrictedVisualStates(const QUuid &uID)
@@ -2099,11 +2111,16 @@ UIVisualStateType UIExtraDataManager::requestedVisualState(const QUuid &uID)
     return UIVisualStateType_Normal;
 }
 
-void UIExtraDataManager::setRequestedVisualState(UIVisualStateType visualState, const QUuid &uID)
+bool UIExtraDataManager::setRequestedVisualState(UIVisualStateType visualState, const QUuid &uID)
 {
-    setExtraDataString(GUI_Fullscreen, toFeatureAllowed(visualState == UIVisualStateType_Fullscreen), uID);
-    setExtraDataString(GUI_Seamless, toFeatureAllowed(visualState == UIVisualStateType_Seamless), uID);
-    setExtraDataString(GUI_Scale, toFeatureAllowed(visualState == UIVisualStateType_Scale), uID);
+    bool fResult = true;
+    /* if (fResult) */
+        fResult = setExtraDataString(GUI_Fullscreen, toFeatureAllowed(visualState == UIVisualStateType_Fullscreen), uID);
+    if (fResult)
+        fResult = setExtraDataString(GUI_Seamless, toFeatureAllowed(visualState == UIVisualStateType_Seamless), uID);
+    if (fResult)
+        fResult = setExtraDataString(GUI_Scale, toFeatureAllowed(visualState == UIVisualStateType_Scale), uID);
+    return fResult;
 }
 
 #ifdef VBOX_WS_NIX
@@ -2119,10 +2136,10 @@ bool UIExtraDataManager::distinguishMachineWindowGroups(const QUuid &uID)
     return isFeatureAllowed(GUI_DistinguishMachineWindowGroups, uID);
 }
 
-void UIExtraDataManager::setDistinguishMachineWindowGroups(const QUuid &uID, bool fEnabled)
+bool UIExtraDataManager::setDistinguishMachineWindowGroups(const QUuid &uID, bool fEnabled)
 {
     /* 'True' if feature allowed, null-string otherwise: */
-    setExtraDataString(GUI_DistinguishMachineWindowGroups, toFeatureAllowed(fEnabled), uID);
+    return setExtraDataString(GUI_DistinguishMachineWindowGroups, toFeatureAllowed(fEnabled), uID);
 }
 #endif /* VBOX_WS_NIX */
 
@@ -2132,10 +2149,10 @@ bool UIExtraDataManager::guestScreenAutoResizeEnabled(const QUuid &uID)
     return !isFeatureRestricted(GUI_AutoresizeGuest, uID);
 }
 
-void UIExtraDataManager::setGuestScreenAutoResizeEnabled(bool fEnabled, const QUuid &uID)
+bool UIExtraDataManager::setGuestScreenAutoResizeEnabled(bool fEnabled, const QUuid &uID)
 {
     /* 'False' if feature restricted, null-string otherwise: */
-    setExtraDataString(GUI_AutoresizeGuest, toFeatureRestricted(!fEnabled), uID);
+    return setExtraDataString(GUI_AutoresizeGuest, toFeatureRestricted(!fEnabled), uID);
 }
 
 bool UIExtraDataManager::lastGuestScreenVisibilityStatus(ulong uScreenIndex, const QUuid &uID)
@@ -2151,11 +2168,11 @@ bool UIExtraDataManager::lastGuestScreenVisibilityStatus(ulong uScreenIndex, con
     return isFeatureAllowed(strKey, uID);
 }
 
-void UIExtraDataManager::setLastGuestScreenVisibilityStatus(ulong uScreenIndex, bool fEnabled, const QUuid &uID)
+bool UIExtraDataManager::setLastGuestScreenVisibilityStatus(ulong uScreenIndex, bool fEnabled, const QUuid &uID)
 {
     /* Not for primary screen: */
     if (uScreenIndex == 0)
-        return;
+        return false;
 
     /* Compose corresponding key: */
     const QString strKey = extraDataKeyPerScreen(GUI_LastVisibilityStatusForGuestScreen, uScreenIndex);
@@ -2188,7 +2205,7 @@ QSize UIExtraDataManager::lastGuestScreenSizeHint(ulong uScreenIndex, const QUui
     return fOk ? QSize(iW, iH) : QSize();
 }
 
-void UIExtraDataManager::setLastGuestScreenSizeHint(ulong uScreenIndex, const QSize &sizeHint, const QUuid &uID)
+bool UIExtraDataManager::setLastGuestScreenSizeHint(ulong uScreenIndex, const QSize &sizeHint, const QUuid &uID)
 {
     /* Choose corresponding key: */
     const QString strKey = extraDataKeyPerScreen(GUI_LastGuestSizeHint, uScreenIndex);
@@ -2199,7 +2216,7 @@ void UIExtraDataManager::setLastGuestScreenSizeHint(ulong uScreenIndex, const QS
     data << QString::number(sizeHint.height());
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(strKey, data, uID);
+    return setExtraDataStringList(strKey, data, uID);
 }
 
 int UIExtraDataManager::hostScreenForPassedGuestScreen(int iGuestScreenIndex, const QUuid &uID)
@@ -2216,13 +2233,13 @@ int UIExtraDataManager::hostScreenForPassedGuestScreen(int iGuestScreenIndex, co
     return fOk ? iHostScreenIndex : -1;
 }
 
-void UIExtraDataManager::setHostScreenForPassedGuestScreen(int iGuestScreenIndex, int iHostScreenIndex, const QUuid &uID)
+bool UIExtraDataManager::setHostScreenForPassedGuestScreen(int iGuestScreenIndex, int iHostScreenIndex, const QUuid &uID)
 {
     /* Choose corresponding key: */
     const QString strKey = extraDataKeyPerScreen(GUI_VirtualScreenToHostScreen, iGuestScreenIndex, true);
 
     /* Save passed index under corresponding value: */
-    setExtraDataString(strKey, iHostScreenIndex != -1 ? QString::number(iHostScreenIndex) : QString(), uID);
+    return setExtraDataString(strKey, iHostScreenIndex != -1 ? QString::number(iHostScreenIndex) : QString(), uID);
 }
 
 bool UIExtraDataManager::autoMountGuestScreensEnabled(const QUuid &uID)
@@ -2238,10 +2255,10 @@ bool UIExtraDataManager::miniToolbarEnabled(const QUuid &uID)
     return !isFeatureRestricted(GUI_ShowMiniToolBar, uID);
 }
 
-void UIExtraDataManager::setMiniToolbarEnabled(bool fEnabled, const QUuid &uID)
+bool UIExtraDataManager::setMiniToolbarEnabled(bool fEnabled, const QUuid &uID)
 {
     /* 'False' if feature restricted, null-string otherwise: */
-    setExtraDataString(GUI_ShowMiniToolBar, toFeatureRestricted(!fEnabled), uID);
+    return setExtraDataString(GUI_ShowMiniToolBar, toFeatureRestricted(!fEnabled), uID);
 }
 
 bool UIExtraDataManager::autoHideMiniToolbar(const QUuid &uID)
@@ -2250,10 +2267,10 @@ bool UIExtraDataManager::autoHideMiniToolbar(const QUuid &uID)
     return !isFeatureRestricted(GUI_MiniToolBarAutoHide, uID);
 }
 
-void UIExtraDataManager::setAutoHideMiniToolbar(bool fAutoHide, const QUuid &uID)
+bool UIExtraDataManager::setAutoHideMiniToolbar(bool fAutoHide, const QUuid &uID)
 {
     /* 'False' if feature restricted, null-string otherwise: */
-    setExtraDataString(GUI_MiniToolBarAutoHide, toFeatureRestricted(!fAutoHide), uID);
+    return setExtraDataString(GUI_MiniToolBarAutoHide, toFeatureRestricted(!fAutoHide), uID);
 }
 
 Qt::AlignmentFlag UIExtraDataManager::miniToolbarAlignment(const QUuid &uID)
@@ -2267,15 +2284,17 @@ Qt::AlignmentFlag UIExtraDataManager::miniToolbarAlignment(const QUuid &uID)
     return Qt::AlignBottom;
 }
 
-void UIExtraDataManager::setMiniToolbarAlignment(Qt::AlignmentFlag alignment, const QUuid &uID)
+bool UIExtraDataManager::setMiniToolbarAlignment(Qt::AlignmentFlag alignment, const QUuid &uID)
 {
     /* Remove record unless Qt::AlignTop specified separately: */
     switch (alignment)
     {
-        case Qt::AlignTop: setExtraDataString(GUI_MiniToolBarAlignment, gpConverter->toInternalString(MiniToolbarAlignment_Top), uID); return;
-        default: break;
+        case Qt::AlignTop:
+            return setExtraDataString(GUI_MiniToolBarAlignment, gpConverter->toInternalString(MiniToolbarAlignment_Top), uID);
+        default:
+            break;
     }
-    setExtraDataString(GUI_MiniToolBarAlignment, QString(), uID);
+    return setExtraDataString(GUI_MiniToolBarAlignment, QString(), uID);
 }
 #endif /* VBOX_WS_MAC */
 
@@ -2285,10 +2304,10 @@ bool UIExtraDataManager::statusBarEnabled(const QUuid &uID)
     return !isFeatureRestricted(GUI_StatusBar_Enabled, uID);
 }
 
-void UIExtraDataManager::setStatusBarEnabled(bool fEnabled, const QUuid &uID)
+bool UIExtraDataManager::setStatusBarEnabled(bool fEnabled, const QUuid &uID)
 {
     /* 'False' if feature restricted, null-string otherwise: */
-    setExtraDataString(GUI_StatusBar_Enabled, toFeatureRestricted(!fEnabled), uID);
+    return setExtraDataString(GUI_StatusBar_Enabled, toFeatureRestricted(!fEnabled), uID);
 }
 
 bool UIExtraDataManager::statusBarContextMenuEnabled(const QUuid &uID)
@@ -2297,10 +2316,10 @@ bool UIExtraDataManager::statusBarContextMenuEnabled(const QUuid &uID)
     return !isFeatureRestricted(GUI_StatusBar_ContextMenu_Enabled, uID);
 }
 
-void UIExtraDataManager::setStatusBarContextMenuEnabled(bool fEnabled, const QUuid &uID)
+bool UIExtraDataManager::setStatusBarContextMenuEnabled(bool fEnabled, const QUuid &uID)
 {
     /* 'False' if feature restricted, null-string otherwise: */
-    setExtraDataString(GUI_StatusBar_ContextMenu_Enabled, toFeatureRestricted(!fEnabled), uID);
+    return setExtraDataString(GUI_StatusBar_ContextMenu_Enabled, toFeatureRestricted(!fEnabled), uID);
 }
 
 QList<IndicatorType> UIExtraDataManager::restrictedStatusBarIndicators(const QUuid &uID)
@@ -2318,7 +2337,7 @@ QList<IndicatorType> UIExtraDataManager::restrictedStatusBarIndicators(const QUu
     return result;
 }
 
-void UIExtraDataManager::setRestrictedStatusBarIndicators(const QList<IndicatorType> &list, const QUuid &uID)
+bool UIExtraDataManager::setRestrictedStatusBarIndicators(const QList<IndicatorType> &list, const QUuid &uID)
 {
     /* Parse passed list: */
     QStringList data;
@@ -2326,7 +2345,7 @@ void UIExtraDataManager::setRestrictedStatusBarIndicators(const QList<IndicatorT
         data << gpConverter->toInternalString(indicatorType);
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_RestrictedStatusBarIndicators, data, uID);
+    return setExtraDataStringList(GUI_RestrictedStatusBarIndicators, data, uID);
 }
 
 QList<IndicatorType> UIExtraDataManager::statusBarIndicatorOrder(const QUuid &uID)
@@ -2376,7 +2395,7 @@ QList<IndicatorType> UIExtraDataManager::statusBarIndicatorOrder(const QUuid &uI
     return result;
 }
 
-void UIExtraDataManager::setStatusBarIndicatorOrder(const QList<IndicatorType> &list, const QUuid &uID)
+bool UIExtraDataManager::setStatusBarIndicatorOrder(const QList<IndicatorType> &list, const QUuid &uID)
 {
     /* Parse passed list: */
     QStringList data;
@@ -2384,7 +2403,7 @@ void UIExtraDataManager::setStatusBarIndicatorOrder(const QList<IndicatorType> &
         data << gpConverter->toInternalString(indicatorType);
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_StatusBar_IndicatorOrder, data, uID);
+    return setExtraDataStringList(GUI_StatusBar_IndicatorOrder, data, uID);
 }
 
 #ifdef VBOX_WS_MAC
@@ -2394,10 +2413,10 @@ bool UIExtraDataManager::realtimeDockIconUpdateEnabled(const QUuid &uID)
     return !isFeatureRestricted(GUI_RealtimeDockIconUpdateEnabled, uID);
 }
 
-void UIExtraDataManager::setRealtimeDockIconUpdateEnabled(bool fEnabled, const QUuid &uID)
+bool UIExtraDataManager::setRealtimeDockIconUpdateEnabled(bool fEnabled, const QUuid &uID)
 {
     /* 'False' if feature restricted, null-string otherwise: */
-    setExtraDataString(GUI_RealtimeDockIconUpdateEnabled, toFeatureRestricted(!fEnabled), uID);
+    return setExtraDataString(GUI_RealtimeDockIconUpdateEnabled, toFeatureRestricted(!fEnabled), uID);
 }
 
 int UIExtraDataManager::realtimeDockIconUpdateMonitor(const QUuid &uID)
@@ -2405,9 +2424,9 @@ int UIExtraDataManager::realtimeDockIconUpdateMonitor(const QUuid &uID)
     return extraDataString(GUI_RealtimeDockIconUpdateMonitor, uID).toInt();
 }
 
-void UIExtraDataManager::setRealtimeDockIconUpdateMonitor(int iIndex, const QUuid &uID)
+bool UIExtraDataManager::setRealtimeDockIconUpdateMonitor(int iIndex, const QUuid &uID)
 {
-    setExtraDataString(GUI_RealtimeDockIconUpdateMonitor, iIndex ? QString::number(iIndex) : QString(), uID);
+    return setExtraDataString(GUI_RealtimeDockIconUpdateMonitor, iIndex ? QString::number(iIndex) : QString(), uID);
 }
 
 bool UIExtraDataManager::dockIconDisableOverlay(const QUuid &uID)
@@ -2416,10 +2435,10 @@ bool UIExtraDataManager::dockIconDisableOverlay(const QUuid &uID)
     return isFeatureAllowed(GUI_DockIconDisableOverlay, uID);
 }
 
-void UIExtraDataManager::setDockIconDisableOverlay(bool fDisabled, const QUuid &uID)
+bool UIExtraDataManager::setDockIconDisableOverlay(bool fDisabled, const QUuid &uID)
 {
     /* 'True' if feature allowed, null-string otherwise: */
-    setExtraDataString(GUI_DockIconDisableOverlay, toFeatureAllowed(fDisabled), uID);
+    return setExtraDataString(GUI_DockIconDisableOverlay, toFeatureAllowed(fDisabled), uID);
 }
 #endif /* VBOX_WS_MAC */
 
@@ -2491,7 +2510,7 @@ QList<double> UIExtraDataManager::scaleFactors(const QUuid &uID)
     return scaleFactorList;
 }
 
-void UIExtraDataManager::setScaleFactor(double dScaleFactor, const QUuid &uID, int iScreenIndex)
+bool UIExtraDataManager::setScaleFactor(double dScaleFactor, const QUuid &uID, int iScreenIndex)
 {
     QStringList data = extraDataStringList(GUI_ScaleFactor, uID);
 
@@ -2503,15 +2522,15 @@ void UIExtraDataManager::setScaleFactor(double dScaleFactor, const QUuid &uID, i
     }
 
     data[iScreenIndex] = QString::number(dScaleFactor);
-    setExtraDataStringList(GUI_ScaleFactor, data, uID);
+    return setExtraDataStringList(GUI_ScaleFactor, data, uID);
 }
 
-void UIExtraDataManager::setScaleFactors(const QList<double> &scaleFactors, const QUuid &uID)
+bool UIExtraDataManager::setScaleFactors(const QList<double> &scaleFactors, const QUuid &uID)
 {
     QStringList data;
     for (int i = 0; i < scaleFactors.size(); ++i)
         data.append(QString::number(scaleFactors[i]));
-    setExtraDataStringList(GUI_ScaleFactor, data, uID);
+    return setExtraDataStringList(GUI_ScaleFactor, data, uID);
 }
 
 ScalingOptimizationType UIExtraDataManager::scalingOptimizationType(const QUuid &uID)
@@ -2529,7 +2548,7 @@ bool UIExtraDataManager::sessionInformationDialogShouldBeMaximized()
     return dialogShouldBeMaximized(GUI_SessionInformationDialogGeometry);
 }
 
-void UIExtraDataManager::setSessionInformationDialogGeometry(const QRect &geometry, bool fMaximized)
+bool UIExtraDataManager::setSessionInformationDialogGeometry(const QRect &geometry, bool fMaximized)
 {
     /* Serialize passed values: */
     QStringList data;
@@ -2541,18 +2560,17 @@ void UIExtraDataManager::setSessionInformationDialogGeometry(const QRect &geomet
         data << GUI_Geometry_State_Max;
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_SessionInformationDialogGeometry, data);
+    return setExtraDataStringList(GUI_SessionInformationDialogGeometry, data);
 }
 
-
-void UIExtraDataManager::setGuestControlProcessControlSplitterHints(const QList<int> &hints)
+bool UIExtraDataManager::setGuestControlProcessControlSplitterHints(const QList<int> &hints)
 {
     QStringList data;
     data << (hints.size() > 0 ? QString::number(hints[0]) : QString());
     data << (hints.size() > 1 ? QString::number(hints[1]) : QString());
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_GuestControl_ProcessControlSplitterHints, data);
+    return setExtraDataStringList(GUI_GuestControl_ProcessControlSplitterHints, data);
 }
 
 QList<int> UIExtraDataManager::guestControlProcessControlSplitterHints()
@@ -2584,9 +2602,9 @@ void UIExtraDataManager::setFileManagerDialogGeometry(const QRect &geometry, boo
     setDialogGeometry(GUI_GuestControl_FileManagerDialogGeometry, geometry, fMaximized);
 }
 
-void UIExtraDataManager::setFileManagerVisiblePanels(const QStringList &panelNameList)
+bool UIExtraDataManager::setFileManagerVisiblePanels(const QStringList &panelNameList)
 {
-    setExtraDataStringList(GUI_GuestControl_FileManagerVisiblePanels, panelNameList);
+    return setExtraDataStringList(GUI_GuestControl_FileManagerVisiblePanels, panelNameList);
 }
 
 QStringList UIExtraDataManager::fileManagerVisiblePanels()
@@ -2609,7 +2627,7 @@ bool UIExtraDataManager::softKeyboardDialogShouldBeMaximized()
     return dialogShouldBeMaximized(GUI_SoftKeyboard_DialogGeometry);
 }
 
-void UIExtraDataManager::setSoftKeyboardOptions(bool fHideNumPad, bool fHideOSMenuKeys, bool fMultimediaKeys)
+bool UIExtraDataManager::setSoftKeyboardOptions(bool fHideNumPad, bool fHideOSMenuKeys, bool fMultimediaKeys)
 {
     QStringList data;
 
@@ -2620,7 +2638,7 @@ void UIExtraDataManager::setSoftKeyboardOptions(bool fHideNumPad, bool fHideOSMe
     if (fMultimediaKeys)
         data << GUI_SoftKeyboard_HideMultimediaKeys;
 
-    setExtraDataStringList(GUI_SoftKeyboard_Options, data);
+    return setExtraDataStringList(GUI_SoftKeyboard_Options, data);
 }
 
 void UIExtraDataManager::softKeyboardOptions(bool &fOutHideNumPad, bool &fOutHideOSMenuKeys, bool &fOutHideMultimediaKeys)
@@ -2639,9 +2657,9 @@ void UIExtraDataManager::softKeyboardOptions(bool &fOutHideNumPad, bool &fOutHid
     }
 }
 
-void UIExtraDataManager::setSoftKeyboardColorTheme(const QStringList &colorStringList)
+bool UIExtraDataManager::setSoftKeyboardColorTheme(const QStringList &colorStringList)
 {
-    setExtraDataStringList(GUI_SoftKeyboard_ColorTheme, colorStringList);
+    return setExtraDataStringList(GUI_SoftKeyboard_ColorTheme, colorStringList);
 }
 
 QStringList UIExtraDataManager::softKeyboardColorTheme()
@@ -2649,9 +2667,9 @@ QStringList UIExtraDataManager::softKeyboardColorTheme()
     return extraDataStringList(GUI_SoftKeyboard_ColorTheme);
 }
 
-void UIExtraDataManager::setSoftKeyboardSelectedColorTheme(const QString &strColorThemeName)
+bool UIExtraDataManager::setSoftKeyboardSelectedColorTheme(const QString &strColorThemeName)
 {
-    setExtraDataString(GUI_SoftKeyboard_SelectedColorTheme, strColorThemeName);
+    return setExtraDataString(GUI_SoftKeyboard_SelectedColorTheme, strColorThemeName);
 }
 
 QString UIExtraDataManager::softKeyboardSelectedColorTheme()
@@ -2659,9 +2677,9 @@ QString UIExtraDataManager::softKeyboardSelectedColorTheme()
     return extraDataString(GUI_SoftKeyboard_SelectedColorTheme);
 }
 
-void UIExtraDataManager::setSoftKeyboardSelectedLayout(const QUuid &uLayoutUid)
+bool UIExtraDataManager::setSoftKeyboardSelectedLayout(const QUuid &uLayoutUid)
 {
-    setExtraDataString(GUI_SoftKeyboard_SelectedLayout, uLayoutUid.toString());
+    return setExtraDataString(GUI_SoftKeyboard_SelectedLayout, uLayoutUid.toString());
 }
 
 QUuid UIExtraDataManager::softKeyboardSelectedLayout()
@@ -2669,7 +2687,7 @@ QUuid UIExtraDataManager::softKeyboardSelectedLayout()
     return QUuid(extraDataString(GUI_SoftKeyboard_SelectedLayout));
 }
 
-void UIExtraDataManager::setFileManagerOptions(bool fListDirectoriesFirst,
+bool UIExtraDataManager::setFileManagerOptions(bool fListDirectoriesFirst,
                                                bool fShowDeleteConfirmation,
                                                bool fShowHumanReadableSizes,
                                                bool fShowHiddenObjects,
@@ -2690,7 +2708,7 @@ void UIExtraDataManager::setFileManagerOptions(bool fListDirectoriesFirst,
         data << GUI_GuestControl_FileManagerAllowInteractiveColumnWidths;
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_GuestControl_FileManagerOptions, data);
+    return setExtraDataStringList(GUI_GuestControl_FileManagerOptions, data);
 }
 
 bool UIExtraDataManager::fileManagerAllowInteractiveColumnWidths()
@@ -2788,9 +2806,9 @@ MachineCloseAction UIExtraDataManager::lastMachineCloseAction(const QUuid &uID)
     return gpConverter->fromInternalString<MachineCloseAction>(extraDataString(GUI_LastCloseAction, uID));
 }
 
-void UIExtraDataManager::setLastMachineCloseAction(MachineCloseAction machineCloseAction, const QUuid &uID)
+bool UIExtraDataManager::setLastMachineCloseAction(MachineCloseAction machineCloseAction, const QUuid &uID)
 {
-    setExtraDataString(GUI_LastCloseAction, gpConverter->toInternalString(machineCloseAction), uID);
+    return setExtraDataString(GUI_LastCloseAction, gpConverter->toInternalString(machineCloseAction), uID);
 }
 
 QString UIExtraDataManager::machineCloseHookScript(const QUuid &uID)
@@ -2822,7 +2840,7 @@ bool UIExtraDataManager::extraDataManagerShouldBeMaximized()
     return dialogShouldBeMaximized(GUI_ExtraDataManager_Geometry);
 }
 
-void UIExtraDataManager::setExtraDataManagerGeometry(const QRect &geometry, bool fMaximized)
+bool UIExtraDataManager::setExtraDataManagerGeometry(const QRect &geometry, bool fMaximized)
 {
     /* Serialize passed values: */
     QStringList data;
@@ -2834,7 +2852,7 @@ void UIExtraDataManager::setExtraDataManagerGeometry(const QRect &geometry, bool
         data << GUI_Geometry_State_Max;
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_ExtraDataManager_Geometry, data);
+    return setExtraDataStringList(GUI_ExtraDataManager_Geometry, data);
 }
 
 QList<int> UIExtraDataManager::extraDataManagerSplitterHints(QWidget *pWidget)
@@ -2871,7 +2889,7 @@ QList<int> UIExtraDataManager::extraDataManagerSplitterHints(QWidget *pWidget)
     return hints;
 }
 
-void UIExtraDataManager::setExtraDataManagerSplitterHints(const QList<int> &hints)
+bool UIExtraDataManager::setExtraDataManagerSplitterHints(const QList<int> &hints)
 {
     /* Parse passed hints: */
     QStringList data;
@@ -2879,7 +2897,7 @@ void UIExtraDataManager::setExtraDataManagerSplitterHints(const QList<int> &hint
     data << (hints.size() > 1 ? QString::number(hints[1]) : QString());
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_ExtraDataManager_SplitterHints, data);
+    return setExtraDataStringList(GUI_ExtraDataManager_SplitterHints, data);
 }
 #endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
 
@@ -2893,7 +2911,7 @@ bool UIExtraDataManager::logWindowShouldBeMaximized()
     return dialogShouldBeMaximized(GUI_LogWindowGeometry);
 }
 
-void UIExtraDataManager::setLogWindowGeometry(const QRect &geometry, bool fMaximized)
+bool UIExtraDataManager::setLogWindowGeometry(const QRect &geometry, bool fMaximized)
 {
     /* Serialize passed values: */
     QStringList data;
@@ -2905,10 +2923,10 @@ void UIExtraDataManager::setLogWindowGeometry(const QRect &geometry, bool fMaxim
         data << GUI_Geometry_State_Max;
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_LogWindowGeometry, data);
+    return setExtraDataStringList(GUI_LogWindowGeometry, data);
 }
 
-void UIExtraDataManager::setLogViweverOptions(const QFont &font, bool wrapLines, bool showLineNumbers)
+bool UIExtraDataManager::setLogViweverOptions(const QFont &font, bool wrapLines, bool showLineNumbers)
 {
     /* Serialize passed values: */
     QStringList data;
@@ -2927,7 +2945,7 @@ void UIExtraDataManager::setLogViweverOptions(const QFont &font, bool wrapLines,
         data << GUI_LogViewerShowLineNumbersDisabled;
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_LogViewerOptions, data);
+    return setExtraDataStringList(GUI_LogViewerOptions, data);
 }
 
 bool UIExtraDataManager::logViewerWrapLines()
@@ -2968,9 +2986,9 @@ QFont UIExtraDataManager::logViewerFont()
     return QFontDatabase::font(strFamily, strStyleName, iFontSize);
 }
 
-void UIExtraDataManager::setHelpBrowserLastUrlList(const QStringList &urlList)
+bool UIExtraDataManager::setHelpBrowserLastUrlList(const QStringList &urlList)
 {
-    setExtraDataStringList(GUI_HelpBrowser_LastURLList, urlList);
+    return setExtraDataStringList(GUI_HelpBrowser_LastURLList, urlList);
 }
 
 QStringList UIExtraDataManager::helpBrowserLastUrlList()
@@ -2978,9 +2996,9 @@ QStringList UIExtraDataManager::helpBrowserLastUrlList()
     return extraDataStringList(GUI_HelpBrowser_LastURLList);
 }
 
-void UIExtraDataManager::setHelpBrowserZoomPercentage(int iZoomPercentage)
+bool UIExtraDataManager::setHelpBrowserZoomPercentage(int iZoomPercentage)
 {
-    setExtraDataString(GUI_HelpBrowser_ZoomPercentage, QString::number(iZoomPercentage));
+    return setExtraDataString(GUI_HelpBrowser_ZoomPercentage, QString::number(iZoomPercentage));
 }
 
 int UIExtraDataManager::helpBrowserZoomPercentage()
@@ -2993,7 +3011,7 @@ QRect UIExtraDataManager::helpBrowserDialogGeometry(QWidget *pWidget, QWidget *p
     return dialogGeometry(GUI_HelpBrowser_DialogGeometry, pWidget, pParentWidget, defaultGeometry);
 }
 
-void UIExtraDataManager::setHelpBrowserDialogGeometry(const QRect &geometry, bool fMaximized)
+bool UIExtraDataManager::setHelpBrowserDialogGeometry(const QRect &geometry, bool fMaximized)
 {
     /* Serialize passed values: */
     QStringList data;
@@ -3005,7 +3023,7 @@ void UIExtraDataManager::setHelpBrowserDialogGeometry(const QRect &geometry, boo
         data << GUI_Geometry_State_Max;
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_HelpBrowser_DialogGeometry, data);
+    return setExtraDataStringList(GUI_HelpBrowser_DialogGeometry, data);
 }
 
 bool UIExtraDataManager::helpBrowserDialogShouldBeMaximized()
@@ -3013,9 +3031,9 @@ bool UIExtraDataManager::helpBrowserDialogShouldBeMaximized()
     return dialogShouldBeMaximized(GUI_HelpBrowser_DialogGeometry);
 }
 
-void UIExtraDataManager::setHelpBrowserBookmarks(const QStringList &bookmarks)
+bool UIExtraDataManager::setHelpBrowserBookmarks(const QStringList &bookmarks)
 {
-    setExtraDataStringList(GUI_HelpBrowser_Bookmarks, bookmarks);
+    return setExtraDataStringList(GUI_HelpBrowser_Bookmarks, bookmarks);
 }
 
 QStringList UIExtraDataManager::helpBrowserBookmarks()
@@ -3023,9 +3041,9 @@ QStringList UIExtraDataManager::helpBrowserBookmarks()
     return extraDataStringList(GUI_HelpBrowser_Bookmarks);
 }
 
-void UIExtraDataManager::setVMActivityOverviewHiddenColumnList(const QStringList &hiddenColumnList)
+bool UIExtraDataManager::setVMActivityOverviewHiddenColumnList(const QStringList &hiddenColumnList)
 {
-    setExtraDataStringList(GUI_VMActivityOverview_HiddenColumns, hiddenColumnList);
+    return setExtraDataStringList(GUI_VMActivityOverview_HiddenColumns, hiddenColumnList);
 }
 
 QStringList UIExtraDataManager::VMActivityOverviewHiddenColumnList()
@@ -3038,14 +3056,14 @@ bool UIExtraDataManager::VMActivityOverviewShowAllMachines()
     return isFeatureAllowed(GUI_VMActivityOverview_ShowAllMachines);
 }
 
-void UIExtraDataManager::setVMActivityOverviewShowAllMachines(bool fShow)
+bool UIExtraDataManager::setVMActivityOverviewShowAllMachines(bool fShow)
 {
-    setExtraDataString(GUI_VMActivityOverview_ShowAllMachines, toFeatureAllowed(fShow));
+    return setExtraDataString(GUI_VMActivityOverview_ShowAllMachines, toFeatureAllowed(fShow));
 }
 
-void UIExtraDataManager::setVMActivityMonitorDataSeriesColors(const QStringList &colorList)
+bool UIExtraDataManager::setVMActivityMonitorDataSeriesColors(const QStringList &colorList)
 {
-    setExtraDataStringList(GUI_VMActivityMonitor_DataSeriesColors, colorList);
+    return setExtraDataStringList(GUI_VMActivityMonitor_DataSeriesColors, colorList);
 }
 
 QStringList UIExtraDataManager::VMActivityMonitorDataSeriesColors()
@@ -3058,9 +3076,9 @@ bool UIExtraDataManager::VMActivityMonitorShowVMExits()
     return isFeatureAllowed(GUI_VMActivityMonitor_ShowVMExits);
 }
 
-void UIExtraDataManager::setVMActivityMonitorShowVMExits(bool fShow)
+bool UIExtraDataManager::setVMActivityMonitorShowVMExits(bool fShow)
 {
-    setExtraDataString(GUI_VMActivityMonitor_ShowVMExits, toFeatureAllowed(fShow));
+    return setExtraDataString(GUI_VMActivityMonitor_ShowVMExits, toFeatureAllowed(fShow));
 }
 
 QRect UIExtraDataManager::mediumSelectorDialogGeometry(QWidget *pWidget, QWidget *pParentWidget, const QRect &defaultGeometry)
@@ -3381,7 +3399,7 @@ QString UIExtraDataManager::toFeatureRestricted(bool fRestricted)
     return fRestricted ? QString("false") : QString();
 }
 
-void UIExtraDataManager::setDialogGeometry(const QString &strKey, const QRect &geometry, bool fMaximized)
+bool UIExtraDataManager::setDialogGeometry(const QString &strKey, const QRect &geometry, bool fMaximized)
 {
     /* Serialize passed values: */
     QStringList data;
@@ -3393,7 +3411,7 @@ void UIExtraDataManager::setDialogGeometry(const QString &strKey, const QRect &g
         data << GUI_Geometry_State_Max;
 
     /* Save corresponding extra-data: */
-    setExtraDataStringList(strKey, data);
+    return setExtraDataStringList(strKey, data);
 }
 
 QRect UIExtraDataManager::dialogGeometry(const QString &strKey,
