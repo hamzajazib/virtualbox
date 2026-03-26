@@ -140,6 +140,8 @@ def testVBoxAPI():
             raise Exception('Host platform invalid!')
         print("Testing VirtualBox Python bindings successful: Detected VirtualBox %s (%d)" % (oVBox.version, oHost.architecture))
         _ = oVBox.getMachines()
+        del oHost
+        del oVBox
         oVBoxMgr.deinit()
         del oVBoxMgr
     except ImportError as exc:
