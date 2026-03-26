@@ -1,4 +1,4 @@
-/* $Id: DevFwCommon.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: DevFwCommon.cpp 113594 2026-03-26 13:37:10Z alexander.eichner@oracle.com $ */
 /** @file
  * FwCommon - Shared firmware code (used by DevPcBios & DevEFI).
  */
@@ -63,9 +63,9 @@
 
 /* type 0 -- DMI BIOS information */
 static const int32_t g_iDefDmiBIOSReleaseMajor  = 0;
-static const int32_t g_iDefDmiBIOSReleaseMinor  = 0;
+static const int32_t g_iDefDmiBIOSReleaseMinor  = 1;
 static const int32_t g_iDefDmiBIOSFirmwareMajor = 0;
-static const int32_t g_iDefDmiBIOSFirmwareMinor = 0;
+static const int32_t g_iDefDmiBIOSFirmwareMinor = 1;
 static const char   *g_pszDefDmiBIOSVendor      = "innotek GmbH";
 static const char   *g_pszDefDmiBIOSVersion     = "VirtualBox";
 static const char   *g_pszDefDmiBIOSReleaseDate = "12/01/2006";
