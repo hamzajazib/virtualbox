@@ -1,4 +1,4 @@
-/* $Id: UIGlobalSettingsLanguage.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIGlobalSettingsLanguage.cpp 113597 2026-03-26 16:19:13Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIGlobalSettingsLanguage class implementation.
  */
@@ -201,7 +201,11 @@ bool UIGlobalSettingsLanguage::saveData()
         /* Save new data from cache: */
         if (   fSuccess
             && newData.m_strLanguageId != oldData.m_strLanguageId)
-            /* fSuccess = */ gEDataManager->setLanguageId(newData.m_strLanguageId);
+            fSuccess = gEDataManager->setLanguageId(newData.m_strLanguageId, this);
+
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            notifyOperationProgressError(QString());
     }
     /* Return result: */
     return fSuccess;

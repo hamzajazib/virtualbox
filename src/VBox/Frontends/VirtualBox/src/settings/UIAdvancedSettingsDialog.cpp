@@ -1,4 +1,4 @@
-﻿/* $Id: UIAdvancedSettingsDialog.cpp 113572 2026-03-25 10:42:57Z sergey.dubov@oracle.com $ */
+﻿/* $Id: UIAdvancedSettingsDialog.cpp 113597 2026-03-26 16:19:13Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIAdvancedSettingsDialog class implementation.
  */
@@ -1417,7 +1417,7 @@ void UIAdvancedSettingsDialog::sltHandleWarningPaneUnhovered(UISettingsPageValid
 void UIAdvancedSettingsDialog::sltHandleExperienceModeCheckBoxChanged()
 {
     /* Save new value: */
-    gEDataManager->setSettingsInExpertMode(m_pCheckBoxMode->isChecked());
+    gEDataManager->setSettingsInExpertMode(m_pCheckBoxMode->isChecked(), this);
 }
 
 void UIAdvancedSettingsDialog::sltHandleExperienceModeChanged()

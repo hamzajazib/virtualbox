@@ -1,4 +1,4 @@
-/* $Id: UIGlobalSettingsUpdate.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIGlobalSettingsUpdate.cpp 113597 2026-03-26 16:19:13Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIGlobalSettingsUpdate class implementation.
  */
@@ -208,11 +208,17 @@ bool UIGlobalSettingsUpdate::saveData()
         if (   fSuccess
             && newData != oldData)
         {
-            /* We still prefer data to be saved to extra-data as well, for backward compartibility: */
-            /* fSuccess = */ gEDataManager->setApplicationUpdateData(newData.m_guiUpdateData.data());
             /* Save new data to host finally: */
             const VBoxUpdateData guiUpdateData = newData.m_guiUpdateData;
             fSuccess = guiUpdateData.save(m_host);
+
+            /* We still prefer data to be saved to extra-data as well, for backward compartibility: */
+            if (fSuccess)
+                fSuccess = gEDataManager->setApplicationUpdateData(newData.m_guiUpdateData.data(), this);
+
+            /* Show error message if necessary: */
+            if (!fSuccess)
+                notifyOperationProgressError(QString());
         }
     }
     /* Return result: */

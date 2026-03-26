@@ -1,4 +1,4 @@
-/* $Id: UIMachineSettingsDisplay.cpp 113323 2026-03-11 09:32:40Z sergey.dubov@oracle.com $ */
+/* $Id: UIMachineSettingsDisplay.cpp 113597 2026-03-26 16:19:13Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMachineSettingsDisplay class implementation.
  */
@@ -1002,13 +1002,20 @@ bool UIMachineSettingsDisplay::saveScreenData()
             }
 #endif
 
+            /* Save guest-screen scale-factor: */
+            bool fEDataFailed = false;
+            if (fSuccess && newDisplayData.m_scaleFactors != oldDisplayData.m_scaleFactors)
+            {
+                fSuccess = gEDataManager->setScaleFactors(newDisplayData.m_scaleFactors,
+                                                          uMachineId,
+                                                          this);
+                fEDataFailed = !fSuccess;
+            }
+
             /* Show error message if necessary: */
             if (!fSuccess)
-                notifyOperationProgressError(UIErrorString::formatErrorInfo(comGraphics));
-
-            /* Save guest-screen scale-factor: */
-            if (fSuccess && newDisplayData.m_scaleFactors != oldDisplayData.m_scaleFactors)
-                /* fSuccess = */ gEDataManager->setScaleFactors(newDisplayData.m_scaleFactors, uMachineId);
+                notifyOperationProgressError(fEDataFailed ? QString() :
+                                             UIErrorString::formatErrorInfo(comGraphics));
         }
     }
     /* Return result: */

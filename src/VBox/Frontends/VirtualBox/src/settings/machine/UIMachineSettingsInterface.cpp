@@ -1,4 +1,4 @@
-/* $Id: UIMachineSettingsInterface.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIMachineSettingsInterface.cpp 113597 2026-03-26 16:19:13Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMachineSettingsInterface class implementation.
  */
@@ -479,39 +479,63 @@ bool UIMachineSettingsInterface::saveMenuBarData()
 #ifndef VBOX_WS_MAC
         /* Save whether menu-bar is enabled: */
         if (fSuccess && newInterfaceData.m_fMenuBarEnabled != oldInterfaceData.m_fMenuBarEnabled)
-            /* fSuccess = */ gEDataManager->setMenuBarEnabled(newInterfaceData.m_fMenuBarEnabled, m_machine.GetId());
+            fSuccess = gEDataManager->setMenuBarEnabled(newInterfaceData.m_fMenuBarEnabled,
+                                                        m_machine.GetId(),
+                                                        this);
 #endif
         /* Save menu-bar restrictions: */
         if (fSuccess && newInterfaceData.m_restrictionsOfMenuBar != oldInterfaceData.m_restrictionsOfMenuBar)
-            /* fSuccess = */ gEDataManager->setRestrictedRuntimeMenuTypes(newInterfaceData.m_restrictionsOfMenuBar, m_machine.GetId());
+            fSuccess = gEDataManager->setRestrictedRuntimeMenuTypes(newInterfaceData.m_restrictionsOfMenuBar,
+                                                                    m_machine.GetId(),
+                                                                    this);
         /* Save menu-bar Application menu restrictions: */
         if (fSuccess && newInterfaceData.m_restrictionsOfMenuApplication != oldInterfaceData.m_restrictionsOfMenuApplication)
-            /* fSuccess = */ gEDataManager->setRestrictedRuntimeMenuApplicationActionTypes(newInterfaceData.m_restrictionsOfMenuApplication, m_machine.GetId());
+            fSuccess = gEDataManager->setRestrictedRuntimeMenuApplicationActionTypes(newInterfaceData.m_restrictionsOfMenuApplication,
+                                                                                     m_machine.GetId(),
+                                                                                     this);
         /* Save menu-bar Machine menu restrictions: */
         if (fSuccess && newInterfaceData.m_restrictionsOfMenuMachine != oldInterfaceData.m_restrictionsOfMenuMachine)
-           /* fSuccess = */  gEDataManager->setRestrictedRuntimeMenuMachineActionTypes(newInterfaceData.m_restrictionsOfMenuMachine, m_machine.GetId());
+            fSuccess = gEDataManager->setRestrictedRuntimeMenuMachineActionTypes(newInterfaceData.m_restrictionsOfMenuMachine,
+                                                                                 m_machine.GetId(),
+                                                                                 this);
         /* Save menu-bar View menu restrictions: */
         if (fSuccess && newInterfaceData.m_restrictionsOfMenuView != oldInterfaceData.m_restrictionsOfMenuView)
-           /* fSuccess = */  gEDataManager->setRestrictedRuntimeMenuViewActionTypes(newInterfaceData.m_restrictionsOfMenuView, m_machine.GetId());
+            fSuccess = gEDataManager->setRestrictedRuntimeMenuViewActionTypes(newInterfaceData.m_restrictionsOfMenuView,
+                                                                              m_machine.GetId(),
+                                                                              this);
         /* Save menu-bar Input menu restrictions: */
         if (fSuccess && newInterfaceData.m_restrictionsOfMenuInput != oldInterfaceData.m_restrictionsOfMenuInput)
-            /* fSuccess = */ gEDataManager->setRestrictedRuntimeMenuInputActionTypes(newInterfaceData.m_restrictionsOfMenuInput, m_machine.GetId());
+            fSuccess = gEDataManager->setRestrictedRuntimeMenuInputActionTypes(newInterfaceData.m_restrictionsOfMenuInput,
+                                                                               m_machine.GetId(),
+                                                                               this);
         /* Save menu-bar Devices menu restrictions: */
         if (fSuccess && newInterfaceData.m_restrictionsOfMenuDevices != oldInterfaceData.m_restrictionsOfMenuDevices)
-            /* fSuccess = */ gEDataManager->setRestrictedRuntimeMenuDevicesActionTypes(newInterfaceData.m_restrictionsOfMenuDevices, m_machine.GetId());
+            fSuccess = gEDataManager->setRestrictedRuntimeMenuDevicesActionTypes(newInterfaceData.m_restrictionsOfMenuDevices,
+                                                                                 m_machine.GetId(),
+                                                                                 this);
 #ifdef VBOX_WITH_DEBUGGER_GUI
         /* Save menu-bar Debug menu restrictions: */
         if (fSuccess && newInterfaceData.m_restrictionsOfMenuDebug != oldInterfaceData.m_restrictionsOfMenuDebug)
-            /* fSuccess = */ gEDataManager->setRestrictedRuntimeMenuDebuggerActionTypes(newInterfaceData.m_restrictionsOfMenuDebug, m_machine.GetId());
+            fSuccess = gEDataManager->setRestrictedRuntimeMenuDebuggerActionTypes(newInterfaceData.m_restrictionsOfMenuDebug,
+                                                                                  m_machine.GetId(),
+                                                                                  this);
 #endif
 #ifdef VBOX_WS_MAC
         /* Save menu-bar Window menu restrictions: */
         if (fSuccess && newInterfaceData.m_restrictionsOfMenuWindow != oldInterfaceData.m_restrictionsOfMenuWindow)
-            /* fSuccess = */ gEDataManager->setRestrictedRuntimeMenuWindowActionTypes(newInterfaceData.m_restrictionsOfMenuWindow, m_machine.GetId());
+            fSuccess = gEDataManager->setRestrictedRuntimeMenuWindowActionTypes(newInterfaceData.m_restrictionsOfMenuWindow,
+                                                                                m_machine.GetId(),
+                                                                                this);
 #endif
         /* Save menu-bar Help menu restrictions: */
         if (fSuccess && newInterfaceData.m_restrictionsOfMenuHelp != oldInterfaceData.m_restrictionsOfMenuHelp)
-            /* fSuccess = */ gEDataManager->setRestrictedRuntimeMenuHelpActionTypes(newInterfaceData.m_restrictionsOfMenuHelp, m_machine.GetId());
+            fSuccess = gEDataManager->setRestrictedRuntimeMenuHelpActionTypes(newInterfaceData.m_restrictionsOfMenuHelp,
+                                                                              m_machine.GetId(),
+                                                                              this);
+
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            notifyOperationProgressError(QString());
     }
     /* Return result: */
     return fSuccess;
@@ -535,13 +559,23 @@ bool UIMachineSettingsInterface::saveStatusBarData()
 
         /* Save whether status-bar is enabled: */
         if (fSuccess && newInterfaceData.m_fStatusBarEnabled != oldInterfaceData.m_fStatusBarEnabled)
-            /* fSuccess = */ gEDataManager->setStatusBarEnabled(newInterfaceData.m_fStatusBarEnabled, m_machine.GetId());
+            fSuccess = gEDataManager->setStatusBarEnabled(newInterfaceData.m_fStatusBarEnabled,
+                                                          m_machine.GetId(),
+                                                          this);
         /* Save status-bar restrictions: */
         if (fSuccess && newInterfaceData.m_statusBarRestrictions != oldInterfaceData.m_statusBarRestrictions)
-            /* fSuccess = */ gEDataManager->setRestrictedStatusBarIndicators(newInterfaceData.m_statusBarRestrictions, m_machine.GetId());
+            fSuccess = gEDataManager->setRestrictedStatusBarIndicators(newInterfaceData.m_statusBarRestrictions,
+                                                                       m_machine.GetId(),
+                                                                       this);
         /* Save status-bar order: */
         if (fSuccess && newInterfaceData.m_statusBarOrder != oldInterfaceData.m_statusBarOrder)
-            /* fSuccess = */ gEDataManager->setStatusBarIndicatorOrder(newInterfaceData.m_statusBarOrder, m_machine.GetId());
+            fSuccess = gEDataManager->setStatusBarIndicatorOrder(newInterfaceData.m_statusBarOrder,
+                                                                 m_machine.GetId(),
+                                                                 this);
+
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            notifyOperationProgressError(QString());
     }
     /* Return result: */
     return fSuccess;
@@ -566,10 +600,20 @@ bool UIMachineSettingsInterface::saveMiniToolbarData()
 #ifndef VBOX_WS_MAC
         /* Save whether mini-toolbar is enabled: */
         if (fSuccess && newInterfaceData.m_fShowMiniToolbar != oldInterfaceData.m_fShowMiniToolbar)
-            /* fSuccess = */ gEDataManager->setMiniToolbarEnabled(newInterfaceData.m_fShowMiniToolbar, m_machine.GetId());
+            fSuccess = gEDataManager->setMiniToolbarEnabled(newInterfaceData.m_fShowMiniToolbar,
+                                                            m_machine.GetId(),
+                                                            this);
         /* Save whether mini-toolbar should be location at top of screen: */
         if (fSuccess && newInterfaceData.m_fMiniToolbarAtTop != oldInterfaceData.m_fMiniToolbarAtTop)
-            /* fSuccess = */ gEDataManager->setMiniToolbarAlignment(newInterfaceData.m_fMiniToolbarAtTop ? Qt::AlignTop : Qt::AlignBottom, m_machine.GetId());
+            fSuccess = gEDataManager->setMiniToolbarAlignment(  newInterfaceData.m_fMiniToolbarAtTop
+                                                              ? Qt::AlignTop
+                                                              : Qt::AlignBottom,
+                                                                m_machine.GetId(),
+                                                                this);
+
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            notifyOperationProgressError(QString());
 #endif
     }
     /* Return result: */
@@ -594,7 +638,13 @@ bool UIMachineSettingsInterface::saveVisualStateData()
 
         /* Save desired visual state: */
         if (fSuccess && newInterfaceData.m_enmVisualState != oldInterfaceData.m_enmVisualState)
-            /* fSuccess = */ gEDataManager->setRequestedVisualState(newInterfaceData.m_enmVisualState, m_machine.GetId());
+            fSuccess = gEDataManager->setRequestedVisualState(newInterfaceData.m_enmVisualState,
+                                                              m_machine.GetId(),
+                                                              this);
+
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            notifyOperationProgressError(QString());
     }
     /* Return result: */
     return fSuccess;

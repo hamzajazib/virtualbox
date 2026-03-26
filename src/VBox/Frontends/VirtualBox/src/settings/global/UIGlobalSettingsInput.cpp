@@ -1,4 +1,4 @@
-/* $Id: UIGlobalSettingsInput.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIGlobalSettingsInput.cpp 113597 2026-03-26 16:19:13Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIGlobalSettingsInput class implementation.
  */
@@ -278,7 +278,7 @@ bool UIGlobalSettingsInput::saveData()
             const QString strHostComboBase = iHostComboItemBase != -1 ? oldData.m_shortcuts.at(iHostComboItemBase).currentSequence() : QString();
             const QString strHostComboData = iHostComboItemData != -1 ? newData.m_shortcuts.at(iHostComboItemData).currentSequence() : QString();
             if (strHostComboData != strHostComboBase)
-                /* fSuccess = */ gEDataManager->setHostKeyCombination(strHostComboData);
+                fSuccess = gEDataManager->setHostKeyCombination(strHostComboData, this);
         }
 
         /* Save other new shortcuts from cache: */
@@ -297,7 +297,11 @@ bool UIGlobalSettingsInput::saveData()
         /* Save other new things from cache: */
         if (   fSuccess
             && newData.m_fAutoCapture != oldData.m_fAutoCapture)
-            /* fSuccess = */ gEDataManager->setAutoCaptureEnabled(newData.m_fAutoCapture);
+            fSuccess = gEDataManager->setAutoCaptureEnabled(newData.m_fAutoCapture, this);
+
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            notifyOperationProgressError(QString());
     }
     /* Return result: */
     return fSuccess;

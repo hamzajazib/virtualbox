@@ -1,4 +1,4 @@
-/* $Id: UINotificationMessage.cpp 113589 2026-03-26 11:48:29Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationMessage.cpp 113597 2026-03-26 16:19:13Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationMessage implementations.
  */
@@ -152,10 +152,11 @@ void UINotificationMessage::warnAboutClipboardError(const QString &strMsg)
 void UINotificationMessage::warnAboutCannotSaveSettings(const QString strDetails,
                                                         QWidget *pParent)
 {
-    createMessage(
-        QApplication::translate("UIMessageCenter", "Failed to save settings ..."),
-        strDetails.toUtf8().constData(),
-        pParent);
+    if (!strDetails.isNull())
+        createMessage(
+            QApplication::translate("UIMessageCenter", "Failed to save settings ..."),
+            strDetails.toUtf8().constData(),
+            pParent);
 }
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER

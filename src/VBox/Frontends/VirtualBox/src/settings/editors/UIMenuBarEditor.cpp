@@ -1,4 +1,4 @@
-/* $Id: UIMenuBarEditor.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIMenuBarEditor.cpp 113597 2026-03-26 16:19:13Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMenuBarEditor class implementation.
  */
@@ -960,7 +960,8 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             {
                 /* Save updated menu-bar restrictions: */
                 gEDataManager->setRestrictedRuntimeMenuHelpActionTypes(m_restrictionsOfMenuHelp, machineID());
-            }            break;
+            }
+            break;
         }
         default: break;
     }

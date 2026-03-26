@@ -1,4 +1,4 @@
-/* $Id: UIGlobalSettingsProxy.cpp 112954 2026-02-11 14:42:55Z sergey.dubov@oracle.com $ */
+/* $Id: UIGlobalSettingsProxy.cpp 113597 2026-03-26 16:19:13Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIGlobalSettingsProxy class implementation.
  */
@@ -286,13 +286,18 @@ bool UIGlobalSettingsProxy::saveData()
         }
 
         /* Drop the old extra data setting if still around: */
+        bool fEDataFailed = false;
         if (   fSuccess
             && !gEDataManager->proxySettings().isEmpty())
-            /* fSuccess = */ gEDataManager->setProxySettings(QString());
+        {
+            fSuccess = gEDataManager->setProxySettings(QString(), this);
+            fEDataFailed = !fSuccess;
+        }
 
         /* Show error message if necessary: */
         if (!fSuccess)
-            notifyOperationProgressError(UIErrorString::formatErrorInfo(m_properties));
+            notifyOperationProgressError(fEDataFailed ? QString() :
+                                         UIErrorString::formatErrorInfo(m_properties));
     }
     /* Return result: */
     return fSuccess;

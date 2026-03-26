@@ -1,4 +1,4 @@
-/* $Id: UIExtraDataManager.h 113589 2026-03-26 11:48:29Z sergey.dubov@oracle.com $ */
+/* $Id: UIExtraDataManager.h 113597 2026-03-26 16:19:13Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIExtraDataManager class declaration.
  */
@@ -204,7 +204,7 @@ public:
         /** Returns color theme type. */
         UIColorThemeType colorTheme();
         /** Defines color theme @a enmType. */
-        bool setColorTheme(const UIColorThemeType &enmType);
+        bool setColorTheme(const UIColorThemeType &enmType, QWidget *pParent);
     /** @} */
 
     /** @name Messaging
@@ -248,7 +248,7 @@ public:
         /** Returns Application Update data. */
         QString applicationUpdateData();
         /** Defines Application Update data as @a strValue. */
-        bool setApplicationUpdateData(const QString &strValue);
+        bool setApplicationUpdateData(const QString &strValue, QWidget *pParent);
 
         /** Returns Application Update check counter. */
         qulonglong applicationUpdateCheckCounter();
@@ -276,7 +276,7 @@ public:
         /** Returns whether settings are in expert mode. */
         bool isSettingsInExpertMode();
         /** Defines whether settings are in @a fExpertMode. */
-        bool setSettingsInExpertMode(bool fExpertMode);
+        bool setSettingsInExpertMode(bool fExpertMode, QWidget *pParent = 0);
     /** @} */
 
     /** @name Settings: Language
@@ -284,7 +284,7 @@ public:
         /** Returns the GUI language ID. */
         QString languageId();
         /** Defines the GUI @a strLanguageId. */
-        bool setLanguageId(const QString &strLanguageId);
+        bool setLanguageId(const QString &strLanguageId, QWidget *pParent);
     /** @} */
 
     /** @name Settings: Display
@@ -292,22 +292,25 @@ public:
         /** Returns maximum guest-screen resolution policy. */
         MaximumGuestScreenSizePolicy maxGuestResolutionPolicy();
         /** Defines maximum guest-screen resolution @a enmPolicy or @a resolution itself for Fixed policy. */
-        bool setMaxGuestScreenResolution(MaximumGuestScreenSizePolicy enmPolicy, const QSize resolution = QSize());
+        bool setMaxGuestScreenResolution(MaximumGuestScreenSizePolicy enmPolicy,
+                                         const QSize &resolution = QSize(),
+                                         QWidget *pParent = 0);
         /** Returns maximum guest-screen resolution for fixed policy. */
         QSize maxGuestResolutionForPolicyFixed();
         /** Defines maximum guest-screen @a resolution for fixed policy. */
-        bool setMaxGuestResolutionForPolicyFixed(const QSize &resolution);
+        bool setMaxGuestResolutionForPolicyFixed(const QSize &resolution,
+                                                 QWidget *pParent);
 
         /** Returns whether hovered machine-window should be activated. */
         bool activateHoveredMachineWindow();
         /** Defines whether hovered machine-window should be @a fActivated. */
-        bool setActivateHoveredMachineWindow(bool fActivate);
+        bool setActivateHoveredMachineWindow(bool fActivate, QWidget *pParent);
         /* Return whether host screen saver is disabled when a vm is running. */
         bool disableHostScreenSaver();
         /* Sets whether host screen saver is disabled when a vm is running. */
-        bool setDisableHostScreenSaver(bool fActivate);
+        bool setDisableHostScreenSaver(bool fActivate, QWidget *pParent);
         /* Set global font scale factor as percentage. 100% is for no scaling. */
-        bool setFontScaleFactor(int iFontScaleFactor);
+        bool setFontScaleFactor(int iFontScaleFactor, QWidget *pParent);
         int  fontScaleFactor();
     /** @} */
 
@@ -316,7 +319,7 @@ public:
         /** Returns the Runtime UI host-key combination. */
         QString hostKeyCombination();
         /** Defines the Runtime UI host-key combination. */
-        bool setHostKeyCombination(const QString &strHostCombo);
+        bool setHostKeyCombination(const QString &strHostCombo, QWidget *pParent);
 
         /** Returns shortcut overrides for shortcut-pool with @a strPoolExtraDataID. */
         QStringList shortcutOverrides(const QString &strPoolExtraDataID);
@@ -324,7 +327,7 @@ public:
         /** Returns whether the Runtime UI auto-capture is enabled. */
         bool autoCaptureEnabled();
         /** Defines whether the Runtime UI auto-capture is @a fEnabled. */
-        bool setAutoCaptureEnabled(bool fEnabled);
+        bool setAutoCaptureEnabled(bool fEnabled, QWidget *pParent);
 
         /** Returns the Runtime UI remapped scan codes. */
         QString remappedScanCodes();
@@ -335,7 +338,7 @@ public:
         /** Returns VBox proxy settings. */
         QString proxySettings();
         /** Defines VBox proxy @a strSettings. */
-        bool setProxySettings(const QString &strSettings);
+        bool setProxySettings(const QString &strSettings, QWidget *pParent);
     /** @} */
 
     /** @name Settings: Storage
@@ -567,7 +570,7 @@ public:
         /** Returns whether Runtime UI menu-bar is enabled. */
         bool menuBarEnabled(const QUuid &uID);
         /** Defines whether Runtime UI menu-bar is @a fEnabled. */
-        bool setMenuBarEnabled(bool fEnabled, const QUuid &uID);
+        bool setMenuBarEnabled(bool fEnabled, const QUuid &uID, QWidget *pParent = 0);
 #endif /* !VBOX_WS_MAC */
 
         /** Returns whether Runtime UI menu-bar context-menu is enabled. */
@@ -578,51 +581,69 @@ public:
         /** Returns restricted Runtime UI menu types. */
         UIExtraDataMetaDefs::MenuType restrictedRuntimeMenuTypes(const QUuid &uID);
         /** Defines restricted Runtime UI menu types. */
-        bool setRestrictedRuntimeMenuTypes(UIExtraDataMetaDefs::MenuType types, const QUuid &uID);
+        bool setRestrictedRuntimeMenuTypes(UIExtraDataMetaDefs::MenuType types,
+                                           const QUuid &uID,
+                                           QWidget *pParent = 0);
 
         /** Returns restricted Runtime UI action types for Application menu. */
         UIExtraDataMetaDefs::MenuApplicationActionType restrictedRuntimeMenuApplicationActionTypes(const QUuid &uID);
         /** Defines restricted Runtime UI action types for Application menu. */
-        bool setRestrictedRuntimeMenuApplicationActionTypes(UIExtraDataMetaDefs::MenuApplicationActionType types, const QUuid &uID);
+        bool setRestrictedRuntimeMenuApplicationActionTypes(UIExtraDataMetaDefs::MenuApplicationActionType types,
+                                                            const QUuid &uID,
+                                                            QWidget *pParent = 0);
 
         /** Returns restricted Runtime UI action types for Machine menu. */
         UIExtraDataMetaDefs::RuntimeMenuMachineActionType restrictedRuntimeMenuMachineActionTypes(const QUuid &uID);
         /** Defines restricted Runtime UI action types for Machine menu. */
-        bool setRestrictedRuntimeMenuMachineActionTypes(UIExtraDataMetaDefs::RuntimeMenuMachineActionType types, const QUuid &uID);
+        bool setRestrictedRuntimeMenuMachineActionTypes(UIExtraDataMetaDefs::RuntimeMenuMachineActionType types,
+                                                        const QUuid &uID,
+                                                        QWidget *pParent = 0);
 
         /** Returns restricted Runtime UI action types for View menu. */
         UIExtraDataMetaDefs::RuntimeMenuViewActionType restrictedRuntimeMenuViewActionTypes(const QUuid &uID);
         /** Defines restricted Runtime UI action types for View menu. */
-        bool setRestrictedRuntimeMenuViewActionTypes(UIExtraDataMetaDefs::RuntimeMenuViewActionType types, const QUuid &uID);
+        bool setRestrictedRuntimeMenuViewActionTypes(UIExtraDataMetaDefs::RuntimeMenuViewActionType types,
+                                                     const QUuid &uID,
+                                                     QWidget *pParent = 0);
 
         /** Returns restricted Runtime UI action types for Input menu. */
         UIExtraDataMetaDefs::RuntimeMenuInputActionType restrictedRuntimeMenuInputActionTypes(const QUuid &uID);
         /** Defines restricted Runtime UI action types for Input menu. */
-        bool setRestrictedRuntimeMenuInputActionTypes(UIExtraDataMetaDefs::RuntimeMenuInputActionType types, const QUuid &uID);
+        bool setRestrictedRuntimeMenuInputActionTypes(UIExtraDataMetaDefs::RuntimeMenuInputActionType types,
+                                                      const QUuid &uID,
+                                                      QWidget *pParent = 0);
 
         /** Returns restricted Runtime UI action types for Devices menu. */
         UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restrictedRuntimeMenuDevicesActionTypes(const QUuid &uID);
         /** Defines restricted Runtime UI action types for Devices menu. */
-        bool setRestrictedRuntimeMenuDevicesActionTypes(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType types, const QUuid &uID);
+        bool setRestrictedRuntimeMenuDevicesActionTypes(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType types,
+                                                        const QUuid &uID,
+                                                        QWidget *pParent = 0);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
         /** Returns restricted Runtime UI action types for Debugger menu. */
         UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType restrictedRuntimeMenuDebuggerActionTypes(const QUuid &uID);
         /** Defines restricted Runtime UI action types for Debugger menu. */
-        bool setRestrictedRuntimeMenuDebuggerActionTypes(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType types, const QUuid &uID);
+        bool setRestrictedRuntimeMenuDebuggerActionTypes(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType types,
+                                                         const QUuid &uID,
+                                                         QWidget *pParent = 0);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef VBOX_WS_MAC
         /** Mac OS X: Returns restricted Runtime UI action types for Window menu. */
         UIExtraDataMetaDefs::MenuWindowActionType restrictedRuntimeMenuWindowActionTypes(const QUuid &uID);
         /** Mac OS X: Defines restricted Runtime UI action types for Window menu. */
-        bool setRestrictedRuntimeMenuWindowActionTypes(UIExtraDataMetaDefs::MenuWindowActionType types, const QUuid &uID);
+        bool setRestrictedRuntimeMenuWindowActionTypes(UIExtraDataMetaDefs::MenuWindowActionType types,
+                                                       const QUuid &uID,
+                                                       QWidget *pParent = 0);
 #endif /* VBOX_WS_MAC */
 
         /** Returns restricted Runtime UI action types for Help menu. */
         UIExtraDataMetaDefs::MenuHelpActionType restrictedRuntimeMenuHelpActionTypes(const QUuid &uID);
         /** Defines restricted Runtime UI action types for Help menu. */
-        bool setRestrictedRuntimeMenuHelpActionTypes(UIExtraDataMetaDefs::MenuHelpActionType types, const QUuid &uID);
+        bool setRestrictedRuntimeMenuHelpActionTypes(UIExtraDataMetaDefs::MenuHelpActionType types,
+                                                     const QUuid &uID,
+                                                     QWidget *pParent = 0);
 
         /** Returns restricted Runtime UI visual-states. */
         UIVisualStateType restrictedVisualStates(const QUuid &uID);
@@ -630,7 +651,7 @@ public:
         /** Returns requested Runtime UI visual-state. */
         UIVisualStateType requestedVisualState(const QUuid &uID);
         /** Defines requested Runtime UI visual-state as @a visualState. */
-        bool setRequestedVisualState(UIVisualStateType visualState, const QUuid &uID);
+        bool setRequestedVisualState(UIVisualStateType visualState, const QUuid &uID, QWidget *pParent = 0);
 
 #ifdef VBOX_WS_NIX
         /** Returns whether legacy full-screen mode is requested. */
@@ -669,7 +690,7 @@ public:
         /** Returns whether mini-toolbar is enabled for full and seamless screens. */
         bool miniToolbarEnabled(const QUuid &uID);
         /** Defines whether mini-toolbar is @a fEnabled for full and seamless screens. */
-        bool setMiniToolbarEnabled(bool fEnabled, const QUuid &uID);
+        bool setMiniToolbarEnabled(bool fEnabled, const QUuid &uID, QWidget *pParent = 0);
 
         /** Returns whether mini-toolbar should auto-hide itself. */
         bool autoHideMiniToolbar(const QUuid &uID);
@@ -679,13 +700,13 @@ public:
         /** Returns mini-toolbar alignment. */
         Qt::AlignmentFlag miniToolbarAlignment(const QUuid &uID);
         /** Returns mini-toolbar @a alignment. */
-        bool setMiniToolbarAlignment(Qt::AlignmentFlag alignment, const QUuid &uID);
+        bool setMiniToolbarAlignment(Qt::AlignmentFlag alignment, const QUuid &uID, QWidget *pParent = 0);
 #endif /* VBOX_WS_MAC */
 
         /** Returns whether Runtime UI status-bar is enabled. */
         bool statusBarEnabled(const QUuid &uID);
         /** Defines whether Runtime UI status-bar is @a fEnabled. */
-        bool setStatusBarEnabled(bool fEnabled, const QUuid &uID);
+        bool setStatusBarEnabled(bool fEnabled, const QUuid &uID, QWidget *pParent = 0);
 
         /** Returns whether Runtime UI status-bar context-menu is enabled. */
         bool statusBarContextMenuEnabled(const QUuid &uID);
@@ -695,12 +716,16 @@ public:
         /** Returns restricted Runtime UI status-bar indicator list. */
         QList<IndicatorType> restrictedStatusBarIndicators(const QUuid &uID);
         /** Defines restricted Runtime UI status-bar indicator @a list. */
-        bool setRestrictedStatusBarIndicators(const QList<IndicatorType> &list, const QUuid &uID);
+        bool setRestrictedStatusBarIndicators(const QList<IndicatorType> &list,
+                                              const QUuid &uID,
+                                              QWidget *pParent = 0);
 
         /** Returns Runtime UI status-bar indicator order list. */
         QList<IndicatorType> statusBarIndicatorOrder(const QUuid &uID);
         /** Defines Runtime UI status-bar indicator order @a list. */
-        bool setStatusBarIndicatorOrder(const QList<IndicatorType> &list, const QUuid &uID);
+        bool setStatusBarIndicatorOrder(const QList<IndicatorType> &list,
+                                        const QUuid &uID,
+                                        QWidget *pParent = 0);
 
 #ifdef VBOX_WS_MAC
         /** Mac OS X: Returns whether Dock icon should be updated at runtime. */
@@ -739,7 +764,7 @@ public:
           * the this function appends a default scale factor for said screens.*/
         bool setScaleFactor(double dScaleFactor, const QUuid &uID, int iScreenIndex);
         /** Replaces the scale factor list of the machine with @a uID with @a scaleFactors. */
-        bool setScaleFactors(const QList<double> &scaleFactors, const QUuid &uID);
+        bool setScaleFactors(const QList<double> &scaleFactors, const QUuid &uID, QWidget *pParent);
 
         /** Returns the scaling optimization type. */
         ScalingOptimizationType scalingOptimizationType(const QUuid &uID);

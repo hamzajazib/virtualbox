@@ -1,4 +1,4 @@
-/* $Id: UIGlobalSettingsInterface.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIGlobalSettingsInterface.cpp 113597 2026-03-26 16:19:13Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIGlobalSettingsInterface class implementation.
  */
@@ -208,7 +208,11 @@ bool UIGlobalSettingsInterface::saveData()
         /* Save 'color-theme': */
         if (   fSuccess
             && newData.m_enmColorTheme != oldData.m_enmColorTheme)
-            /* fSuccess = */ gEDataManager->setColorTheme(newData.m_enmColorTheme);
+            fSuccess = gEDataManager->setColorTheme(newData.m_enmColorTheme, this);
+
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            notifyOperationProgressError(QString());
     }
     /* Return result: */
     return fSuccess;

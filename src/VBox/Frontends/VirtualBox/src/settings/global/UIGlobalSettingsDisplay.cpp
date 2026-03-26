@@ -1,4 +1,4 @@
-/* $Id: UIGlobalSettingsDisplay.cpp 112403 2026-01-11 19:29:08Z knut.osmundsen@oracle.com $ */
+/* $Id: UIGlobalSettingsDisplay.cpp 113597 2026-03-26 16:19:13Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIGlobalSettingsDisplay class implementation.
  */
@@ -283,26 +283,31 @@ bool UIGlobalSettingsDisplay::saveData()
         /* Save maximum guest screen size and policy: */
         if (   fSuccess
             && newData.m_guiMaximumGuestScreenSizeValue != oldData.m_guiMaximumGuestScreenSizeValue)
-            /* fSuccess = */ gEDataManager->setMaxGuestScreenResolution(newData.m_guiMaximumGuestScreenSizeValue.m_enmPolicy,
-                                                                        newData.m_guiMaximumGuestScreenSizeValue.m_size);
+            fSuccess = gEDataManager->setMaxGuestScreenResolution(newData.m_guiMaximumGuestScreenSizeValue.m_enmPolicy,
+                                                                  newData.m_guiMaximumGuestScreenSizeValue.m_size,
+                                                                  this);
         /* Save guest-screen scale-factor: */
         if (   fSuccess
             && newData.m_scaleFactors != oldData.m_scaleFactors)
-            /* fSuccess = */ gEDataManager->setScaleFactors(newData.m_scaleFactors, UIExtraDataManager::GlobalID);
+            fSuccess = gEDataManager->setScaleFactors(newData.m_scaleFactors, UIExtraDataManager::GlobalID, this);
         /* Save font scale factor: */
         if (   fSuccess
             && newData.m_iFontScalingFactor != oldData.m_iFontScalingFactor)
-            /* fSuccess = */ gEDataManager->setFontScaleFactor(newData.m_iFontScalingFactor);
+            fSuccess = gEDataManager->setFontScaleFactor(newData.m_iFontScalingFactor, this);
         /* Save whether hovered machine-window should be activated automatically: */
         if (   fSuccess
             && newData.m_fActivateHoveredMachineWindow != oldData.m_fActivateHoveredMachineWindow)
-            /* fSuccess = */ gEDataManager->setActivateHoveredMachineWindow(newData.m_fActivateHoveredMachineWindow);
+            fSuccess = gEDataManager->setActivateHoveredMachineWindow(newData.m_fActivateHoveredMachineWindow, this);
 #if defined(VBOX_WS_WIN) || defined(VBOX_WS_NIX)
         /* Save whether the host screen saver is to be disable when a vm is running: */
         if (   fSuccess
             && newData.m_fDisableHostScreenSaver != oldData.m_fDisableHostScreenSaver)
-            /* fSuccess = */ gEDataManager->setDisableHostScreenSaver(newData.m_fDisableHostScreenSaver);
+            fSuccess = gEDataManager->setDisableHostScreenSaver(newData.m_fDisableHostScreenSaver, this);
 #endif /* VBOX_WS_WIN || VBOX_WS_NIX */
+
+        /* Show error message if necessary: */
+        if (!fSuccess)
+            notifyOperationProgressError(QString());
     }
     /* Return result: */
     return fSuccess;
