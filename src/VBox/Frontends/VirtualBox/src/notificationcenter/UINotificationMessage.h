@@ -1,4 +1,4 @@
-/* $Id: UINotificationMessage.h 113513 2026-03-23 15:10:46Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationMessage.h 113585 2026-03-26 11:01:52Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationMessage declarations.
  */
@@ -458,6 +458,23 @@ public:
           * @param  comCloudMachine  Brings the object parameter get acquired from. */
         static void cannotAcquireCloudMachineParameter(const CCloudMachine &comCloudMachine,
                                                        QWidget *pParent);
+
+        /** Notifies about inability to set extra-data.
+          * @param  comVBox   Brings the object extra-data being changed for.
+          * @param  strKey    Brings the extra-data key.
+          * @param  strValue  Brings the extra-data value. */
+        static void cannotSetExtraData(const CVirtualBox &comVBox,
+                                       const QString &strKey,
+                                       const QString &strValue,
+                                       QWidget *pParent);
+        /** Notifies about inability to set extra-data.
+          * @param  comMachine  Brings the object extra-data being changed for.
+          * @param  strKey      Brings the extra-data key.
+          * @param  strValue    Brings the extra-data value. */
+        static void cannotSetExtraData(const CMachine &comMachine,
+                                       const QString &strKey,
+                                       const QString &strValue,
+                                       QWidget *pParent);
 
         /** Notifies about inability to change IHost parameter.
           * @param  comHost  Brings the object parameter being changed for. */

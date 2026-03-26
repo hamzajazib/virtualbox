@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.h 113543 2026-03-24 15:59:43Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.h 113585 2026-03-26 11:01:52Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class declaration.
  */
@@ -224,13 +224,11 @@ public:
 
         void cannotFindMachineByName(const CVirtualBox &comVBox, const QString &strName) const;
         void cannotFindMachineById(const CVirtualBox &comVBox, const QUuid &uId) const;
-        void cannotSetExtraData(const CVirtualBox &comVBox, const QString &strKey, const QString &strValue);
 
         void cannotOpenSession(const CSession &comSession) const;
         void cannotOpenSession(const CMachine &comMachine) const;
         void cannotOpenSession(const CProgress &comProgress, const QString &strMachineName) const;
 
-        void cannotSetExtraData(const CMachine &machine, const QString &strKey, const QString &strValue);
         bool cannotRemountMedium(const CMachine &machine, const UIMedium &medium,
                                  bool fMount, bool fRetry, QWidget *pParent = 0) const;
     /** @} */

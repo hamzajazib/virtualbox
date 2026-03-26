@@ -1,4 +1,4 @@
-/* $Id: UIMessageCenter.cpp 113543 2026-03-24 15:59:43Z sergey.dubov@oracle.com $ */
+/* $Id: UIMessageCenter.cpp 113585 2026-03-26 11:01:52Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIMessageCenter class implementation.
  */
@@ -372,14 +372,6 @@ void UIMessageCenter::cannotFindMachineById(const CVirtualBox &comVBox, const QU
           UIErrorString::formatErrorInfo(comVBox));
 }
 
-void UIMessageCenter::cannotSetExtraData(const CVirtualBox &comVBox, const QString &strKey, const QString &strValue)
-{
-    error(0, MessageType_Error,
-          tr("Failed to set the global VirtualBox extra data for key <i>%1</i> to value <i>{%2}</i>.")
-             .arg(strKey, strValue),
-          UIErrorString::formatErrorInfo(comVBox));
-}
-
 void UIMessageCenter::cannotOpenSession(const CSession &comSession) const
 {
     error(0, MessageType_Error,
@@ -401,14 +393,6 @@ void UIMessageCenter::cannotOpenSession(const CProgress &comProgress, const QStr
           tr("Failed to open a session for the virtual machine <b>%1</b>.")
              .arg(strMachineName),
           UIErrorString::formatErrorInfo(comProgress));
-}
-
-void UIMessageCenter::cannotSetExtraData(const CMachine &machine, const QString &strKey, const QString &strValue)
-{
-    error(0, MessageType_Error,
-          tr("Failed to set the extra data for key <i>%1</i> of machine <i>%2</i> to value <i>{%3}</i>.")
-             .arg(strKey, CMachine(machine).GetName(), strValue),
-          UIErrorString::formatErrorInfo(machine));
 }
 
 bool UIMessageCenter::cannotRemountMedium(const CMachine &machine, const UIMedium &medium, bool fMount,

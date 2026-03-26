@@ -1,4 +1,4 @@
-/* $Id: UIExtraDataManager.cpp 113360 2026-03-11 15:21:26Z sergey.dubov@oracle.com $ */
+/* $Id: UIExtraDataManager.cpp 113585 2026-03-26 11:01:52Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIExtraDataManager class implementation.
  */
@@ -40,7 +40,7 @@
 #include "UIHostComboEditor.h"
 #include "UILocalMachineStuff.h"
 #include "UIMainEventListener.h"
-#include "UIMessageCenter.h"
+#include "UINotificationMessage.h"
 #include "UISettingsDefs.h"
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 # include "UIExtraDataManagerWindow.h"
@@ -335,7 +335,10 @@ QString UIExtraDataManager::extraDataString(const QString &strKey, const QUuid &
     return strValue;
 }
 
-void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString &strValue, const QUuid &uID /* = GlobalID */)
+void UIExtraDataManager::setExtraDataString(const QString &strKey,
+                                            const QString &strValue,
+                                            const QUuid &uID /* = GlobalID */,
+                                            QWidget *pParent /* = 0 */)
 {
     /* Make sure VBoxSVC is available: */
     if (!gpGlobalSession->isVBoxSVCAvailable())
@@ -359,14 +362,14 @@ void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString
         /* Update global extra-data: */
         comVBox.SetExtraData(strKey, strValue);
         if (!comVBox.isOk())
-            msgCenter().cannotSetExtraData(comVBox, strKey, strValue);
+            UINotificationMessage::cannotSetExtraData(comVBox, strKey, strValue, pParent);
         /* Wipe out old keys: */
         foreach (const QString &strOldKey, g_mapOfObsoleteKeys.values(strKey))
         {
             comVBox.SetExtraData(strOldKey, QString());
             if (!comVBox.isOk())
             {
-                msgCenter().cannotSetExtraData(comVBox, strOldKey, strValue);
+                UINotificationMessage::cannotSetExtraData(comVBox, strOldKey, strValue, pParent);
                 break;
             }
         }
@@ -394,14 +397,14 @@ void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString
         /* Update machine extra-data: */
         comSessionMachine.SetExtraData(strKey, strValue);
         if (!comSessionMachine.isOk())
-            msgCenter().cannotSetExtraData(comSessionMachine, strKey, strValue);
+            UINotificationMessage::cannotSetExtraData(comSessionMachine, strKey, strValue, pParent);
         /* Wipe out old keys: */
         foreach (const QString &strOldKey, g_mapOfObsoleteKeys.values(strKey))
         {
             comSessionMachine.SetExtraData(strOldKey, QString());
             if (!comSessionMachine.isOk())
             {
-                msgCenter().cannotSetExtraData(comSessionMachine, strOldKey, strValue);
+                UINotificationMessage::cannotSetExtraData(comSessionMachine, strOldKey, strValue, pParent);
                 break;
             }
         }
@@ -432,7 +435,10 @@ QStringList UIExtraDataManager::extraDataStringList(const QString &strKey, const
     return strValue.split(QRegularExpression("[;,]"), Qt::SkipEmptyParts);
 }
 
-void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QStringList &value, const QUuid &uID /* = GlobalID */)
+void UIExtraDataManager::setExtraDataStringList(const QString &strKey,
+                                                const QStringList &value,
+                                                const QUuid &uID /* = GlobalID */,
+                                                QWidget *pParent /* = 0 */)
 {
     /* Make sure VBoxSVC is available: */
     if (!gpGlobalSession->isVBoxSVCAvailable())
@@ -456,14 +462,14 @@ void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QSt
         /* Update global extra-data: */
         comVBox.SetExtraDataStringList(strKey, value);
         if (!comVBox.isOk())
-            msgCenter().cannotSetExtraData(comVBox, strKey, value.join(","));
+            UINotificationMessage::cannotSetExtraData(comVBox, strKey, value.join(","), pParent);
         /* Wipe out old keys: */
         foreach (const QString &strOldKey, g_mapOfObsoleteKeys.values(strKey))
         {
             comVBox.SetExtraData(strOldKey, QString());
             if (!comVBox.isOk())
             {
-                msgCenter().cannotSetExtraData(comVBox, strOldKey, value.join(","));
+                UINotificationMessage::cannotSetExtraData(comVBox, strOldKey, value.join(","), pParent);
                 break;
             }
         }
@@ -491,14 +497,14 @@ void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QSt
         /* Update machine extra-data: */
         comSessionMachine.SetExtraDataStringList(strKey, value);
         if (!comSessionMachine.isOk())
-            msgCenter().cannotSetExtraData(comSessionMachine, strKey, value.join(","));
+            UINotificationMessage::cannotSetExtraData(comSessionMachine, strKey, value.join(","), pParent);
         /* Wipe out old keys: */
         foreach (const QString &strOldKey, g_mapOfObsoleteKeys.values(strKey))
         {
             comSessionMachine.SetExtraData(strOldKey, QString());
             if (!comSessionMachine.isOk())
             {
-                msgCenter().cannotSetExtraData(comSessionMachine, strOldKey, value.join(","));
+                UINotificationMessage::cannotSetExtraData(comSessionMachine, strOldKey, value.join(","), pParent);
                 break;
             }
         }

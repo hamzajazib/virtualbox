@@ -1,4 +1,4 @@
-/* $Id: UIExtraDataManager.h 113360 2026-03-11 15:21:26Z sergey.dubov@oracle.com $ */
+/* $Id: UIExtraDataManager.h 113585 2026-03-26 11:01:52Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - UIExtraDataManager class declaration.
  */
@@ -173,17 +173,25 @@ public:
 
         /** Returns extra-data value corresponding to passed @a strKey as QString.
           * If valid @a uID is set => applies to machine extra-data, otherwise => to global one. */
-        QString extraDataString(const QString &strKey, const QUuid &uID = GlobalID);
+        QString extraDataString(const QString &strKey,
+                                const QUuid &uID = GlobalID);
         /** Defines extra-data value corresponding to passed @a strKey as strValue.
           * If valid @a uID is set => applies to machine extra-data, otherwise => to global one. */
-        void setExtraDataString(const QString &strKey, const QString &strValue, const QUuid &uID = GlobalID);
+        void setExtraDataString(const QString &strKey,
+                                const QString &strValue,
+                                const QUuid &uID = GlobalID,
+                                QWidget *pParent = 0);
 
         /** Returns extra-data value corresponding to passed @a strKey as QStringList.
           * If valid @a uID is set => applies to machine extra-data, otherwise => to global one. */
-        QStringList extraDataStringList(const QString &strKey, const QUuid &uID = GlobalID);
+        QStringList extraDataStringList(const QString &strKey,
+                                        const QUuid &uID = GlobalID);
         /** Defines extra-data value corresponding to passed @a strKey as value.
           * If valid @a uID is set => applies to machine extra-data, otherwise => to global one. */
-        void setExtraDataStringList(const QString &strKey, const QStringList &value, const QUuid &uID = GlobalID);
+        void setExtraDataStringList(const QString &strKey,
+                                    const QStringList &value,
+                                    const QUuid &uID = GlobalID,
+                                    QWidget *pParent = 0);
     /** @} */
 
     /** @name General

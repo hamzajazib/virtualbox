@@ -1,4 +1,4 @@
-/* $Id: UINotificationMessage.cpp 113514 2026-03-23 15:58:07Z sergey.dubov@oracle.com $ */
+/* $Id: UINotificationMessage.cpp 113585 2026-03-26 11:01:52Z sergey.dubov@oracle.com $ */
 /** @file
  * VBox Qt GUI - Various UINotificationMessage implementations.
  */
@@ -1230,6 +1230,40 @@ void UINotificationMessage::cannotAcquireCloudMachineParameter(const CCloudMachi
         QApplication::translate("UIMessageCenter", "Cloud failure ..."),
         QApplication::translate("UIMessageCenter", "Failed to acquire cloud machine parameter.") +
         UIErrorString::formatErrorInfo(comCloudMachine),
+        pParent);
+}
+
+/* static */
+void UINotificationMessage::cannotSetExtraData(const CVirtualBox &comVBox,
+                                               const QString &strKey,
+                                               const QString &strValue,
+                                               QWidget *pParent)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "VirtualBox failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to set the global VirtualBox extra data for key "
+                                                   "<i>%1</i> to value <i>{%2}</i>.").arg(strKey, strValue) +
+        UIErrorString::formatErrorInfo(comVBox),
+        QString() /* internal name */,
+        QString() /* help keyword */,
+        NotificationType_Warning,
+        pParent);
+}
+
+/* static */
+void UINotificationMessage::cannotSetExtraData(const CMachine &comMachine,
+                                               const QString &strKey,
+                                               const QString &strValue,
+                                               QWidget *pParent)
+{
+    createMessage(
+        QApplication::translate("UIMessageCenter", "Machine failure ..."),
+        QApplication::translate("UIMessageCenter", "Failed to set the extra data for key <i>%1</i> of machine <i>%2</i> to "
+                                                   "value <i>{%3}</i>.").arg(strKey, CMachine(comMachine).GetName(), strValue) +
+        UIErrorString::formatErrorInfo(comMachine),
+        QString() /* internal name */,
+        QString() /* help keyword */,
+        NotificationType_Warning,
         pParent);
 }
 
